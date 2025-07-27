@@ -1,0 +1,18 @@
+## Ignore para Visual Studio y .NET
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.tmp
+*.cache
+*.log
+*.pdb
+*.dbmdl
+*.jfm
+*.DS_Store
+*.vscode/
+*.http
+
+# Archivos de configuración local
+appsettings.Development.json

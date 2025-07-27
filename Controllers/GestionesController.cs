@@ -1,0 +1,112 @@
+﻿using gestiones_backend.Context;
+using gestiones_backend.Dtos.In;
+using gestiones_backend.Dtos.Out;
+using gestiones_backend.Entity;
+using gestiones_backend.Services;
+using Mapster;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+
+namespace gestiones_backend.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class GestionesController : ControllerBase
+    {
+        private readonly DataContext _context;
+        private readonly GestioneService _service;
+        private readonly CompromisosPagoService _serviceCompromisos;
+
+        public GestionesController(DataContext context, GestioneService service, CompromisosPagoService serviceCompromisos)
+        {
+            _context = context;
+            _service = service;
+            _serviceCompromisos = serviceCompromisos;
+        }
+
+
+        [Authorize]
+        [HttpPost("grabar-gestion")]
+        public IActionResult GrabarGestiones([FromBody] GestionInDTO nuevaGestion)
+        {
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            var claims = identity.Claims;
+            string name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+            Usuario usuario = _context.Usuarios.Where(x => x.NombreUsuario == name).FirstOrDefault();
+
+            if (usuario == null)
+            {
+                throw new Exception("Token incorrecto");
+            }
+
+            Gestione gestione = new Gestione();
+
+            gestione.Descripcion = nuevaGestion.Descripcion;
+            gestione.IdDeuda = nuevaGestion.idDeuda;
+            gestione.IdTipoGestion = nuevaGestion.IdTipoGestion;
+            gestione.IdUsuarioGestiona = usuario.IdUsuario;
+
+            _context.Gestiones.Add(gestione);
+            _context.SaveChanges();
+            return Ok("Se grabo exitosamente");
+        }
+
+        [Authorize]
+        [HttpPost("grabar-compromiso-pago")]
+        public IActionResult GrabarCompromisosPago(CompromisoPagoInDTO compromisoPagoNuevo)
+        {
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            var claims = identity.Claims;
+            string name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+            Usuario usuario = _context.Usuarios.Where(x => x.NombreUsuario == name).FirstOrDefault();
+
+            if (usuario == null)
+            {
+                throw new Exception("Token incorrecto");
+            }
+
+            CompromisosPago TelefonosDeudoresDTO = compromisoPagoNuevo.Adapt<CompromisosPago>();
+            TelefonosDeudoresDTO.IdUsuario = usuario.IdUsuario;
+            _context.CompromisosPagos.Add(TelefonosDeudoresDTO);
+            _context.SaveChanges();
+            return Ok("Se grabo exitosamente");
+        }
+
+        [HttpGet("gestiones-reporte")]
+        public async Task<IActionResult> GetByFilters(
+        [FromQuery] DateTime startDate,
+        [FromQuery] DateTime endDate,
+        [FromQuery] string? deudorName = null)
+        {
+            List<GestionDto> gestiones = await _service.GetGestionesByFiltersAsync(
+                startDate, endDate, deudorName);
+
+            return Ok(gestiones);
+        }
+
+        [HttpGet("compromiso-pagos-hoy")]
+        public async Task<IActionResult> GetByFiltersGestiones()
+        {
+            DateOnly hoy = DateOnly.FromDateTime(DateTime.Today);
+            List<CompromisosPago> conpromisosPagos = _context.CompromisosPagos.Include(x => x.IdDeudaNavigation).Where(x => x.FechaCompromiso == hoy).ToList();
+            return Ok("");
+        }
+
+        [HttpGet("compromiso-reporte")]
+        public async Task<IActionResult> GetByFiltersGestiones(
+        [FromQuery] DateOnly startDate,
+        [FromQuery] DateOnly endDate,
+        [FromQuery] string? deudorName = null)
+        {
+            List<CompromisoPagoDto> compromisos = await _serviceCompromisos.GetCompromisosByFiltersAsync(
+                startDate, endDate, deudorName);
+
+            return Ok(compromisos);
+        }
+    }
+}
