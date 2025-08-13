@@ -27,7 +27,7 @@ builder.Services.AddControllers(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<DataContext>(options =>
-    options.UseNpgsql("Host=localhost;Port=5433;Database=mydb;Username=myuser;Password=mypassword"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("Jwt")
