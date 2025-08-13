@@ -16,6 +16,9 @@ public partial class Usuario
     public string Rol { get; set; } = null!;
 
     public string Contrasena { get; set; } = null!;
+    public string Email { get; set; } = null!;
+    public string Telefono { get; set; } = null!;
+    public string NombreCompleto { get; set; } = null!;
 
     public virtual ICollection<CompromisosPago> CompromisosPagos { get; set; } = new List<CompromisosPago>();
 

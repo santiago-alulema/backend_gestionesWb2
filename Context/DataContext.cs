@@ -36,10 +36,8 @@ namespace gestiones_backend.Context
             // Configuración para entidades simples
             ConfigureSimpleEntities(modelBuilder);
 
-            // Configuración para entidades complejas con relaciones
             ConfigureComplexEntities(modelBuilder);
 
-            // Configuración específica para relaciones especiales
             ConfigureSpecialRelationships(modelBuilder);
         }
 
@@ -365,10 +363,12 @@ namespace gestiones_backend.Context
             {
                 entity.HasKey(e => e.IdUsuario);
                 entity.Property(e => e.IdUsuario).HasMaxLength(13);
+                entity.Property(e => e.Email).HasMaxLength(100);
+                entity.Property(e => e.Telefono).HasMaxLength(50);
                 entity.Property(e => e.NombreUsuario).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.Rol)
-        .HasMaxLength(20) 
-        .HasColumnName("rol");
+                        .HasMaxLength(20) 
+                        .HasColumnName("rol");
                 entity.Property(e => e.Contrasena).IsRequired().HasMaxLength(255);
             });
 
