@@ -1,4 +1,4 @@
-using gestiones_backend.Class;
+﻿using gestiones_backend.Class;
 using gestiones_backend.Context;
 using gestiones_backend.helpers;
 using gestiones_backend.Interfaces;
@@ -57,7 +57,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
         builder => builder
-            .WithOrigins("http://localhost:5173, http://207.180.205.100:5000")
+            .WithOrigins("http://localhost:5173, http://207.180.205.100:5173")
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials());
@@ -75,7 +75,7 @@ builder.Services.AddMapster();
 
 var app = builder.Build();
 
-// ?? Aplicar migraciones autom�ticamente al iniciar
+// 🚀 Aplicar migraciones automáticamente al iniciar
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<DataContext>();
