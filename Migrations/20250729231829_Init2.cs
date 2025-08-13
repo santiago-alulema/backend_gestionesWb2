@@ -5,7 +5,7 @@
 namespace gestiones_backend.Migrations
 {
     /// <inheritdoc />
-    public partial class cambio_contrasenia : Migration
+    public partial class Init2 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

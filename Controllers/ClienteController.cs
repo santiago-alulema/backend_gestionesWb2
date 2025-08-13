@@ -63,7 +63,7 @@ namespace gestiones_backend.Controllers
                     query = query.Where(c => c.FechaCompromiso == hoy);
                 }
 
-                var compromisos = query.Where(x => x.Estado=="C").Select(c => new CompromisoPagoOutDTO
+                var compromisos = query.Where(x => x.Estado== true).Select(c => new CompromisoPagoOutDTO
                 {
                     compromisoPagoId = c.IdCompromiso,
                     deudaId = c.IdDeuda != null ? c.IdDeuda.Value : Guid.Empty,
@@ -113,7 +113,7 @@ namespace gestiones_backend.Controllers
             _context.DeudorTelefonos.AddRange(TelefonosDeudores);
             _context.SaveChanges();
 
-            return Ok("S grabo los telefonos exitosamente");
+            return Ok("Se grabo los telefonos exitosamente");
         }
 
         [HttpGet("listar-clientes")]

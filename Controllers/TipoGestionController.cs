@@ -20,7 +20,7 @@ namespace gestiones_backend.Controllers
 
         [HttpGet("tipo-gestion-padre")]
         public IActionResult TipoGestionPadre() {
-            List<TiposGestion> gestiones = _context.TiposGestions.Where( x => x.IdPadre == null &&
+            List<TiposGestion> gestiones = _context.TiposGestion.Where( x => x.IdPadre == null &&
                                                                              x.Estado == true).ToList();
             List<TipoGestionOutDTO> gestionesDto = gestiones.Adapt<List<TipoGestionOutDTO>>();
             return Ok(gestionesDto);
@@ -29,7 +29,7 @@ namespace gestiones_backend.Controllers
         [HttpGet("tipo-gestion-por-padre/{CodigoPadre}")]
         public IActionResult TipoGestionPorPadre(string CodigoPadre)
         {
-            List<TiposGestion> gestiones = _context.TiposGestions.Where(x => x.Estado == true && 
+            List<TiposGestion> gestiones = _context.TiposGestion.Where(x => x.Estado == true && 
                                                                              x.IdPadre == CodigoPadre).ToList();
             List<TipoGestionOutDTO> gestionesDto = gestiones.Adapt<List<TipoGestionOutDTO>>();
             return Ok(gestionesDto);

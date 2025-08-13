@@ -6,7 +6,7 @@
         public DateOnly FechaCompromiso { get; set; }
         public string Deudor { get; set; } = string.Empty;
         public decimal MontoComprometido { get; set; }
-        public string Estado { get; set; } = string.Empty;
+        public bool? Estado { get; set; }
         public DateOnly? FechaCumplimientoReal { get; set; }
         public string Observaciones { get; set; } = string.Empty;
     }

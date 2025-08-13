@@ -55,7 +55,11 @@ namespace gestiones_backend.Controllers
                 }
             }
             _context.Deudores.AddRange(grabarDeudor);
-            _context.Deudores.UpdateRange(actualizarDeudor);
+            if (actualizarDeudor.Count>0)
+            {
+                _context.Deudores.UpdateRange(actualizarDeudor);
+
+            }
             _context.SaveChanges();
             return Ok("Datos procesados exitosamente (actualizaciones e inserciones)");
         }

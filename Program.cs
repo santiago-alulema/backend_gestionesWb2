@@ -1,6 +1,7 @@
 using gestiones_backend.Class;
 using gestiones_backend.Context;
 using gestiones_backend.helpers;
+using gestiones_backend.Interfaces;
 using gestiones_backend.Services;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -68,6 +69,11 @@ builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<GestioneService>();
 builder.Services.AddScoped<CompromisosPagoService>();
 builder.Services.AddScoped<CustomExceptionFilter>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IReportesEmpresaService, ReportesEmpresaService>();
+
+
 builder.Services.AddMapster();
 
 var app = builder.Build();

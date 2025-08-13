@@ -17,7 +17,9 @@ public partial class CompromisosPago
 
     public decimal MontoComprometido { get; set; }
 
-    public string? Estado { get; set; }
+    public bool? Estado { get; set; } 
+
+    public bool? IncumplioCompromisoPago { get; set; }
 
     public DateOnly? FechaCumplimientoReal { get; set; }
 

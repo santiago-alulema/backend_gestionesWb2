@@ -8,6 +8,6 @@ namespace gestiones_backend.Dtos.In
         public string IdCompromiso { get; set; }
 
         [Required]
-        public string NuevoEstado { get; set; }
+        public bool NuevoEstado { get; set; }
     }
 }

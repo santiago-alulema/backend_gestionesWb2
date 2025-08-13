@@ -2,6 +2,7 @@
 using gestiones_backend.Dtos.In;
 using gestiones_backend.Dtos.Out;
 using gestiones_backend.Entity;
+using gestiones_backend.Interfaces;
 using gestiones_backend.Services;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
@@ -19,12 +20,14 @@ namespace gestiones_backend.Controllers
         private readonly DataContext _context;
         private readonly GestioneService _service;
         private readonly CompromisosPagoService _serviceCompromisos;
+        private readonly IAuthenticationService _authService;
 
-        public GestionesController(DataContext context, GestioneService service, CompromisosPagoService serviceCompromisos)
+        public GestionesController(IAuthenticationService authService, DataContext context, GestioneService service, CompromisosPagoService serviceCompromisos)
         {
             _context = context;
             _service = service;
             _serviceCompromisos = serviceCompromisos;
+            _authService = authService;
         }
 
 
@@ -32,24 +35,17 @@ namespace gestiones_backend.Controllers
         [HttpPost("grabar-gestion")]
         public IActionResult GrabarGestiones([FromBody] GestionInDTO nuevaGestion)
         {
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
-            var claims = identity.Claims;
-            string name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-
-            Usuario usuario = _context.Usuarios.Where(x => x.NombreUsuario == name).FirstOrDefault();
-
-            if (usuario == null)
-            {
-                throw new Exception("Token incorrecto");
-            }
+            var usuario = _authService.GetCurrentUser();
 
             Gestione gestione = new Gestione();
-
+            gestione.IdGestion = Guid.NewGuid().ToString();
             gestione.Descripcion = nuevaGestion.Descripcion;
             gestione.IdDeuda = nuevaGestion.idDeuda;
             gestione.IdTipoGestion = nuevaGestion.IdTipoGestion;
             gestione.IdUsuarioGestiona = usuario.IdUsuario;
-
+            gestione.IdTipoContactoGestion = nuevaGestion.IdTipoContactoDeudor;
+            gestione.IdRespuestaTipoContacto = nuevaGestion.IdRespuesta;
+            gestione.Email = nuevaGestion.Email;
             _context.Gestiones.Add(gestione);
             _context.SaveChanges();
             return Ok("Se grabo exitosamente");
@@ -59,21 +55,50 @@ namespace gestiones_backend.Controllers
         [HttpPost("grabar-compromiso-pago")]
         public IActionResult GrabarCompromisosPago(CompromisoPagoInDTO compromisoPagoNuevo)
         {
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
-            var claims = identity.Claims;
-            string name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            var usuario = _authService.GetCurrentUser();
 
-            Usuario usuario = _context.Usuarios.Where(x => x.NombreUsuario == name).FirstOrDefault();
+            CompromisosPago compromisoPago = compromisoPagoNuevo.Adapt<CompromisosPago>();
+            compromisoPago.IdCompromiso = Guid.NewGuid().ToString();
+            compromisoPago.IdUsuario = usuario.IdUsuario;
+            _context.CompromisosPagos.Add(compromisoPago);
+            _context.SaveChanges();
+            return Ok("Se grabo exitosamente");
+        }
 
-            if (usuario == null)
+        [HttpPost("grabar-pago")]
+        public async Task<ActionResult<Pago>> RegistrarPago(PagoGrabarDTO pagoDto)
+        {
+            var usuario = _authService.GetCurrentUser();
+            var deuda = await _context.Deudas.FindAsync(pagoDto.IdDeuda);
+
+            if (deuda == null)
             {
-                throw new Exception("Token incorrecto");
+                return NotFound(new { Error = "La deuda especificada no existe" });
             }
 
-            CompromisosPago TelefonosDeudoresDTO = compromisoPagoNuevo.Adapt<CompromisosPago>();
-            TelefonosDeudoresDTO.IdUsuario = usuario.IdUsuario;
-            _context.CompromisosPagos.Add(TelefonosDeudoresDTO);
-            _context.SaveChanges();
+            var pago = new Pago
+            {
+                IdDeuda = pagoDto.IdDeuda,
+                FechaPago = pagoDto.FechaPago,
+                MontoPagado = pagoDto.MontoPagado,
+                MedioPago = pagoDto.MedioPago,
+                Observaciones = pagoDto.Observaciones,
+                IdUsuario = usuario.IdUsuario,
+                IdBancosPago = pagoDto.BancoId,
+                NumeroDocumenro = pagoDto.NumeroDocumento,
+                IdTipoCuentaBancaria = pagoDto.CuentaId,
+                IdTipoTransaccion = pagoDto.TipoTransaccionId,
+                IdAbonoLiquidacion = pagoDto.AbonoLiquidacionId,
+                
+            };
+
+            deuda.SaldoActual -= pagoDto.MontoPagado;
+            deuda.UltimoPago = pagoDto.MontoPagado;
+
+            _context.Pagos.Add(pago);
+            //_context.Deudas.Update(deuda);
+            await _context.SaveChangesAsync();
+
             return Ok("Se grabo exitosamente");
         }
 
