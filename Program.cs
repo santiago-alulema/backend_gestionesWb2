@@ -13,11 +13,9 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<CustomExceptionFilter>();
-
 }).AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.WriteIndented = true;
@@ -59,7 +57,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
         builder => builder
-            .WithOrigins("http://localhost:5173") 
+            .WithOrigins("http://localhost:5173")
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials());
@@ -73,10 +71,17 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IReportesEmpresaService, ReportesEmpresaService>();
 
-
 builder.Services.AddMapster();
 
 var app = builder.Build();
+
+// ?? Aplicar migraciones automáticamente al iniciar
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<DataContext>();
+    db.Database.Migrate();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
