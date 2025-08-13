@@ -14,13 +14,6 @@ FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Instalar herramientas EF Core para migraciones
-RUN apt-get update && apt-get install -y curl unzip \
-    && dotnet tool install --global dotnet-ef \
-    && export PATH="$PATH:/root/.dotnet/tools"
+ENV ASPNETCORE_ENVIRONMENT=Production
 
-# Script de arranque: migraciones + API
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["dotnet", "gestiones_backend.dll"]
