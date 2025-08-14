@@ -16,12 +16,13 @@ namespace gestiones_backend.helpers
             _settings = options.Value;
         }
 
-        public string GenerateToken(string username, string role, Boolean IsSessionActive)
+        public string GenerateToken(string username, string role, Boolean IsSessionActive, string fullName)
         {
             var claims = new[]
             {
             new Claim(ClaimTypes.Name, username),
             new Claim(ClaimTypes.Role, role),
+            new Claim("fullName", fullName),
             new Claim("isSessionActive", IsSessionActive.ToString()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };

@@ -32,7 +32,7 @@ namespace gestiones_backend.Controllers
 
                 if (user != null)
                 {
-                    var token = _jwtService.GenerateToken(user.NombreCompleto, user.Rol, oLoginCLS.RememberMe);
+                    var token = _jwtService.GenerateToken(user.NombreUsuario, user.Rol, oLoginCLS.RememberMe, user.NombreCompleto);
                     return Ok(new { token });
                 }
                 else

@@ -40,26 +40,30 @@ namespace gestiones_backend.Controllers
                 }
                 else
                 {
-                    var nuevoDeudor = new Deudores()
+                    if (!grabarDeudor.Any(d => d.IdDeudor == deudorExcel.Cedula))
                     {
-                        IdDeudor = deudorExcel.Cedula,
-                        Correo = deudorExcel.Correo,
-                        Nombre = deudorExcel.Nombre,
-                        Direccion = deudorExcel.Direccion,
-                        Telefono = deudorExcel.Telefono,
-                        Descripcion = deudorExcel.Descripcion,
-                        IdUsuario = deudorExcel.Usuario
-                    };
+                        var nuevoDeudor = new Deudores
+                        {
+                            IdDeudor = deudorExcel.Cedula,
+                            Correo = deudorExcel.Correo,
+                            Nombre = deudorExcel.Nombre,
+                            Direccion = deudorExcel.Direccion,
+                            Telefono = deudorExcel.Telefono,
+                            Descripcion = deudorExcel.Descripcion,
+                            IdUsuario = deudorExcel.Usuario
+                        };
 
-                    grabarDeudor.Add(nuevoDeudor);
+                        grabarDeudor.Add(nuevoDeudor);
+                    }
                 }
             }
-            _context.Deudores.AddRange(grabarDeudor);
-            if (actualizarDeudor.Count>0)
-            {
-                _context.Deudores.UpdateRange(actualizarDeudor);
 
-            }
+            if (grabarDeudor.Count > 0)
+                _context.Deudores.AddRange(grabarDeudor);
+
+            if (actualizarDeudor.Count>0)
+                _context.Deudores.UpdateRange(actualizarDeudor);
+            
             _context.SaveChanges();
             return Ok("Datos procesados exitosamente (actualizaciones e inserciones)");
         }
