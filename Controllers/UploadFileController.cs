@@ -18,42 +18,52 @@ namespace gestiones_backend.Controllers
             _context = context;
         }
 
-
         [HttpPost("upload-excel-deudores")]
-        public IActionResult uploadFileDeudores([FromBody] List<UploadDeudoresInDTO> deudoresExcel)
+        public IActionResult UploadFileDeudores([FromBody] List<UploadDeudoresInDTO> deudoresExcel)
         {
-            List<Deudores> actualizarDeudor = [];
-            List<Deudores> grabarDeudor = [];
+            if (deudoresExcel == null || !deudoresExcel.Any())
+                return BadRequest("No se recibieron datos.");
+
+            var cedulasExcel = deudoresExcel.Select(d => d.Cedula).ToList();
+            var deudoresExistentes = _context.Deudores
+                                           .Where(d => cedulasExcel.Contains(d.IdDeudor))
+                                           .ToDictionary(d => d.IdDeudor);
+
+            var actualizarDeudor = new List<Deudores>();
+            var grabarDeudor = new List<Deudores>();
+
             foreach (var deudorExcel in deudoresExcel)
             {
-                var deudorExistente = _context.Deudores.Find(deudorExcel.Cedula);
-
-                if (deudorExistente != null)
+                if (deudoresExistentes.TryGetValue(deudorExcel.Cedula, out var deudorExistente))
                 {
-                    deudorExistente.Nombre = deudorExcel.Nombre;
-                    deudorExistente.Direccion = deudorExcel.Direccion;
-                    deudorExistente.Telefono = deudorExcel.Telefono;
-                    deudorExistente.Correo = deudorExcel.Correo;
-                    deudorExistente.Descripcion = deudorExcel.Descripcion;
-                    deudorExistente.IdUsuario = deudorExcel.Usuario;
-                    actualizarDeudor.Add(deudorExistente);
+                    // Actualizar solo si no está ya en la lista de actualización
+                    if (!actualizarDeudor.Any(d => d.IdDeudor == deudorExcel.Cedula))
+                    {
+                        deudorExistente.Nombre = deudorExcel.Nombre;
+                        deudorExistente.Direccion = deudorExcel.Direccion;
+                        deudorExistente.Telefono = deudorExcel.Telefono;
+                        deudorExistente.Correo = deudorExcel.Correo;
+                        deudorExistente.Descripcion = deudorExcel.Descripcion;
+                        deudorExistente.IdUsuario = deudorExcel.Usuario;
+
+                        actualizarDeudor.Add(deudorExistente);
+                    }
                 }
                 else
                 {
+                    // Agregar solo si no está ya en la lista de grabación
                     if (!grabarDeudor.Any(d => d.IdDeudor == deudorExcel.Cedula))
                     {
-                        var nuevoDeudor = new Deudores
+                        grabarDeudor.Add(new Deudores
                         {
                             IdDeudor = deudorExcel.Cedula,
-                            Correo = deudorExcel.Correo,
                             Nombre = deudorExcel.Nombre,
                             Direccion = deudorExcel.Direccion,
                             Telefono = deudorExcel.Telefono,
+                            Correo = deudorExcel.Correo,
                             Descripcion = deudorExcel.Descripcion,
                             IdUsuario = deudorExcel.Usuario
-                        };
-
-                        grabarDeudor.Add(nuevoDeudor);
+                        });
                     }
                 }
             }
@@ -61,36 +71,13 @@ namespace gestiones_backend.Controllers
             if (grabarDeudor.Count > 0)
                 _context.Deudores.AddRange(grabarDeudor);
 
-            if (actualizarDeudor.Count>0)
+            if (actualizarDeudor.Count > 0)
                 _context.Deudores.UpdateRange(actualizarDeudor);
-            
+
             _context.SaveChanges();
-            return Ok("Datos procesados exitosamente (actualizaciones e inserciones)");
+
+            return Ok($"Datos procesados exitosamente: {grabarDeudor.Count} insertados, {actualizarDeudor.Count} actualizados.");
         }
-
-
-        //[HttpPost("upload-excel-deudores")]
-        //public IActionResult uploadFileDeudaores([FromBody] List<UploadDeudoresInDTO> deudoresExcel)
-        //{
-        //    List<Deudores> deudores = new();
-        //    for (int i = 0; i < deudoresExcel.Count; i++)
-        //    {
-        //        deudores.Add(new Deudores()
-        //        {
-        //            IdDeudor = deudoresExcel[i].Cedula,
-        //            Correo = deudoresExcel[i].Correo,
-        //            Nombre = deudoresExcel[i].Nombre,
-        //            Direccion = deudoresExcel[i].Direccion,
-        //            Telefono = deudoresExcel[i].Telefono,
-        //            Descripcion = deudoresExcel[i].Descripcion,
-        //            IdUsuario = deudoresExcel[i].Usuario
-        //        });
-        //    }
-        //    _context.Deudores.AddRange(deudores);
-        //    _context.SaveChanges();
-        //    return Ok("Se grabo exitosamente");
-        //}
-
 
         [HttpPost("upload-excel-deudas")]
         public IActionResult uploadFileDeudas([FromBody] List<UploadDeudasInDTO> deudasExcel)
