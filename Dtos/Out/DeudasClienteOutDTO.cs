@@ -13,7 +13,7 @@
         public int numeroCouta { get; set; } = 0;
         public int totalCuotas { get; set; } = 0;
         public Decimal valorCuotas { get; set; } = 0;
-
+        public String empresa { get; set; } = "";
 
     }
 }

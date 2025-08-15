@@ -45,6 +45,7 @@ namespace gestiones_backend.Controllers
                     numeroCouta = deudas[i].CuotaActual ?? 0,
                     totalCuotas = deudas[i].NumeroCuotas ?? 0,
                     valorCuotas = deudas[i].ValorCuota ?? 0,
+                    empresa = deudas[i].Empresa
                 });
             }
             return Ok(deudoresDTO);
