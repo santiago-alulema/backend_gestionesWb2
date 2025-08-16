@@ -1,9 +1,12 @@
 ﻿using gestiones_backend.Context;
+using gestiones_backend.DbConn;
 using gestiones_backend.Dtos.Out;
 using gestiones_backend.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
+using System.ComponentModel;
+using System.Data;
 
 namespace gestiones_backend.Controllers
 {
@@ -13,12 +16,16 @@ namespace gestiones_backend.Controllers
     {
         private readonly DataContext _context;
         private readonly IReportesEmpresaService _reportesEmpresaService;
+        private readonly IConfiguration Configuration;
+
         public ReporteGeneralGestionesController(
        DataContext context,
-       IReportesEmpresaService reportesEmpresaService)
+       IReportesEmpresaService reportesEmpresaService,
+       IConfiguration config)
         {
             _context = context;
             _reportesEmpresaService = reportesEmpresaService;
+            Configuration = config;
         }
 
         [HttpGet("gestiones-por-usuario")]
@@ -111,6 +118,64 @@ namespace gestiones_backend.Controllers
         {
                 var reporte = await _reportesEmpresaService.ObtenerReportePorEmpresaMesActual();
                 return Ok(reporte);
+        }
+
+
+        [HttpGet("reporte-general-gestiones/{fechaInicio}/{fechaFin}/{tipoReporte}/{cliente}")]
+        public IActionResult GetReporteGeneral(string fechaInicio, string fechaFin, string tipoReporte, string cliente = null)
+        {
+            string consulta = "";
+            string filtroCliente = cliente == "-SP-" ? "": @$"d2.""Nombre"" like '%{cliente}%' or d2.""IdDeudor"" like '%{cliente}%' or";
+            if (tipoReporte == "pagos")
+            {
+                consulta = @$"select  d2.""IdDeudor"" cedula, d2.""Nombre"" nombres,
+                            p.""Observaciones"", fp.""Nombre"" formaPago , bp.""Nombre"" banco, tcb.""Nombre"" cuentaBancaria, tt.""Nombre"" ""Tipos Transaccion"", al.""Nombre"" AbonoLiquidacion,
+                            d.*
+                            from ""Pagos"" p 
+                            join ""FormasPago"" fp  ON p.""FormaPagoId""  = fp.""FormaPagoId""  
+                            join ""BancosPagos"" bp ON p.""IdBancosPago""  = bp.""Id""  
+                            join ""TiposCuentaBancaria"" tcb  ON p.""IdTipoCuentaBancaria""  = tcb.""Id""
+                            join ""TiposTransaccion"" tt on tt.""Id""  = p.""IdTipoTransaccion"" 
+                            join ""AbonosLiquidacion"" al on al.""Id"" = p.""IdAbonoLiquidacion"" 
+                            join ""Deudas"" d ON p.""IdDeuda""  = d.""IdDeuda"" 
+                            join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
+                            where {filtroCliente} (p.""FechaPago"" >= '{fechaInicio}' and p.""FechaPago"" <= '{fechaFin}' ) ";
+            }
+
+            if (tipoReporte == "gestiones")
+            {
+                consulta = @$"select  d2.""IdDeudor"" cedula, d2.""Nombre"" nombres,
+                                g.*,
+                                d.*
+                                from ""Gestiones"" g 
+                                join ""Deudas"" d ON g.""IdDeuda""  = d.""IdDeuda"" 
+                                join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
+                                where {filtroCliente} (g.""FechaGestion"" >= '{fechaInicio}' and g.""FechaGestion"" <= '{fechaFin}' ) ";
+            }
+
+            if (tipoReporte == "compromisos")
+            {
+                consulta = @$"select  d2.""IdDeudor"" cedula, d2.""Nombre"" nombres,
+                                cp.*,
+                                d.*
+                                from ""CompromisosPagos"" cp 
+                                join ""Deudas"" d ON cp.""IdDeuda""  = d.""IdDeuda"" 
+                                join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor""
+                                where {filtroCliente} (cp.""FechaCompromiso""  >= '{fechaInicio}' and cp.""FechaCompromiso""  <= '{fechaFin}' )";
+            }
+
+            PgConn conn = new PgConn();
+            conn.cadenaConnect = Configuration.GetConnectionString("DefaultConnection");
+
+            DataTable dataTable = conn.ejecutarconsulta_dt(consulta);
+            ExcelPackage.License.SetNonCommercialPersonal("Santiago");
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet1");
+                worksheet.Cells.LoadFromDataTable(dataTable, true);
+                var stream = new MemoryStream(package.GetAsByteArray());
+                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{tipoReporte}_{DateTime.Now}.xlsx");
+            }
         }
 
     }

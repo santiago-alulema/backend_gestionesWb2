@@ -1,0 +1,6 @@
+sábado, 16 de agosto de 2025 - - - - - - - 42703: column d2.-SP- does not exist
+
+POSITION: 998
+sábado, 16 de agosto de 2025 - - - - - - - 42P01: missing FROM-clause entry for table "p"
+
+POSITION: 386
