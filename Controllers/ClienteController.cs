@@ -138,7 +138,10 @@ namespace gestiones_backend.Controllers
                 throw new Exception("Token incorrecto");
             }
 
-            List<Deudores> clientes = _context.Deudores.Where(x => x.IdUsuario == usuario.IdUsuario).ToList();
+            List<Deudores> clientes = usuario.Rol == "user"
+                                     ? _context.Deudores.Where(x => x.IdUsuario == usuario.IdUsuario).ToList()
+                                     : _context.Deudores.ToList();
+
             List<ClientesOutDTO> deudoresDTO = new();
             for (int i = 0; i < clientes.Count; i++)
             {
