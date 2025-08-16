@@ -1,4 +1,5 @@
 ﻿using gestiones_backend.Context;
+using gestiones_backend.DbConn;
 using gestiones_backend.Dtos.In;
 using gestiones_backend.Dtos.Out;
 using gestiones_backend.Entity;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using System.Security.Claims;
 
 namespace gestiones_backend.Controllers
@@ -21,13 +23,19 @@ namespace gestiones_backend.Controllers
         private readonly GestioneService _service;
         private readonly CompromisosPagoService _serviceCompromisos;
         private readonly IAuthenticationService _authService;
+        private readonly IConfiguration Configuration;
 
-        public GestionesController(IAuthenticationService authService, DataContext context, GestioneService service, CompromisosPagoService serviceCompromisos)
+        public GestionesController(IAuthenticationService authService, 
+            DataContext context, 
+            GestioneService service,
+            CompromisosPagoService serviceCompromisos,
+            IConfiguration config)
         {
             _context = context;
             _service = service;
             _serviceCompromisos = serviceCompromisos;
             _authService = authService;
+            Configuration = config;
         }
 
 
@@ -132,6 +140,40 @@ namespace gestiones_backend.Controllers
                 startDate, endDate, deudorName);
 
             return Ok(compromisos);
+        }
+
+        [HttpGet("movimiento-deuda/{idDeuda}")]
+        public async Task<IActionResult> GetMovimientoDeuda(string idDeuda)
+        {
+            string consulta = @$"SELECT * FROM (
+                                SELECT 'Pago' AS tipo, p.""FechaPago""::DATE AS fecha, p.""Observaciones"" observaciones
+                                FROM ""Deudas"" d
+                                JOIN ""Pagos"" p ON p.""IdDeuda"" = d.""IdDeuda""
+                                WHERE d.""IdDeuda"" = '{idDeuda}'
+    
+                                UNION ALL
+    
+                                SELECT 'Gestion' AS tipo, g.""FechaGestion""::DATE AS fecha, g.""Descripcion"" observaciones
+                                FROM ""Deudas"" d
+                                JOIN ""Gestiones"" g ON g.""IdDeuda"" = d.""IdDeuda""
+                                WHERE d.""IdDeuda"" = '{idDeuda}'
+    
+                                UNION ALL
+    
+                                SELECT 'Compromiso Pago' AS tipo, cp.""FechaCompromiso""::DATE AS fecha, cp.""Observaciones"" observaciones
+                                FROM ""Deudas"" d
+                                JOIN ""CompromisosPagos"" cp ON cp.""IdDeuda"" = d.""IdDeuda""
+                                WHERE d.""IdDeuda"" = '{idDeuda}'
+                            ) AS combined_results
+                            ORDER BY fecha;";
+            PgConn conn = new PgConn();
+            conn.cadenaConnect = Configuration.GetConnectionString("DefaultConnection");
+
+            DataTable dataTable = conn.ejecutarconsulta_dt(consulta);
+            string JSONString = string.Empty;
+            JSONString = Newtonsoft.Json.JsonConvert.SerializeObject(dataTable);
+
+            return Content(JSONString, "application/json");
         }
     }
 }
