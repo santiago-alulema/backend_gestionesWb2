@@ -10,36 +10,27 @@ public partial class Deuda
 {
     [Key]
     public Guid IdDeuda { get; set; } = Guid.Empty;
-
     public string? IdDeudor { get; set; }
-
-    public decimal MontoOriginal { get; set; }
-
-    public decimal SaldoActual { get; set; }
-
-    public DateOnly FechaVencimiento { get; set; }
-
-    public DateOnly? FechaAsignacion { get; set; }
-
+    public Decimal? DeudaCapital { get; set; }
+    public Decimal? Interes { get; set; }
+    public Decimal? GastosCobranzas { get; set; }
+    public Decimal? SaldoDeuda { get; set; }
+    public int? Descuento { get; set; }
+    public Decimal? MontoCobrar { get; set; }
+    public DateOnly? FechaVenta { get; set; }
+    public DateOnly? FechaUltimoPago { get; set; }
     public string? Estado { get; set; }
-
-    public string? Descripcion { get; set; }
-    
-    public string? NumeroFactura { get; set; } = string.Empty; 
-    
-    public Decimal? TotalFactura { get; set; } = Decimal.Zero;
-    
-    public string? NumeroAutorizacion { get; set; } = string.Empty ;
-
-    public Decimal? SaldoDeuda { get; set; } = Decimal.Zero; 
-    public int? NumeroCuotas { get; set; } = 0;
-    public int? CuotaActual { get; set; } = 0;
-    public Decimal? ValorCuota { get; set; } = Decimal.Zero;
-    public String? Tramo { get; set; } = string.Empty;
-    public Decimal? UltimoPago { get; set; } = Decimal.Zero;
-    public string Empresa { get; set; } = string.Empty;
-
-
+    public int? DiasMora { get; set; }
+    public string? NumeroFactura { get; set; }
+    public string? Clasificacion { get; set; }
+    public int? Creditos { get; set; }
+    public Decimal? SaldoDeulda { get; set; }
+    public int? NumeroCuotas { get; set; }
+    public string? TipoDocumento { get; set; }
+    public Decimal? ValorCuota { get; set; }
+    public string? Tramo { get; set; }
+    public Decimal? UltimoPago { get; set; }
+    public string? Empresa { get; set; }
 
     public virtual ICollection<AsignacionesCartera> AsignacionesCarteras { get; set; } = new List<AsignacionesCartera>();
 

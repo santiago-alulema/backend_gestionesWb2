@@ -15,7 +15,7 @@ public partial class Deudores
 
     public string? Direccion { get; set; }
 
-    public string Telefono { get; set; } = null!;
+    public string? Telefono { get; set; } = null!;
 
     public string? Correo { get; set; }
 

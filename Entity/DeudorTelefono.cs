@@ -11,9 +11,9 @@ public partial class DeudorTelefono
 
     public String IdDeudorTelefonos { get; set; }
 
-    public string IdDeudor { get; set; } = null!;
+    public string? IdDeudor { get; set; } = null!;
 
-    public string Telefono { get; set; } = null!;
+    public string? Telefono { get; set; } = null!;
 
     public DateTime FechaAdicion { get; set; }
 

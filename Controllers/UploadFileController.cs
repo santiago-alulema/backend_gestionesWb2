@@ -4,6 +4,7 @@ using gestiones_backend.Entity;
 using gestiones_backend.helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 
 namespace gestiones_backend.Controllers
 {
@@ -36,7 +37,6 @@ namespace gestiones_backend.Controllers
             {
                 if (deudoresExistentes.TryGetValue(deudorExcel.Cedula, out var deudorExistente))
                 {
-                    // Actualizar solo si no está ya en la lista de actualización
                     if (!actualizarDeudor.Any(d => d.IdDeudor == deudorExcel.Cedula))
                     {
                         deudorExistente.Nombre = deudorExcel.Nombre;
@@ -51,7 +51,6 @@ namespace gestiones_backend.Controllers
                 }
                 else
                 {
-                    // Agregar solo si no está ya en la lista de grabación
                     if (!grabarDeudor.Any(d => d.IdDeudor == deudorExcel.Cedula))
                     {
                         grabarDeudor.Add(new Deudores
@@ -94,48 +93,58 @@ namespace gestiones_backend.Controllers
 
                 var deudaExistente = _context.Deudas
                     .FirstOrDefault(d => d.NumeroFactura == deudaExcel.NumeroFactura);
+                List<String> dedudores = _context.Deudores.Select(x => x.IdDeudor).ToList();
+
+                if (!dedudores.Contains(deudaExcel.CedulaDeudor))
+                {
+                    continue;
+                }
+
 
                 if (deudaExistente != null)
                 {
                     deudaExistente.IdDeudor = deudaExcel.CedulaDeudor;
-                    deudaExistente.MontoOriginal = deudaExcel.MontoOriginal;
-                    deudaExistente.SaldoActual = deudaExcel.SaldoActual;
-                    deudaExistente.FechaVencimiento = DateOnly.Parse(deudaExcel.FechaVencimiento);
-
-                    if (!string.IsNullOrEmpty(deudaExcel.FechaAsignacion))
-                        deudaExistente.FechaAsignacion = DateOnly.Parse(deudaExcel.FechaAsignacion);
-
-                    deudaExistente.Estado = deudaExcel.Estado;
-                    deudaExistente.Descripcion = deudaExcel.Descripcion;
-                    deudaExistente.NumeroAutorizacion = deudaExcel.NumeroAutorizacion;
-                    deudaExistente.TotalFactura = deudaExcel.TotalFactura;
+                    deudaExistente.DeudaCapital = deudaExcel.DeudaCapital;
+                    deudaExistente.Interes = deudaExcel.Interes;
+                    deudaExistente.GastosCobranzas = deudaExcel.GastosCobranza;
                     deudaExistente.SaldoDeuda = deudaExcel.SaldoDeuda;
+                    deudaExistente.Descuento = (int)(Decimal.Parse(deudaExcel.Descuento.Replace("%", "")) * 100);
+                    deudaExistente.MontoCobrar = deudaExcel.MontoCobrar;
+                    deudaExistente.FechaVenta = StringToDateOnly(deudaExcel.FechaVenta);
+                    deudaExistente.FechaUltimoPago = StringToDateOnly(deudaExcel.FechaUltimoPago);
+                    deudaExistente.Estado = deudaExcel.Estado;
+                    deudaExistente.DiasMora = deudaExcel.DiasMora;
+                    deudaExistente.NumeroFactura = deudaExcel.NumeroFactura;
+                    deudaExistente.Clasificacion = deudaExcel.Calificacion;
+                    deudaExistente.Creditos = deudaExcel.Creditos;
                     deudaExistente.NumeroCuotas = deudaExcel.NumeroCuotas;
-                    deudaExistente.CuotaActual = deudaExcel.CuotaActual;
+                    deudaExistente.TipoDocumento = deudaExcel.TipoDeDocumento;
                     deudaExistente.ValorCuota = deudaExcel.ValorCuota;
                     deudaExistente.Tramo = deudaExcel.Tramo;
                     deudaExistente.UltimoPago = deudaExcel.UltimoPago;
                     deudaExistente.Empresa = deudaExcel.Empresa;
-                    actualizarDeuda.Add(deudaExistente);
+
                 }
                 else
                 {
                     var nuevaDeuda = new Deuda()
                     {
                         IdDeudor = deudaExcel.CedulaDeudor,
-                        MontoOriginal = deudaExcel.MontoOriginal,
-                        SaldoActual = deudaExcel.SaldoActual,
-                        FechaVencimiento = DateOnly.Parse(deudaExcel.FechaVencimiento),
-                        FechaAsignacion = !string.IsNullOrEmpty(deudaExcel.FechaAsignacion) ?
-                            DateOnly.Parse(deudaExcel.FechaAsignacion) : null,
-                        Estado = deudaExcel.Estado,
-                        Descripcion = deudaExcel.Descripcion,
-                        NumeroFactura = deudaExcel.NumeroFactura,
-                        NumeroAutorizacion = deudaExcel.NumeroAutorizacion,
-                        TotalFactura = deudaExcel.TotalFactura,
+                        DeudaCapital = deudaExcel.DeudaCapital,
+                        Interes = deudaExcel.Interes,
+                        GastosCobranzas = deudaExcel.GastosCobranza,
                         SaldoDeuda = deudaExcel.SaldoDeuda,
+                        Descuento = (int)(Decimal.Parse(deudaExcel.Descuento.Replace("%", "")) * 100),
+                        MontoCobrar = deudaExcel.MontoCobrar,
+                        FechaVenta = StringToDateOnly(deudaExcel.FechaVenta),
+                        FechaUltimoPago = StringToDateOnly(deudaExcel.FechaUltimoPago),
+                        Estado = deudaExcel.Estado,
+                        DiasMora = deudaExcel.DiasMora,
+                        NumeroFactura = deudaExcel.NumeroFactura,
+                        Clasificacion = deudaExcel.Calificacion,
+                        Creditos = deudaExcel.Creditos,
                         NumeroCuotas = deudaExcel.NumeroCuotas,
-                        CuotaActual = deudaExcel.CuotaActual,
+                        TipoDocumento = deudaExcel.TipoDeDocumento,
                         ValorCuota = deudaExcel.ValorCuota,
                         Tramo = deudaExcel.Tramo,
                         UltimoPago = deudaExcel.UltimoPago,
@@ -144,45 +153,27 @@ namespace gestiones_backend.Controllers
                     grabarDeuda.Add(nuevaDeuda);
                 }
             }
-            _context.Deudas.AddRange(grabarDeuda);
-            _context.Deudas.UpdateRange(actualizarDeuda);
+            if (grabarDeuda.Count > 0)
+                _context.Deudas.AddRange(grabarDeuda);
+            if(actualizarDeuda.Count > 0)
+                _context.Deudas.UpdateRange(actualizarDeuda);
             _context.SaveChanges();
             return Ok("Deudas procesadas exitosamente (actualizaciones e inserciones)");
            
         }
+        public static DateOnly? StringToDateOnly(string dateString)
+        {
+            if (string.IsNullOrWhiteSpace(dateString))
+                return null;
 
-        //[HttpPost("upload-excel-deudas")]
-        //public IActionResult uploadFileDeudas([FromBody] List<UploadDeudasInDTO> deudasExcel)
-        //{
-        //    List<Deuda> deudas = new();
-        //    for (int i = 0; i < deudasExcel.Count; i++)
-        //    {
-        //        deudas.Add(new Deuda()
-        //        {
-        //            IdDeudor = deudasExcel[i].CedulaDeudor,
-        //            MontoOriginal = deudasExcel[i].MontoOriginal,
-        //            SaldoActual = deudasExcel[i].SaldoActual,
-        //            FechaVencimiento = DateOnly.Parse( deudasExcel[i].FechaVencimiento),
-        //            FechaAsignacion = DateOnly.Parse( deudasExcel[i].FechaAsignacion),
-        //            Estado = deudasExcel[i].Estado,
-        //            Descripcion = deudasExcel[i].Descripcion,
-        //            NumeroFactura = deudasExcel[i].NumeroFactua,
-        //            NumeroAutorizacion = deudasExcel[i].NumeroAutorizacion,
-        //            TotalFactura = deudasExcel[i].TotalFactura,
+            if (DateTime.TryParse(dateString, out DateTime dateTime))
+                return DateOnly.FromDateTime(dateTime);
 
-        //            SaldoDeuda = deudasExcel[i].SaldoDeuda,
-        //            NumeroCuotas = deudasExcel[i].NumeroCuotas,
-        //            CuotaActual = deudasExcel[i].CuotaActual,
-        //            ValorCuota = deudasExcel[i].ValorCuota,
-        //            Tramo = deudasExcel[i].Tramo,
-        //            UltimoPago = deudasExcel[i].UltimoPago,
-        //            Empresa = deudasExcel[i].Empresa,
+            // Intenta con formatos específicos
+            if (DateOnly.TryParseExact(dateString, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
+                return date;
 
-        //        });
-        //    }
-        //    _context.Deudas.AddRange(deudas);
-        //    _context.SaveChanges();
-        //    return Ok("Se grabo exitosamente");
-        //}
+            return null;
+        }
     }
 }

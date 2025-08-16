@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using gestiones_backend.Context;
@@ -11,9 +12,11 @@ using gestiones_backend.Context;
 namespace gestiones_backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20250816064147_telefonoNoRequerido2")]
+    partial class telefonoNoRequerido2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -295,6 +298,7 @@ namespace gestiones_backend.Migrations
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("IdDeudor")
+                        .IsRequired()
                         .HasMaxLength(13)
                         .HasColumnType("character varying(13)");
 
@@ -307,6 +311,7 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("Telefono")
+                        .IsRequired()
                         .HasMaxLength(12)
                         .HasColumnType("character varying(12)");
 
@@ -793,7 +798,8 @@ namespace gestiones_backend.Migrations
                     b.HasOne("gestiones_backend.Entity.Deudores", "IdDeudorNavigation")
                         .WithMany("DeudorTelefonos")
                         .HasForeignKey("IdDeudor")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("IdDeudorNavigation");
                 });

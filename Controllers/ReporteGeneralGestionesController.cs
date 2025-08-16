@@ -38,7 +38,7 @@ namespace gestiones_backend.Controllers
                         .Count(g => g.FechaGestion >= fechaInicio && g.FechaGestion <= fechaFin),
                     valorTotal = u.Gestiones
                         .Where(g => g.FechaGestion >= fechaInicio && g.FechaGestion <= fechaFin)
-                        .Sum(g => g.IdDeudaNavigation.MontoOriginal)
+                        .Sum(g => g.IdDeudaNavigation.SaldoDeulda)
                 })
                 .Where(r => r.CantidadGestiones > 0)
                 .OrderByDescending(r => r.CantidadGestiones)

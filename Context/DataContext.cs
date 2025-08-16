@@ -124,6 +124,17 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Descripcion).HasMaxLength(255);
                 entity.Property(e => e.Activo).IsRequired();
                 entity.Property(e => e.TipoResultadoId).IsRequired().HasMaxLength(50);
+
+                entity.HasOne(e => e.TipoResultadoNavigation)
+                        .WithMany() 
+                        .HasForeignKey(e => e.TipoResultadoId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+              
+                entity.HasMany(e => e.TiposRespuestaNavigation)
+                    .WithOne(e => e.TipoContactoNavigatorNavigation)
+                    .HasForeignKey(e => e.IdTipoContactoResultado)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
 
@@ -289,18 +300,26 @@ namespace gestiones_backend.Context
             modelBuilder.Entity<Deuda>(entity =>
             {
                 entity.HasKey(e => e.IdDeuda);
-                entity.Property(e => e.MontoOriginal).HasColumnType("decimal(18,2)").IsRequired();
-                entity.Property(e => e.SaldoActual).HasColumnType("decimal(18,2)").IsRequired();
-                entity.Property(e => e.FechaVencimiento).IsRequired();
-                entity.Property(e => e.Estado).HasMaxLength(50);
-                entity.Property(e => e.Descripcion).HasMaxLength(500);
-                entity.Property(e => e.NumeroFactura).HasMaxLength(50);
-                entity.Property(e => e.TotalFactura).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.NumeroAutorizacion).HasMaxLength(50);
+                entity.Property(e => e.DeudaCapital).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.Interes).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.GastosCobranzas).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.SaldoDeuda).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.Descuento);
+                entity.Property(e => e.MontoCobrar).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.FechaVenta);
+                entity.Property(e => e.FechaUltimoPago);
+                entity.Property(e => e.Estado);
+                entity.Property(e => e.DiasMora);
+                entity.Property(e => e.NumeroFactura);
+                entity.Property(e => e.Clasificacion);
+                entity.Property(e => e.Creditos);
+                entity.Property(e => e.SaldoDeulda).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.NumeroCuotas);
+                entity.Property(e => e.TipoDocumento);
                 entity.Property(e => e.ValorCuota).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.Tramo);
                 entity.Property(e => e.UltimoPago).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.Empresa).HasMaxLength(100);
+                entity.Property(e => e.Empresa);
 
                 entity.HasOne(d => d.IdDeudorNavigation)
                     .WithMany(p => p.Deuda)
@@ -313,8 +332,8 @@ namespace gestiones_backend.Context
             {
                 entity.HasKey(e => e.IdDeudorTelefonos);
                 entity.Property(e => e.IdDeudorTelefonos).HasMaxLength(40);
-                entity.Property(e => e.IdDeudor).HasMaxLength(13).IsRequired();
-                entity.Property(e => e.Telefono).HasMaxLength(12).IsRequired();
+                entity.Property(e => e.IdDeudor).HasMaxLength(13);
+                entity.Property(e => e.Telefono).HasMaxLength(12);
                 entity.Property(e => e.FechaAdicion).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.Origen).HasMaxLength(100);
                 entity.Property(e => e.Observacion).HasMaxLength(500);
@@ -331,7 +350,7 @@ namespace gestiones_backend.Context
                 entity.HasKey(e => e.IdDeudor);
                 entity.Property(e => e.IdDeudor).HasMaxLength(13);
                 entity.Property(e => e.Nombre).IsRequired().HasMaxLength(255);
-                entity.Property(e => e.Telefono).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Telefono).HasMaxLength(50);
                 entity.Property(e => e.Direccion).HasMaxLength(255);
                 entity.Property(e => e.Correo).HasMaxLength(100);
                 entity.Property(e => e.Descripcion).HasMaxLength(500);
@@ -370,15 +389,6 @@ namespace gestiones_backend.Context
                         .HasMaxLength(20) 
                         .HasColumnName("rol");
                 entity.Property(e => e.Contrasena).IsRequired().HasMaxLength(255);
-            });
-
-            // Configuración de relaciones para RespuestaTipoContacto
-            modelBuilder.Entity<RespuestaTipoContacto>(entity =>
-            {
-                entity.HasOne(e => e.TipoContactoNavigatorNavigation)
-                    .WithMany(t => t.TiposRespuestaNavigation)
-                    .HasForeignKey(e => e.IdTipoContactoResultado)
-                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // Configuración de relaciones para TipoContactoResultado

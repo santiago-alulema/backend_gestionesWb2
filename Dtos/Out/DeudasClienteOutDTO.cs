@@ -2,18 +2,29 @@
 {
     public class DeudasClienteOutDTO
     {
-        public Guid deudaId { get; set; }
-        public Decimal montoOriginal { get; set; }
-        public Decimal saldoActual { get; set; }
-        public DateOnly fechaVencimiento { get; set; }
-        public DateOnly? fechaAsignacion { get; set; }
-        public String descripcion { get; set; }
-        public String cedulaCliente { get; set; } = string.Empty;
-        public String numeroFactura { get; set; } = string.Empty;
-        public int numeroCouta { get; set; } = 0;
-        public int totalCuotas { get; set; } = 0;
-        public Decimal valorCuotas { get; set; } = 0;
-        public String empresa { get; set; } = "";
+        public Guid IdDeuda { get; set; } = Guid.Empty;
+        public string? IdDeudor { get; set; }
+        public Decimal? DeudaCapital { get; set; }
+        public Decimal? Interes { get; set; }
+        public Decimal? GastosCobranzas { get; set; }
+        public Decimal? SaldoDeuda { get; set; }
+        public int? Descuento { get; set; }
+        public Decimal? MontoCobrar { get; set; }
+        public DateOnly? FechaVenta { get; set; }
+        public DateOnly? FechaUltimoPago { get; set; }
+        public string? Estado { get; set; }
+        public int? DiasMora { get; set; }
+        public string? NumeroFactura { get; set; }
+        public string? Clasificacion { get; set; }
+        public int? Creditos { get; set; }
+        public Decimal? SaldoDeulda { get; set; }
+        public int? NumeroCuotas { get; set; }
+        public string? TipoDocumento { get; set; }
+        public Decimal? ValorCuota { get; set; }
+        public string? Tramo { get; set; }
+        public Decimal? UltimoPago { get; set; }
+        public string? Empresa { get; set; }
+
 
     }
 }

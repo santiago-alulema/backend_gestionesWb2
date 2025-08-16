@@ -27,27 +27,7 @@ namespace gestiones_backend.Controllers
         public IActionResult DeudasPorCliente(string cedulaCliente)
         {
             List<Deuda> deudas = _context.Deudas.Where(x => x.IdDeudor == cedulaCliente).ToList();
-            List<DeudasClienteOutDTO> deudoresDTO = new();
-            for (int i = 0; i < deudas.Count; i++)
-            {
-                deudoresDTO.Add(new DeudasClienteOutDTO()
-                {
-                    montoOriginal = deudas[i].MontoOriginal,
-                    saldoActual = deudas[i].SaldoActual,
-                    fechaVencimiento = deudas[i].FechaVencimiento,
-                    fechaAsignacion = deudas[i].FechaAsignacion,
-                    cedulaCliente = !string.IsNullOrEmpty(deudas[i].IdDeudor)
-                                    ? deudas[i].IdDeudor
-                                    : string.Empty,
-                    descripcion = deudas[i].Descripcion,
-                    deudaId = deudas[i].IdDeuda,
-                    numeroFactura = deudas[i].NumeroFactura,
-                    numeroCouta = deudas[i].CuotaActual ?? 0,
-                    totalCuotas = deudas[i].NumeroCuotas ?? 0,
-                    valorCuotas = deudas[i].ValorCuota ?? 0,
-                    empresa = deudas[i].Empresa
-                });
-            }
+            List<DeudasClienteOutDTO> deudoresDTO = deudas.Adapt<List<DeudasClienteOutDTO>>();
             return Ok(deudoresDTO);
         }
 
@@ -64,28 +44,37 @@ namespace gestiones_backend.Controllers
                     query = query.Where(c => c.FechaCompromiso == hoy);
                 }
 
-                var compromisos = query.Where(x => x.Estado== true).Select(c => new CompromisoPagoOutDTO
-                {
-                    compromisoPagoId = c.IdCompromiso,
-                    deudaId = c.IdDeuda != null ? c.IdDeuda.Value : Guid.Empty,
-                    montoOriginal = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.MontoOriginal : 0,
-                    saldoActual = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.SaldoActual : 0,
-                    fechaVencimiento = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.FechaVencimiento : DateOnly.MinValue,
-                    fechaAsignacion = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.FechaAsignacion : null,
-                    descripcion = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.Descripcion : string.Empty,
-                    cedulaCliente = c.IdDeudaNavigation != null && c.IdDeudaNavigation.IdDeudorNavigation != null
-                        ? c.IdDeudaNavigation.IdDeudorNavigation.IdDeudor
-                        : string.Empty,
-                    numeroFactura = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.NumeroFactura : string.Empty,
-                    numeroCouta = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.CuotaActual ?? 0 : 0,
-                    totalCuotas = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.NumeroCuotas ?? 0 : 0,
-                    valorCuotas = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.ValorCuota ?? 0 : 0,
-                    nombreCliente = c.IdDeudaNavigation.IdDeudorNavigation.Nombre,
-                    fechaCompromiso = c.FechaCompromiso,
-                    montoCompromiso = c.MontoComprometido
-                }).ToList();
+                var compromisos = query
+                    .Where(x => x.Estado == true)
+                    .Select(c => new CompromisoPagoOutDTO
+                    {
+                        CompromisoPagoId = c.IdCompromiso,
+                        DeudaId = c.IdDeuda != null ? c.IdDeuda.Value : Guid.Empty,
+                        DeudaCapital = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.DeudaCapital ?? 0m) : 0m,
+                        Interes = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.Interes ?? 0m) : 0m,
+                        GastosCobranzas = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.GastosCobranzas ?? 0m) : 0m,
+                        SaldoDeuda = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.SaldoDeuda ?? 0m) : 0m,
+                        DiasMora = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.DiasMora ?? 0) : 0,
+                        FechaVenta = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.FechaVenta : null,
+                        FechaUltimoPago = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.FechaUltimoPago : null,
+                        CedulaCliente = c.IdDeudaNavigation != null && c.IdDeudaNavigation.IdDeudorNavigation != null
+                            ? c.IdDeudaNavigation.IdDeudorNavigation.IdDeudor
+                            : "",
+                        NumeroFactura = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.NumeroFactura : "",
+                        NombreCliente = c.IdDeudaNavigation != null && c.IdDeudaNavigation.IdDeudorNavigation != null
+                            ? c.IdDeudaNavigation.IdDeudorNavigation.Nombre
+                            : "",
+                        NumeroCouta = c.IdDeudaNavigation != null
+                            ? (c.IdDeudaNavigation.Creditos.ToString() + "/" + c.IdDeudaNavigation.NumeroCuotas.ToString())
+                            : "",
+                        ValorCuota = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.ValorCuota ?? 0m) : 0m,
+                        Empresa = c.IdDeudaNavigation != null && c.IdDeudaNavigation.Empresa != null
+                            ? c.IdDeudaNavigation.Empresa
+                            : "",
+                    })
+                    .ToList();
 
-                return Ok(compromisos);
+            return Ok(compromisos);
             
         }
 
@@ -106,15 +95,32 @@ namespace gestiones_backend.Controllers
         [HttpPost("grabar-telefonos-cliente")]
         public IActionResult SavePhonesClients([FromBody] List<TelefonosDeudorInDTO> telefonosDeudores)
         {
+            List<string> deudoresExistentes = _context.Deudores.Select(x => x.IdDeudor).ToList();
+            var telefonosValidos = telefonosDeudores
+                .Where(t => deudoresExistentes.Contains(t.cedula))  
+                .ToList();
+
+            if (!telefonosValidos.Any())
+            {
+                return BadRequest("Ninguno de los deudores proporcionados existe en la base de datos");
+            }
+
             TypeAdapterConfig config = new TypeAdapterConfig();
             ConfigTelefonoDeudor.Register(config);
 
-            List<DeudorTelefono> TelefonosDeudores = telefonosDeudores.Adapt<List<DeudorTelefono>>(config);
-
-            _context.DeudorTelefonos.AddRange(TelefonosDeudores);
+            List<DeudorTelefono> telefonosParaGuardar = telefonosValidos.Adapt<List<DeudorTelefono>>(config);
+            _context.DeudorTelefonos.AddRange(telefonosParaGuardar);
             _context.SaveChanges();
 
-            return Ok("Se grabo los telefonos exitosamente");
+            int omitidos = telefonosDeudores.Count - telefonosValidos.Count;
+            string mensaje = $"Se grabaron {telefonosValidos.Count} teléfonos exitosamente";
+
+            if (omitidos > 0)
+            {
+                mensaje += $". Se omitieron {omitidos} teléfonos porque sus deudores no existen";
+            }
+
+            return Ok(mensaje);
         }
 
         [HttpGet("listar-clientes")]

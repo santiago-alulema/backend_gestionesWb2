@@ -92,8 +92,8 @@ namespace gestiones_backend.Controllers
                 
             };
 
-            deuda.SaldoActual -= pagoDto.MontoPagado;
-            deuda.UltimoPago = pagoDto.MontoPagado;
+            //deuda.SaldoActual -= pagoDto.MontoPagado;
+            //deuda.UltimoPago = pagoDto.MontoPagado;
 
             _context.Pagos.Add(pago);
             //_context.Deudas.Update(deuda);

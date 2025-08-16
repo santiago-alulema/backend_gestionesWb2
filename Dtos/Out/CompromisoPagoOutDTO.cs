@@ -2,24 +2,21 @@
 {
     public class CompromisoPagoOutDTO
     {
-        public Guid deudaId { get; set; }
-        public Decimal montoOriginal { get; set; }
-        public Decimal saldoActual { get; set; }
-        public DateOnly fechaVencimiento { get; set; }
-        public DateOnly? fechaAsignacion { get; set; }
-        public DateOnly? fechaCompromiso { get; set; }
-        public String descripcion { get; set; }
-        public String cedulaCliente { get; set; } = string.Empty;
-        public String numeroFactura { get; set; } = string.Empty;
-        public String nombreCliente { get; set; } = string.Empty;
-        public String compromisoPagoId { get; set; } = string.Empty;
-
-        public int numeroCouta { get; set; } = 0;
-        public int totalCuotas { get; set; } = 0;
-        public Decimal valorCuotas { get; set; } = 0;
-        public Decimal montoCompromiso { get; set; } = 0;
-
-
+        public Guid DeudaId { get; set; }
+        public Decimal? DeudaCapital { get; set; }
+        public Decimal? Interes { get; set; }
+        public Decimal? GastosCobranzas { get; set; }
+        public Decimal? SaldoDeuda { get; set; }
+        public Decimal? DiasMora { get; set; }
+        public DateOnly? FechaVenta { get; set; }
+        public DateOnly? FechaUltimoPago { get; set; }
+        public String CedulaCliente { get; set; } = string.Empty;
+        public String NumeroFactura { get; set; } = string.Empty;
+        public String NombreCliente { get; set; } = string.Empty;
+        public String CompromisoPagoId { get; set; } = string.Empty;
+        public string NumeroCouta { get; set; } = string.Empty;
+        public Decimal ValorCuota { get; set; } = Decimal.Zero;
+        public string? Empresa { get; set; } = string.Empty;
 
     }
 }
