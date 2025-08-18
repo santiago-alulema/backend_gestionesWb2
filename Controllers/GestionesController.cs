@@ -49,9 +49,9 @@ namespace gestiones_backend.Controllers
             gestione.IdGestion = Guid.NewGuid().ToString();
             gestione.Descripcion = nuevaGestion.Descripcion;
             gestione.IdDeuda = nuevaGestion.idDeuda;
-            gestione.IdTipoGestion = nuevaGestion.IdTipoGestion;
             gestione.IdUsuarioGestiona = usuario.IdUsuario;
-            gestione.IdTipoContactoGestion = nuevaGestion.IdTipoContactoDeudor;
+            gestione.IdTipoResultado = nuevaGestion.IdResultado;
+            gestione.IdTipoContactoResultado = nuevaGestion.idTipoContactoCliente;
             gestione.IdRespuestaTipoContacto = nuevaGestion.IdRespuesta;
             gestione.Email = nuevaGestion.Email;
             _context.Gestiones.Add(gestione);
@@ -66,6 +66,8 @@ namespace gestiones_backend.Controllers
             var usuario = _authService.GetCurrentUser();
 
             CompromisosPago compromisoPago = compromisoPagoNuevo.Adapt<CompromisosPago>();
+            compromisoPago.IdTipoTarea = compromisoPagoNuevo.TipoTarea;
+            compromisoPago.HoraRecordatorio = compromisoPagoNuevo.HoraRecordatorio;
             compromisoPago.IdCompromiso = Guid.NewGuid().ToString();
             compromisoPago.IdUsuario = usuario.IdUsuario;
             _context.CompromisosPagos.Add(compromisoPago);
@@ -99,12 +101,8 @@ namespace gestiones_backend.Controllers
                 IdAbonoLiquidacion = pagoDto.AbonoLiquidacionId,
                 
             };
-
-            //deuda.SaldoActual -= pagoDto.MontoPagado;
-            //deuda.UltimoPago = pagoDto.MontoPagado;
-
+            
             _context.Pagos.Add(pago);
-            //_context.Deudas.Update(deuda);
             await _context.SaveChangesAsync();
 
             return Ok("Se grabo exitosamente");
@@ -146,26 +144,55 @@ namespace gestiones_backend.Controllers
         public async Task<IActionResult> GetMovimientoDeuda(string idDeuda)
         {
             string consulta = @$"SELECT * FROM (
-                                SELECT 'Pago' AS tipo, p.""FechaPago""::DATE AS fecha, p.""Observaciones"" observaciones
+                                SELECT 'Pago' AS tipo,
+                                        TO_CHAR( p.""FechaPago""::DATE, 'YYYY-MM-DD') AS fecha,
+                                        p.""Observaciones"" observaciones, 
+                                        ('<strong>Banco: </strong> '  || bp.""Nombre"" || 
+                                	   	'<br><strong>Cuenta: </strong>' || tcb.""Nombre"" || 
+                                	   	'<br><strong>Tipo Transaccion: </strong>' || tt.""Nombre""|| 
+                                	   	'<br><strong>Abono/Liquidacion: </strong>' || al.""Nombre""|| 
+                                	   	'<br><strong>Numero Doc.: </strong>' || p.""NumeroDocumenro"" || 
+                                	   	'<br><strong>Fecha Pago: </strong>' || p.""FechaPago"" || 
+                                	   	'<br><strong>Valor: </strong>' || p.""MontoPagado"") as tracking
                                 FROM ""Deudas"" d
-                                JOIN ""Pagos"" p ON p.""IdDeuda"" = d.""IdDeuda""
+                                JOIN ""Pagos"" p ON p.""IdDeuda"" = d.""IdDeuda"" 
+                                JOIN ""BancosPagos"" bp ON p.""IdBancosPago"" = bp.""Id""  
+                                JOIN ""TiposCuentaBancaria"" tcb ON p.""IdTipoCuentaBancaria"" = tcb.""Id""
+                                JOIN ""TiposTransaccion"" tt ON tt.""Id"" = p.""IdTipoTransaccion"" 
+                                JOIN ""AbonosLiquidacion"" al ON al.""Id"" = p.""IdAbonoLiquidacion"" 
                                 WHERE d.""IdDeuda"" = '{idDeuda}'
     
                                 UNION ALL
     
-                                SELECT 'Gestion' AS tipo, g.""FechaGestion""::DATE AS fecha, g.""Descripcion"" observaciones
+                                SELECT 'Gestion' AS tipo, 
+                                        TO_CHAR(""FechaGestion""::DATE, 'YYYY-MM-DD') AS fecha, 
+                                        g.""Descripcion"" observaciones,
+                                        ('<strong>RESULTADO:</strong> '  || tr.""Nombre"" || 
+                                         '<br><strong>Tipo Constacto Cliente</strong>' || tcr.""Nombre"" || 
+                                         '<br><strong>Respuesta: </strong>' || rtc.""Nombre"") as tracking
                                 FROM ""Deudas"" d
                                 JOIN ""Gestiones"" g ON g.""IdDeuda"" = d.""IdDeuda""
+                                join  ""TiposResultado"" tr on tr.""Id"" = g.""IdTipoResultado""
+                                join ""TiposContactoResultado"" tcr on tcr.""Id"" = g.""IdTipoContactoResultado""
+                                join  ""RespuestasTipoContacto"" rtc on rtc.""Id"" = g.""IdRespuestaTipoContacto""
                                 WHERE d.""IdDeuda"" = '{idDeuda}'
     
                                 UNION ALL
     
-                                SELECT 'Compromiso Pago' AS tipo, cp.""FechaCompromiso""::DATE AS fecha, cp.""Observaciones"" observaciones
+                                SELECT 'Compromiso Pago' AS tipo, 
+                                        TO_CHAR( cp.""FechaCompromiso""::DATE, 'YYYY-MM-DD') AS fecha,
+                                        cp.""Observaciones"" observaciones,
+                                        ('<strong>Fecha recordatorio:</strong> '  || cp.""FechaCompromiso"" || 
+                                	   	'<br><strong>Hora recordatorio</strong>' || cp.""HoraRecordatorio"" || 
+                                	   	'<br><strong>Valor: </strong>' || cp.""MontoComprometido"" || 
+                                	   	'<br><strong>Tipo tarea: </strong>' || tr.""Nombre""|| 
+                                	   	'<br><strong>Observaciones: </strong>' || cp.""Observaciones"") as tracking
                                 FROM ""Deudas"" d
                                 JOIN ""CompromisosPagos"" cp ON cp.""IdDeuda"" = d.""IdDeuda""
+                                JOIN ""TiposTareas"" tr ON tr.""Id"" = cp.""IdTipoTarea""
                                 WHERE d.""IdDeuda"" = '{idDeuda}'
                             ) AS combined_results
-                            ORDER BY fecha;";
+                            ORDER BY fecha ASC;";
             PgConn conn = new PgConn();
             conn.cadenaConnect = Configuration.GetConnectionString("DefaultConnection");
 

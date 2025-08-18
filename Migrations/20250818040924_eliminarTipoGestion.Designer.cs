@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using gestiones_backend.Context;
@@ -11,9 +12,11 @@ using gestiones_backend.Context;
 namespace gestiones_backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20250818040924_eliminarTipoGestion")]
+    partial class eliminarTipoGestion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -153,17 +156,8 @@ namespace gestiones_backend.Migrations
                     b.Property<DateOnly?>("FechaCumplimientoReal")
                         .HasColumnType("date");
 
-                    b.Property<string>("HoraRecordatorio")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<Guid?>("IdDeuda")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("IdTipoTarea")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
 
                     b.Property<string>("IdUsuario")
                         .IsRequired()
@@ -182,8 +176,6 @@ namespace gestiones_backend.Migrations
                     b.HasKey("IdCompromiso");
 
                     b.HasIndex("IdDeuda");
-
-                    b.HasIndex("IdTipoTarea");
 
                     b.HasIndex("IdUsuario");
 
@@ -653,24 +645,6 @@ namespace gestiones_backend.Migrations
                     b.ToTable("TiposResultado");
                 });
 
-            modelBuilder.Entity("gestiones_backend.Entity.TipoTarea", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<bool>("Estado")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TiposTareas");
-                });
-
             modelBuilder.Entity("gestiones_backend.Entity.TipoTransaccion", b =>
                 {
                     b.Property<string>("Id")
@@ -755,19 +729,12 @@ namespace gestiones_backend.Migrations
                         .HasForeignKey("IdDeuda")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("gestiones_backend.Entity.TipoTarea", "IdTipoTareaNavigation")
-                        .WithMany("CompromisosPagos")
-                        .HasForeignKey("IdTipoTarea")
-                        .IsRequired();
-
                     b.HasOne("gestiones_backend.Entity.Usuario", "IdUsuarioNavigation")
                         .WithMany("CompromisosPagos")
                         .HasForeignKey("IdUsuario")
                         .IsRequired();
 
                     b.Navigation("IdDeudaNavigation");
-
-                    b.Navigation("IdTipoTareaNavigation");
 
                     b.Navigation("IdUsuarioNavigation");
                 });
@@ -981,11 +948,6 @@ namespace gestiones_backend.Migrations
             modelBuilder.Entity("gestiones_backend.Entity.TipoResultado", b =>
                 {
                     b.Navigation("TiposConstactosNavigation");
-                });
-
-            modelBuilder.Entity("gestiones_backend.Entity.TipoTarea", b =>
-                {
-                    b.Navigation("CompromisosPagos");
                 });
 
             modelBuilder.Entity("gestiones_backend.Entity.Usuario", b =>

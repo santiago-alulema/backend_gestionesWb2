@@ -6,7 +6,7 @@ using System.Security.Claims;
 namespace gestiones_backend.Services
 {
 
-    public class AuthenticationService : Interfaces.IAuthenticationService // Implementa la interfaz
+    public class AuthenticationService : Interfaces.IAuthenticationService 
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly DataContext _context;

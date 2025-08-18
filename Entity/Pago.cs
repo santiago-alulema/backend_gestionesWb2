@@ -9,16 +9,13 @@ public partial class Pago
 {
     [Key]
     public int IdPago { get; set; }
-
     public Guid IdDeuda { get; set; } = Guid.Empty;
-
     public DateOnly? FechaPago { get; set; }
+    public DateTime? FechaRegistro { get; set; }
 
     public decimal MontoPagado { get; set; }
-
     public string? MedioPago { get; set; }
     public string? NumeroDocumenro { get; set; }
-
     public string? Observaciones { get; set; }
     public string? FormaPagoId { get; set; }
     public string? IdUsuario { get; set; }

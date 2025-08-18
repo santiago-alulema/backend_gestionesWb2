@@ -26,8 +26,9 @@ namespace gestiones_backend.Context
         public virtual DbSet<TipoCuentaBancaria> TiposCuentaBancaria { get; set; }
         public virtual DbSet<TipoResultado> TiposResultado { get; set; }
         public virtual DbSet<TipoTransaccion> TiposTransaccion { get; set; }
-        public virtual DbSet<TiposGestion> TiposGestion { get; set; }
         public virtual DbSet<Usuario> Usuarios { get; set; }
+        public virtual DbSet<TipoTarea> TiposTareas { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -49,6 +50,15 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Id).HasMaxLength(50);
                 entity.Property(e => e.Nombre).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Activo).IsRequired();
+            });
+
+            modelBuilder.Entity<TipoTarea>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasMaxLength(50);
+                entity.Property(e => e.Nombre);
+                entity.Property(e => e.Estado);
+
             });
 
             modelBuilder.Entity<BancosPagos>(entity =>
@@ -144,13 +154,12 @@ namespace gestiones_backend.Context
             modelBuilder.Entity<Pago>(entity =>
             {
                 entity.HasKey(e => e.IdPago);
-
                 entity.Property(e => e.MontoPagado).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.NumeroDocumenro).HasMaxLength(50);
                 entity.Property(e => e.Observaciones).HasMaxLength(500);
                 entity.Property(e => e.FechaPago).HasDefaultValueSql("CURRENT_DATE");
-
-                // Relaciones
+                entity.Property(e => e.FechaRegistro).HasColumnType("timestamp without time zone").HasDefaultValueSql("NOW()");
+                
                 entity.HasOne(p => p.FormaPagoNavigation)
                     .WithMany()
                     .HasForeignKey(p => p.FormaPagoId)
@@ -192,24 +201,19 @@ namespace gestiones_backend.Context
             {
                 entity.HasKey(e => e.IdGestion);
                 entity.Property(e => e.IdGestion).HasMaxLength(40);
-                entity.Property(e => e.Descripcion).HasMaxLength(500);
+                entity.Property(e => e.Descripcion).HasMaxLength(900);
                 entity.Property(e => e.Email).HasMaxLength(100);
                 entity.Property(e => e.FechaGestion).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                // Relaciones
-                entity.HasOne(g => g.IdTipoGestionNavigation)
-                    .WithMany(t => t.Gestiones)
-                    .HasForeignKey(g => g.IdTipoGestion)
-                    .OnDelete(DeleteBehavior.Restrict);
-
+                // Relaciones actualizadas
                 entity.HasOne(g => g.IdUsuarioGestionaNavigation)
                     .WithMany(u => u.Gestiones)
                     .HasForeignKey(g => g.IdUsuarioGestiona)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(g => g.IdTipoContactoGestionNavigation)
+                entity.HasOne(g => g.IdTipoContactoResultadoNavigation)
                     .WithMany()
-                    .HasForeignKey(g => g.IdTipoContactoGestion)
+                    .HasForeignKey(g => g.IdTipoContactoResultado)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(g => g.RespuestaTipoContactoNavigation)
@@ -263,8 +267,10 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Estado);
                 entity.Property(e => e.FechaCompromiso).IsRequired();
                 entity.Property(e => e.IncumplioCompromisoPago);
+                entity.Property(e => e.HoraRecordatorio);
                 entity.Property(e => e.MontoComprometido).HasColumnType("decimal(18,2)").IsRequired();
                 entity.Property(e => e.IdUsuario).HasMaxLength(13).IsRequired();
+                entity.Property(e => e.IdTipoTarea).HasMaxLength(40);
 
                 entity.HasOne(d => d.IdDeudaNavigation)
                     .WithMany(p => p.CompromisosPagos)
@@ -274,6 +280,11 @@ namespace gestiones_backend.Context
                 entity.HasOne(d => d.IdUsuarioNavigation)
                     .WithMany(p => p.CompromisosPagos)
                     .HasForeignKey(d => d.IdUsuario)
+                    .OnDelete(DeleteBehavior.ClientSetNull);
+
+                entity.HasOne(d => d.IdTipoTareaNavigation)
+                    .WithMany(p => p.CompromisosPagos)
+                    .HasForeignKey(d => d.IdTipoTarea)
                     .OnDelete(DeleteBehavior.ClientSetNull);
             });
 
@@ -362,21 +373,7 @@ namespace gestiones_backend.Context
                     .OnDelete(DeleteBehavior.SetNull);
             });
 
-            // Configuración para TiposGestion
-            modelBuilder.Entity<TiposGestion>(entity =>
-            {
-                entity.HasKey(e => e.IdTipoGestion);
-                entity.Property(e => e.IdTipoGestion).HasMaxLength(40);
-                entity.Property(e => e.Nombre).IsRequired().HasMaxLength(255);
-                entity.Property(e => e.Descripcion).HasMaxLength(500);
-                entity.Property(e => e.TipoGestion).HasMaxLength(1).IsRequired();
-
-                entity.HasOne(d => d.IdPadreNavigation)
-                    .WithMany(p => p.InverseIdPadreNavigation)
-                    .HasForeignKey(d => d.IdPadre)
-                    .OnDelete(DeleteBehavior.Cascade);
-            });
-
+          
             // Configuración para Usuario
             modelBuilder.Entity<Usuario>(entity =>
             {

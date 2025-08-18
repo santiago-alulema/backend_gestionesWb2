@@ -4,8 +4,7 @@ using gestiones_backend.Dtos.In;
 using gestiones_backend.Dtos.Out;
 using gestiones_backend.Entity;
 using Mapster;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+using gestiones_backend.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -17,16 +16,35 @@ namespace gestiones_backend.Controllers
     public class ClienteController : ControllerBase
     {
         private readonly DataContext _context;
+        private readonly IAuthenticationService _authService;
 
-        public ClienteController(DataContext context)
+        public ClienteController(DataContext context, IAuthenticationService authService)
         {
             _context = context;
+            _authService = authService;
         }
 
         [HttpGet("deudas-por-cliente/{cedulaCliente}")]
-        public IActionResult DeudasPorCliente(string cedulaCliente)
+        public IActionResult DeudasPorCliente(string cedulaCliente, [FromQuery] string? empresa, [FromQuery] bool sinGestionar = false)
         {
-            List<Deuda> deudas = _context.Deudas.Where(x => x.IdDeudor == cedulaCliente).ToList();
+            IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking().Where(x => x.IdDeudor == cedulaCliente);
+
+            if (!string.IsNullOrEmpty(empresa) && empresa != "TODOS")
+            {
+                deudasQuery = deudasQuery.Where(d =>
+                    d.Empresa != null &&
+                    d.Empresa.ToUpper() == empresa.ToUpper());
+            }
+
+            if (sinGestionar)
+            {
+                deudasQuery = deudasQuery.Where(d =>
+                    !d.CompromisosPagos.Any() &&
+                    !d.Gestiones.Any() &&
+                    !d.Pagos.Any());
+
+            }
+            List<Deuda> deudas = deudasQuery.ToList();
             List<DeudasClienteOutDTO> deudoresDTO = deudas.Adapt<List<DeudasClienteOutDTO>>();
             return Ok(deudoresDTO);
         }
@@ -124,37 +142,39 @@ namespace gestiones_backend.Controllers
         }
 
         [HttpGet("listar-clientes")]
-        public IActionResult Allclients()
+        public IActionResult Allclients([FromQuery] string? empresa, [FromQuery] bool sinGestionar = false)
         {
+            Usuario usuario = _authService.GetCurrentUser();
 
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
-            var claims = identity.Claims;
-            string name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            IQueryable<Deudores> clientesQuery = usuario.Rol == "user"
+                ? _context.Deudores.Where(x => x.IdUsuario == usuario.IdUsuario)
+                : _context.Deudores.AsQueryable();
 
-            Usuario usuario = _context.Usuarios.Where(x => x.NombreUsuario == name).FirstOrDefault();
-
-            if (usuario == null)
+            if (!string.IsNullOrEmpty(empresa) && empresa != "TODOS")
             {
-                throw new Exception("Token incorrecto");
+                clientesQuery = clientesQuery.Where(c =>
+                    c.Deuda.Any(d => d.Empresa != null && d.Empresa.ToUpper() == empresa.ToUpper()));
             }
 
-            List<Deudores> clientes = usuario.Rol == "user"
-                                     ? _context.Deudores.Where(x => x.IdUsuario == usuario.IdUsuario).ToList()
-                                     : _context.Deudores.ToList();
-
-            List<ClientesOutDTO> deudoresDTO = new();
-            for (int i = 0; i < clientes.Count; i++)
+            if (sinGestionar)
             {
-                deudoresDTO.Add(new ClientesOutDTO()
-                {
-                    cedula = clientes[i].IdDeudor,
-                    nombre = clientes[i].Nombre,
-                    telefono = clientes[i].Telefono,
-                    direccion = clientes[i].Direccion,
-                    descripcion = clientes[i].Descripcion,
-                    correo = clientes[i].Correo
-                });
+                clientesQuery = clientesQuery.Where(c =>
+                    c.Deuda.Any(d =>
+                        !d.CompromisosPagos.Any() &&
+                        !d.Gestiones.Any() &&
+                        !d.Pagos.Any()));
             }
+
+            var deudoresDTO = clientesQuery.Select(c => new ClientesOutDTO()
+            {
+                cedula = c.IdDeudor,
+                nombre = c.Nombre,
+                telefono = c.Telefono,
+                direccion = c.Direccion,
+                descripcion = c.Descripcion,
+                correo = c.Correo
+            }).ToList();
+
             return Ok(deudoresDTO);
         }
 

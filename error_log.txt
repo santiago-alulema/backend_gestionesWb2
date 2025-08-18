@@ -4,3 +4,21 @@ POSITION: 998
 sábado, 16 de agosto de 2025 - - - - - - - 42P01: missing FROM-clause entry for table "p"
 
 POSITION: 386
+domingo, 17 de agosto de 2025 - - - - - - - 42P01: relation "TiposGestion" does not exist
+
+POSITION: 1519
+domingo, 17 de agosto de 2025 - - - - - - - 42P01: relation "TiposGestion" does not exist
+
+POSITION: 1519
+domingo, 17 de agosto de 2025 - - - - - - - 42703: column g.IdTipoContactoGestion does not exist
+
+POSITION: 1562
+domingo, 17 de agosto de 2025 - - - - - - - 42703: column g.IdTipoContactoGestion does not exist
+
+POSITION: 1562
+domingo, 17 de agosto de 2025 - - - - - - - 42703: column g.IdTipoContactoGestion does not exist
+
+POSITION: 1562
+domingo, 17 de agosto de 2025 - - - - - - - 42703: column g.IdTipoContactoGestion does not exist
+
+POSITION: 1562

@@ -1,6 +1,7 @@
 ﻿using gestiones_backend.Context;
 using gestiones_backend.DbConn;
 using gestiones_backend.Dtos.Out;
+using gestiones_backend.Entity;
 using gestiones_backend.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,27 +18,43 @@ namespace gestiones_backend.Controllers
         private readonly DataContext _context;
         private readonly IReportesEmpresaService _reportesEmpresaService;
         private readonly IConfiguration Configuration;
+        private readonly IAuthenticationService _authService;
 
         public ReporteGeneralGestionesController(
-       DataContext context,
-       IReportesEmpresaService reportesEmpresaService,
-       IConfiguration config)
+                                                   DataContext context,
+                                                   IReportesEmpresaService reportesEmpresaService,
+                                                   IConfiguration config,
+                                                   IAuthenticationService authService)
         {
             _context = context;
             _reportesEmpresaService = reportesEmpresaService;
             Configuration = config;
+            _authService = authService;
         }
 
         [HttpGet("gestiones-por-usuario")]
-        public async Task<ActionResult<IEnumerable<object>>> GetGestionesPorUsuario()
+        public async Task<ActionResult<IEnumerable<object>>> GetGestionesPorUsuario([FromQuery] string FechaInicio,
+                                                                                    [FromQuery] string FechaFin)
         {
-            // Crear fechas con Kind=Utc
-            var fechaInicio = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-            var fechaFin = new DateTime(fechaInicio.Year, fechaInicio.Month,
-                                      DateTime.DaysInMonth(fechaInicio.Year, fechaInicio.Month),
-                                      23, 59, 59, DateTimeKind.Utc);
+            Usuario usuario = _authService.GetCurrentUser();
 
-            var resultado = await _context.Usuarios
+            DateTime fechaInicio = !string.IsNullOrEmpty(FechaInicio)
+                                 ? DateTime.Parse(FechaInicio).ToUniversalTime()
+                                 : DateTime.UtcNow.Date;
+
+            DateTime fechaFin = !string.IsNullOrEmpty(FechaFin)
+                ? DateTime.Parse(FechaFin).ToUniversalTime().AddDays(1).AddTicks(-1)
+                : DateTime.UtcNow.Date.AddDays(1).AddTicks(-1);
+
+
+            var query = _context.Usuarios.AsQueryable();
+
+            if (usuario.Rol.ToLower() != "admin") 
+            {
+                query = query.Where(u => u.IdUsuario == usuario.IdUsuario);
+            }
+
+            var resultado = await query
                 .Select(u => new
                 {
                     nombreUsuario = u.NombreUsuario,
@@ -45,22 +62,38 @@ namespace gestiones_backend.Controllers
                         .Count(g => g.FechaGestion >= fechaInicio && g.FechaGestion <= fechaFin),
                     valorTotal = u.Gestiones
                         .Where(g => g.FechaGestion >= fechaInicio && g.FechaGestion <= fechaFin)
-                        .Sum(g => g.IdDeudaNavigation.SaldoDeulda)
+                        .Sum(g => g.IdDeudaNavigation.SaldoDeuda)
                 })
-                .Where(r => r.CantidadGestiones > 0)
+                .Where(r => r.CantidadGestiones > 0) 
                 .OrderByDescending(r => r.CantidadGestiones)
                 .ToListAsync();
 
             return Ok(resultado);
         }
 
-        [HttpGet("gestiones-pago-por-usuario")]
-        public async Task<ActionResult<IEnumerable<object>>> GetGestionesPagoPorUsuario()
-        {
-            var fechaInicio = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-            var fechaFin = fechaInicio.AddMonths(1).AddDays(-1);
 
-            var resultado = await _context.Usuarios
+        [HttpGet("gestiones-pago-por-usuario")]
+        public async Task<ActionResult<IEnumerable<object>>> GetGestionesPagoPorUsuario([FromQuery] string FechaInicio,
+                                                                                        [FromQuery] string FechaFin)
+        {
+            Usuario usuario = _authService.GetCurrentUser();
+
+            DateOnly fechaInicio = !string.IsNullOrEmpty(FechaInicio)
+        ? DateOnly.FromDateTime(DateTime.Parse(FechaInicio))
+        : DateOnly.FromDateTime(DateTime.Today);
+
+            DateOnly fechaFin = !string.IsNullOrEmpty(FechaFin)
+                ? DateOnly.FromDateTime(DateTime.Parse(FechaFin))
+                : DateOnly.FromDateTime(DateTime.Today);
+
+            var query = _context.Usuarios.AsQueryable();
+
+            if (usuario.Rol.ToLower() != "admin")
+            {
+                query = query.Where(u => u.IdUsuario == usuario.IdUsuario);
+            }
+
+            var resultado = await query
                 .Select(u => new
                 {
                     nombreUsuario = u.NombreUsuario,
@@ -68,8 +101,8 @@ namespace gestiones_backend.Controllers
                         .SelectMany(d => d.Deuda)
                         .SelectMany(d => d.Pagos)
                         .Where(p => p.FechaPago != null &&
-                                   DateOnly.FromDateTime(p.FechaPago.Value.ToDateTime(TimeOnly.MinValue)) >= DateOnly.FromDateTime(fechaInicio) &&
-                                   DateOnly.FromDateTime(p.FechaPago.Value.ToDateTime(TimeOnly.MinValue)) <= DateOnly.FromDateTime(fechaFin))
+                                   p.FechaPago.Value >= fechaInicio &&
+                                   p.FechaPago.Value <= fechaFin)
                         .ToList()
                 })
                 .Select(r => new
@@ -86,18 +119,33 @@ namespace gestiones_backend.Controllers
         }
 
         [HttpGet("compromisos-pago-por-usuario")]
-        public async Task<ActionResult<IEnumerable<object>>> GetCompromisosPagoPorUsuario()
+        public async Task<ActionResult<IEnumerable<object>>> GetCompromisosPagoPorUsuario([FromQuery] string FechaInicio = null,
+                                                                                          [FromQuery] string FechaFin = null)
         {
-            var fechaInicio = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-            var fechaFin = fechaInicio.AddMonths(1).AddDays(-1);
+            Usuario usuario = _authService.GetCurrentUser();
 
-            var resultado = await _context.Usuarios
+            DateOnly fechaInicio = !string.IsNullOrEmpty(FechaInicio)
+                ? DateOnly.FromDateTime(DateTime.Parse(FechaInicio))
+                : DateOnly.FromDateTime(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1));
+
+            DateOnly fechaFin = !string.IsNullOrEmpty(FechaFin)
+                ? DateOnly.FromDateTime(DateTime.Parse(FechaFin))
+                : DateOnly.FromDateTime(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(1).AddDays(-1));
+
+            var query = _context.Usuarios.AsQueryable();
+
+            if (usuario.Rol.ToLower() != "admin")
+            {
+                query = query.Where(u => u.IdUsuario == usuario.IdUsuario);
+            }
+
+            var resultado = await query
                 .Select(u => new
                 {
                     nombreUsuario = u.NombreUsuario,
                     Compromisos = u.CompromisosPagos
-                        .Where(c => c.FechaCompromiso >= DateOnly.FromDateTime(fechaInicio) &&
-                                   c.FechaCompromiso <= DateOnly.FromDateTime(fechaFin))
+                        .Where(c => c.FechaCompromiso >= fechaInicio &&
+                                   c.FechaCompromiso <= fechaFin)
                         .ToList()
                 })
                 .Select(r => new
@@ -114,9 +162,10 @@ namespace gestiones_backend.Controllers
         }
 
         [HttpGet("reporte-por-empresa-mes-actual")]
-        public async Task<ActionResult<IEnumerable<ReporteEmpresaDto>>> GetReportePorEmpresaMesActual()
+        public async Task<ActionResult<IEnumerable<ReporteEmpresaDto>>> GetReportePorEmpresaMesActual([FromQuery] string FechaInicio = null,
+                                                                                                      [FromQuery] string FechaFin = null)
         {
-                var reporte = await _reportesEmpresaService.ObtenerReportePorEmpresaMesActual();
+                var reporte = await _reportesEmpresaService.ObtenerReportePorEmpresaMesActual(FechaInicio, FechaFin);
                 return Ok(reporte);
         }
 

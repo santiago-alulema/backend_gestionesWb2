@@ -34,6 +34,33 @@ namespace gestiones_backend.Controllers
             return Ok(gestionesDto);
         }
 
+        [HttpGet("obtener-tipos-tareas")]
+        public IActionResult TiposTareas()
+        {
+            List<TipoTarea> resultado = _context.TiposTareas.Where(x => x.Estado == true ).ToList();
+            List<SeleccionGeneralOutDTO> gestionesDto = resultado.Adapt<List<SeleccionGeneralOutDTO>>();
+            return Ok(gestionesDto);
+        }
+
+        [HttpGet("obtener-todas-empresas")]
+        public IActionResult ListaEmpresas()
+        {
+            var empresas = _context.Deudas
+                .Where(d => !string.IsNullOrEmpty(d.Empresa))
+                .Select(d => d.Empresa.Trim().ToUpper())
+                .Distinct()
+                .OrderBy(e => e)  
+                .Select(e => new SeleccionGeneralOutDTO
+                {
+                    Id = e,
+                    Nombre = e
+                })
+                .ToList();
+
+            return Ok(empresas);
+        }
+
+
         [HttpGet("obtener-respuesta-tipo-contacto/{TipoContactoResultadoId}")]
         public IActionResult ObtenerTipoContactoResultadoId(string TipoContactoResultadoId)
         {

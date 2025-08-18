@@ -22,7 +22,6 @@ namespace gestiones_backend.Services
             var query = _context.Gestiones
                 .Include(g => g.IdDeudaNavigation)
                     .ThenInclude(d => d.IdDeudorNavigation)
-                .Include(g => g.IdTipoGestionNavigation)
                 .Include(g => g.IdUsuarioGestionaNavigation)
                 .AsQueryable();
 
@@ -42,7 +41,6 @@ namespace gestiones_backend.Services
                 idGestion = g.IdGestion,
                 fechaGestion = g.FechaGestion,
                 deudor = g.IdDeudaNavigation.IdDeudorNavigation.Nombre ?? "S/N",
-                tipoGestion = g.IdTipoGestionNavigation.Descripcion ?? "S/A",
                 descripcion = g.Descripcion,
                 usuario = g.IdUsuarioGestionaNavigation.NombreUsuario
             }).ToListAsync();

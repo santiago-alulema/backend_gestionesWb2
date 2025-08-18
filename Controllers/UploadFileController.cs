@@ -124,6 +124,8 @@ namespace gestiones_backend.Controllers
                     deudaExistente.UltimoPago = deudaExcel.UltimoPago;
                     deudaExistente.Empresa = deudaExcel.Empresa;
 
+                    actualizarDeuda.Add(deudaExistente);
+
                 }
                 else
                 {

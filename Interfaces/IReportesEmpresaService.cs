@@ -4,6 +4,6 @@ namespace gestiones_backend.Interfaces
 {
     public interface IReportesEmpresaService
     {
-        Task<IEnumerable<ReporteEmpresaDto>> ObtenerReportePorEmpresaMesActual();
+        Task<IEnumerable<ReporteEmpresaDto>> ObtenerReportePorEmpresaMesActual(string FechaInicio, string FechaFin);
     }
 }

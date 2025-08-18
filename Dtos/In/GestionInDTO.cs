@@ -5,7 +5,8 @@
         public Guid idDeuda { get; set; }
         public string IdTipoGestion { get; set; }
         public string Descripcion { get; set; }
-        public string IdTipoContactoDeudor { get; set; }
+        public string IdResultado { get; set; }
+        public string idTipoContactoCliente { get; set; }
         public string IdRespuesta { get; set; }
         public string Email { get; set; }
 
