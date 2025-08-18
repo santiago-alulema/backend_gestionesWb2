@@ -123,6 +123,7 @@ namespace gestiones_backend.Controllers
         [HttpGet("compromiso-pagos-hoy")]
         public async Task<IActionResult> GetByFiltersGestiones()
         {
+            var usuario = _authService.GetCurrentUser();
             DateOnly hoy = DateOnly.FromDateTime(DateTime.Today);
             List<CompromisosPago> conpromisosPagos = _context.CompromisosPagos.Include(x => x.IdDeudaNavigation).Where(x => x.FechaCompromiso == hoy).ToList();
             return Ok("");

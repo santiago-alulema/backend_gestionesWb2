@@ -22,3 +22,33 @@ POSITION: 1562
 domingo, 17 de agosto de 2025 - - - - - - - 42703: column g.IdTipoContactoGestion does not exist
 
 POSITION: 1562
+lunes, 18 de agosto de 2025 - - - - - - - 22P02: invalid input syntax for type uuid: "undefined"
+
+POSITION: 1482
+lunes, 18 de agosto de 2025 - - - - - - - 22P02: invalid input syntax for type uuid: "undefined"
+
+POSITION: 1482
+lunes, 18 de agosto de 2025 - - - - - - - 22P02: invalid input syntax for type uuid: "undefined"
+
+POSITION: 1482
+lunes, 18 de agosto de 2025 - - - - - - - 22P02: invalid input syntax for type uuid: "undefined"
+
+POSITION: 1482
+lunes, 18 de agosto de 2025 - - - - - - - 22P02: invalid input syntax for type uuid: "undefined"
+
+POSITION: 1482
+lunes, 18 de agosto de 2025 - - - - - - - 22P02: invalid input syntax for type uuid: "undefined"
+
+POSITION: 1482
+lunes, 18 de agosto de 2025 - - - - - - - 22P02: invalid input syntax for type uuid: "undefined"
+
+POSITION: 1482
+lunes, 18 de agosto de 2025 - - - - - - - 22P02: invalid input syntax for type uuid: "undefined"
+
+POSITION: 1482
+lunes, 18 de agosto de 2025 - - - - - - - 22P02: invalid input syntax for type uuid: "undefined"
+
+POSITION: 1482
+lunes, 18 de agosto de 2025 - - - - - - - 22P02: invalid input syntax for type uuid: "undefined"
+
+POSITION: 1482

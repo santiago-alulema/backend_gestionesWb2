@@ -52,22 +52,25 @@ namespace gestiones_backend.Controllers
         [HttpGet("listar-compromisos-pago/{esHoy}")]
         public IActionResult GestionarCompromisos(bool esHoy)
         {
-                var hoy = DateOnly.FromDateTime(DateTime.Today);
+            Usuario usuario = _authService.GetCurrentUser();
+            var hoy = DateOnly.FromDateTime(DateTime.Today);
                 IQueryable<CompromisosPago> query = _context.CompromisosPagos
                     .Include(x => x.IdDeudaNavigation)
-                    .ThenInclude(x => x.IdDeudorNavigation);
+                    .ThenInclude(x => x.IdDeudorNavigation)
+                    .Include(x => x.IdTipoTareaNavigation)
+                    ;
 
-                if (esHoy)
+            if (esHoy)
                 {
-                    query = query.Where(c => c.FechaCompromiso == hoy);
+                    query = query.Where(c => c.FechaCompromiso == hoy );
                 }
 
                 var compromisos = query
-                    .Where(x => x.Estado == true)
+                    .Where(x => x.Estado == true && x.IdUsuario == usuario.IdUsuario)
                     .Select(c => new CompromisoPagoOutDTO
                     {
                         CompromisoPagoId = c.IdCompromiso,
-                        DeudaId = c.IdDeuda != null ? c.IdDeuda.Value : Guid.Empty,
+                        IdDeuda = c.IdDeuda != null ? c.IdDeuda.Value : Guid.Empty,
                         DeudaCapital = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.DeudaCapital ?? 0m) : 0m,
                         Interes = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.Interes ?? 0m) : 0m,
                         GastosCobranzas = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.GastosCobranzas ?? 0m) : 0m,
@@ -83,12 +86,14 @@ namespace gestiones_backend.Controllers
                             ? c.IdDeudaNavigation.IdDeudorNavigation.Nombre
                             : "",
                         NumeroCouta = c.IdDeudaNavigation != null
-                            ? (c.IdDeudaNavigation.Creditos.ToString() + "/" + c.IdDeudaNavigation.NumeroCuotas.ToString())
+                            ?  c.IdDeudaNavigation.NumeroCuotas.ToString()
                             : "",
                         ValorCuota = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.ValorCuota ?? 0m) : 0m,
                         Empresa = c.IdDeudaNavigation != null && c.IdDeudaNavigation.Empresa != null
                             ? c.IdDeudaNavigation.Empresa
                             : "",
+                        HoraTarea = c.HoraRecordatorio,
+                        TipoTarea = c.IdTipoTareaNavigation.Nombre
                     })
                     .ToList();
 

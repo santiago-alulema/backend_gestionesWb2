@@ -2,7 +2,7 @@
 {
     public class CompromisoPagoOutDTO
     {
-        public Guid DeudaId { get; set; }
+        public Guid IdDeuda { get; set; }
         public Decimal? DeudaCapital { get; set; }
         public Decimal? Interes { get; set; }
         public Decimal? GastosCobranzas { get; set; }
@@ -16,6 +16,8 @@
         public String CompromisoPagoId { get; set; } = string.Empty;
         public string NumeroCouta { get; set; } = string.Empty;
         public Decimal ValorCuota { get; set; } = Decimal.Zero;
+        public string TipoTarea { get; set; } = string.Empty;
+        public string HoraTarea { get; set; } = string.Empty;
         public string? Empresa { get; set; } = string.Empty;
 
     }
