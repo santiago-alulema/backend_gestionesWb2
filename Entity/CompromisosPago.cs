@@ -12,6 +12,7 @@ public partial class CompromisosPago
     public string IdCompromiso { get; set; }
     public Guid? IdDeuda { get; set; }
     public DateOnly FechaCompromiso { get; set; }
+    public DateTime FechaRegistro { get; set; }
     public decimal MontoComprometido { get; set; }
     public bool? Estado { get; set; } 
     public bool? IncumplioCompromisoPago { get; set; }

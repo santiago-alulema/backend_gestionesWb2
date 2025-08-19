@@ -271,7 +271,8 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.MontoComprometido).HasColumnType("decimal(18,2)").IsRequired();
                 entity.Property(e => e.IdUsuario).HasMaxLength(13).IsRequired();
                 entity.Property(e => e.IdTipoTarea).HasMaxLength(40);
-
+                entity.Property(e => e.FechaRegistro).HasColumnType("timestamp without time zone").HasDefaultValueSql("NOW()");
+                
                 entity.HasOne(d => d.IdDeudaNavigation)
                     .WithMany(p => p.CompromisosPagos)
                     .HasForeignKey(d => d.IdDeuda)
