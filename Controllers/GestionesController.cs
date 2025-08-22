@@ -177,19 +177,19 @@ namespace gestiones_backend.Controllers
                                 SELECT 'Pago' AS tipo,
                                         TO_CHAR( p.""FechaPago""::DATE, 'YYYY-MM-DD') AS fecha,
                                         p.""Observaciones"" observaciones, 
-                                        ('<strong>Banco: </strong> '  || bp.""Nombre"" || 
-                                	   	'<br><strong>Cuenta: </strong>' || tcb.""Nombre"" || 
-                                	   	'<br><strong>Tipo Transaccion: </strong>' || tt.""Nombre""|| 
-                                	   	'<br><strong>Abono/Liquidacion: </strong>' || al.""Nombre""|| 
-                                	   	'<br><strong>Numero Doc.: </strong>' || p.""NumeroDocumenro"" || 
-                                	   	'<br><strong>Fecha Pago: </strong>' || p.""FechaPago"" || 
-                                	   	'<br><strong>Valor: </strong>' || p.""MontoPagado"") as tracking
+                                        ('<strong>Banco: </strong> '  || COALESCE(bp.""Nombre"", 'N/A') || 
+                                       '<br><strong>Cuenta: </strong>' || COALESCE(tcb.""Nombre"", 'N/A') || 
+                                       '<br><strong>Tipo Transaccion: </strong>' || COALESCE(tt.""Nombre"", 'N/A') || 
+                                       '<br><strong>Abono/Liquidacion: </strong>' || COALESCE(al.""Nombre"", 'N/A') || 
+                                       '<br><strong>Numero Doc.: </strong>' || COALESCE(p.""NumeroDocumenro"", 'N/A') || 
+                                       '<br><strong>Fecha Pago: </strong>' || COALESCE(p.""FechaPago""::text, 'N/A') || 
+                                       '<br><strong>Valor: </strong>' || COALESCE(p.""MontoPagado""::text, 'N/A')) AS tracking
                                 FROM ""Deudas"" d
-                                JOIN ""Pagos"" p ON p.""IdDeuda"" = d.""IdDeuda"" 
-                                JOIN ""BancosPagos"" bp ON p.""IdBancosPago"" = bp.""Id""  
-                                JOIN ""TiposCuentaBancaria"" tcb ON p.""IdTipoCuentaBancaria"" = tcb.""Id""
-                                JOIN ""TiposTransaccion"" tt ON tt.""Id"" = p.""IdTipoTransaccion"" 
-                                JOIN ""AbonosLiquidacion"" al ON al.""Id"" = p.""IdAbonoLiquidacion"" 
+                                LEFT JOIN ""Pagos"" p ON p.""IdDeuda"" = d.""IdDeuda"" 
+                                LEFT JOIN ""BancosPagos"" bp ON p.""IdBancosPago"" = bp.""Id""  
+                                LEFT JOIN ""TiposCuentaBancaria"" tcb ON p.""IdTipoCuentaBancaria"" = tcb.""Id""
+                                LEFT JOIN ""TiposTransaccion"" tt ON tt.""Id"" = p.""IdTipoTransaccion"" 
+                                LEFT JOIN ""AbonosLiquidacion"" al ON al.""Id"" = p.""IdAbonoLiquidacion"" 
                                 WHERE d.""IdDeuda"" = '{idDeuda}'
     
                                 UNION ALL
