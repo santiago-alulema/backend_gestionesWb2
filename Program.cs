@@ -70,6 +70,9 @@ builder.Services.AddScoped<CustomExceptionFilter>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IReportesEmpresaService, ReportesEmpresaService>();
+builder.Services.AddScoped<IPagosService, PagosService>();
+builder.Services.AddScoped<ITareasService, TareasService>();
+builder.Services.AddScoped<IGestionesService, GestionesService>();
 
 builder.Services.AddMapster();
 

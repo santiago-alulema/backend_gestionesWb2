@@ -24,20 +24,49 @@ namespace gestiones_backend.Controllers
         private readonly CompromisosPagoService _serviceCompromisos;
         private readonly IAuthenticationService _authService;
         private readonly IConfiguration Configuration;
+        private readonly IGestionesService _gestionesService;
 
         public GestionesController(IAuthenticationService authService, 
             DataContext context, 
             GestioneService service,
             CompromisosPagoService serviceCompromisos,
-            IConfiguration config)
+            IConfiguration config,
+            IGestionesService gestionesService)
         {
             _context = context;
             _service = service;
             _serviceCompromisos = serviceCompromisos;
             _authService = authService;
             Configuration = config;
+            _gestionesService = gestionesService;
         }
 
+        [HttpGet]
+        public ActionResult<List<GestionDto>> GetAll()
+        {
+            var gestiones = _gestionesService.GetAllAsync();
+            return Ok(gestiones);
+        }
+
+        [HttpPut("{id}")]
+        public ActionResult<GestionDto> Update(string id, [FromBody] UpdateGestionDto dto)
+        {
+            var gestion = _gestionesService.UpdateAsync(id, dto);
+            if (gestion == null)
+                return NotFound(new { message = "Gestión no encontrada" });
+
+            return Ok(gestion);
+        }
+
+        [HttpDelete("{id}")]
+        public ActionResult Delete(string id)
+        {
+            var eliminado = _gestionesService.DeleteAsync(id);
+            if (!eliminado)
+                return NotFound(new { message = "Gestión no encontrada" });
+
+            return NoContent();
+        }
 
         [Authorize]
         [HttpPost("grabar-gestion")]

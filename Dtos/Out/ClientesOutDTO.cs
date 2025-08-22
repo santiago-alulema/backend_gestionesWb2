@@ -10,6 +10,8 @@
         public string correo { get; set; } = string.Empty;
         public string descripcion { get; set; } = string.Empty;
         public string numerofactura { get; set; } = string.Empty;
-
+        public string numeroDeudas { get; set; } = string.Empty;
+        public string gestor { get; set; } = string.Empty;
+        public string tramos { get; set; } = string.Empty;
     }
 }

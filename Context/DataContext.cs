@@ -154,6 +154,7 @@ namespace gestiones_backend.Context
             modelBuilder.Entity<Pago>(entity =>
             {
                 entity.HasKey(e => e.IdPago);
+                entity.Property(e => e.IdPago).HasDefaultValueSql("gen_random_uuid()");
                 entity.Property(e => e.MontoPagado).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.NumeroDocumenro).HasMaxLength(50);
                 entity.Property(e => e.Observaciones).HasMaxLength(500);

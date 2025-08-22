@@ -8,7 +8,7 @@ namespace gestiones_backend.Entity;
 public partial class Pago
 {
     [Key]
-    public int IdPago { get; set; }
+    public Guid IdPago { get; set; }
     public Guid IdDeuda { get; set; } = Guid.Empty;
     public DateOnly? FechaPago { get; set; }
     public DateTime? FechaRegistro { get; set; }

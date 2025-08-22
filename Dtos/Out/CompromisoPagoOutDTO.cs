@@ -19,6 +19,8 @@
         public string TipoTarea { get; set; } = string.Empty;
         public string HoraTarea { get; set; } = string.Empty;
         public string? Empresa { get; set; } = string.Empty;
-
+        public string? MontoCobrar { get; set; } = string.Empty;
+        public string? Tramo { get; set; } = string.Empty;
+        public string? ValorCompromisoPago { get; set; } = string.Empty;
     }
 }

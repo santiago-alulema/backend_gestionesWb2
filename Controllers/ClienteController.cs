@@ -93,9 +93,11 @@ namespace gestiones_backend.Controllers
                             ? c.IdDeudaNavigation.Empresa
                             : "",
                         HoraTarea = c.HoraRecordatorio,
-                        TipoTarea = c.IdTipoTareaNavigation.Nombre
-                    })
-                    .ToList();
+                        TipoTarea = c.IdTipoTareaNavigation.Nombre,
+                        ValorCompromisoPago = c.MontoComprometido.ToString() ?? "0",
+                        MontoCobrar= c.IdDeudaNavigation.MontoCobrar.ToString(),
+                        Tramo= c.IdDeudaNavigation.Tramo
+                    }).ToList();
 
             return Ok(compromisos);
             
@@ -152,8 +154,12 @@ namespace gestiones_backend.Controllers
             Usuario usuario = _authService.GetCurrentUser();
 
             IQueryable<Deudores> clientesQuery = usuario.Rol == "user"
-                ? _context.Deudores.Where(x => x.IdUsuario == usuario.IdUsuario)
-                : _context.Deudores.AsQueryable();
+                ? _context.Deudores.Include(x => x.Deuda)
+                                   .Include(x => x.Usuario)
+                                   .Where(x => x.IdUsuario == usuario.IdUsuario)
+                : _context.Deudores.Include(x => x.Deuda)
+                                   .Include(x => x.Usuario)
+                                   .AsQueryable();
 
             if (!string.IsNullOrEmpty(empresa) && empresa != "TODOS")
             {
@@ -170,14 +176,19 @@ namespace gestiones_backend.Controllers
                         !d.Pagos.Any()));
             }
 
-            var deudoresDTO = clientesQuery.Select(c => new ClientesOutDTO()
+            var deudoresDTO = clientesQuery.AsEnumerable().Select(c => new ClientesOutDTO()
             {
                 cedula = c.IdDeudor,
                 nombre = c.Nombre,
                 telefono = c.Telefono,
                 direccion = c.Direccion,
                 descripcion = c.Descripcion,
-                correo = c.Correo
+                correo = c.Correo,
+                numeroDeudas = c.Deuda.Count().ToString(),
+                tramos = c.Deuda != null ?
+                        String.Join("", c.Deuda.Select((x, index) => $"<strong>{index + 1}</strong>: {x.Tramo} <br>")) :
+                        string.Empty,
+                gestor = c.Usuario.NombreCompleto
             }).ToList();
 
             return Ok(deudoresDTO);
