@@ -350,6 +350,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.FechaAdicion).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.Origen).HasMaxLength(100);
                 entity.Property(e => e.Observacion).HasMaxLength(500);
+                entity.Property(e => e.Propietario).HasColumnType("varchar").HasMaxLength(500);
 
                 entity.HasOne(d => d.IdDeudorNavigation)
                     .WithMany(p => p.DeudorTelefonos)

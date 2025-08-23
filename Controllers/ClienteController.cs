@@ -49,6 +49,47 @@ namespace gestiones_backend.Controllers
             return Ok(deudoresDTO);
         }
 
+        [HttpGet("buscar-deuda-por-id/{idDeuda}")]
+        public IActionResult DeudasPorId(string idDeuda)
+        {
+            Deuda deudasQuery = _context.Deudas.AsNoTracking().FirstOrDefault(x => x.IdDeuda == Guid.Parse(idDeuda));
+            if (deudasQuery == null)
+            {
+                return BadRequest("No existe deuda;");
+            }
+
+            DeudasClienteOutDTO deudoresDTO = deudasQuery.Adapt<DeudasClienteOutDTO>();
+            return Ok(deudoresDTO);
+        }
+
+        [HttpGet("buscar-cliente-por-id/{clienteId}")]
+        public IActionResult Allclients(string? clienteId)
+        {
+            Usuario usuario = _authService.GetCurrentUser();
+
+            Deudores clientesQuery = _context.Deudores.Include(x => x.Deuda)
+                                    .Include(x => x.Usuario)
+                                    .FirstOrDefault(x => x.IdDeudor == clienteId);
+
+            ClientesOutDTO deudoresDTO = new ClientesOutDTO()
+            {
+                cedula = clientesQuery.IdDeudor,
+                nombre = clientesQuery.Nombre,
+                telefono = clientesQuery.Telefono,
+                direccion = clientesQuery.Direccion,
+                descripcion = clientesQuery.Descripcion,
+                correo = clientesQuery.Correo,
+                numeroDeudas = clientesQuery.Deuda.Count().ToString(),
+                tramos = clientesQuery.Deuda != null ?
+                        String.Join("", clientesQuery.Deuda.Select((x, index) => $"<strong>{index + 1}</strong>: {x.Tramo} <br>")) :
+                        string.Empty,
+                gestor = clientesQuery.Usuario.NombreCompleto
+            };
+
+            return Ok(deudoresDTO);
+        }
+
+
         [HttpGet("listar-compromisos-pago/{esHoy}")]
         public IActionResult GestionarCompromisos(bool esHoy)
         {
@@ -110,7 +151,8 @@ namespace gestiones_backend.Controllers
             ConfigTelefonoDeudor.Register(config);
 
             DeudorTelefono TelefonosDeudores = telefonosNuevoDeudores.Adapt<DeudorTelefono>(config);
-
+            TelefonosDeudores.Observacion = telefonosNuevoDeudores.origen;
+            TelefonosDeudores.Origen = "Desde Web";
             _context.DeudorTelefonos.Add(TelefonosDeudores);
             _context.SaveChanges();
 
@@ -197,7 +239,7 @@ namespace gestiones_backend.Controllers
         [HttpGet("listar-telefonos-activos-cliente/{cedulaCliente}")]
         public IActionResult ListarTelefonosActivosClientes(string cedulaCliente)
         {
-            List<DeudorTelefono> deudorTelefonos = _context.DeudorTelefonos.Where( x => x.EsValido == true && x.IdDeudor == cedulaCliente).ToList();
+            List<DeudorTelefono> deudorTelefonos = _context.DeudorTelefonos.Where( x => x.IdDeudor == cedulaCliente).ToList();
             List<TelefonosActivosDeudorOutDTO> TelefonosDeudoresDTO = deudorTelefonos.Adapt<List<TelefonosActivosDeudorOutDTO>>();
             return Ok(TelefonosDeudoresDTO);
         }

@@ -6,6 +6,8 @@
         public string telefono { get; set; }
         public Boolean esValido { get; set; }
         public string origen { get; set; }
+        public string propietario { get; set; }
+
 
     }
 }

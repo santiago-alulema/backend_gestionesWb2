@@ -10,13 +10,14 @@ namespace gestiones_backend.ConfigurationsMapper
         public static void Register(TypeAdapterConfig config)
         {
             config.NewConfig<TelefonosDeudorInDTO, DeudorTelefono>()
-       .Ignore(dest => dest.IdDeudorNavigation)
-       .Map(dest => dest.FechaAdicion, src => DateTime.UtcNow)
-       .Map(dest => dest.IdDeudorTelefonos, src => Guid.NewGuid().ToString())
-       .Map(dest => dest.IdDeudor, src => src.cedula)
-       .Map(dest => dest.Origen, src => src.origen)
-       .Map(dest => dest.EsValido, src => true)
-       .Map(dest => dest.Telefono, src => src.telefono);
+                   .Ignore(dest => dest.IdDeudorNavigation)
+                   .Map(dest => dest.FechaAdicion, src => DateTime.UtcNow)
+                   .Map(dest => dest.IdDeudorTelefonos, src => Guid.NewGuid().ToString())
+                   .Map(dest => dest.IdDeudor, src => src.cedula)
+                   .Map(dest => dest.Origen, src => src.origen)
+                   .Map(dest => dest.Propietario, src => src.propietario)
+                   .Map(dest => dest.EsValido, src => src.esValido)
+                   .Map(dest => dest.Telefono, src => src.telefono);
 
             config.NewConfig<GrabarTelefonoNuevoInDTO, DeudorTelefono>()
                 .Ignore(dest => dest.IdDeudorNavigation)
@@ -24,8 +25,10 @@ namespace gestiones_backend.ConfigurationsMapper
                 .Map(dest => dest.IdDeudorTelefonos, src => Guid.NewGuid().ToString())
                 .Map(dest => dest.IdDeudor, src => src.cedula)
                 .Map(dest => dest.Origen, src => src.origen)
-                .Map(dest => dest.EsValido, src => true)
-                .Map(dest => dest.Telefono, src => src.telefono);
+                .Map(dest => dest.EsValido, src => src.esValido)
+                .Map(dest => dest.Telefono, src => src.telefono)
+                .Map(dest => dest.Propietario, src => src.propietario);
+
         }
     }
 }

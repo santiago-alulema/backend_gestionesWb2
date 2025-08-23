@@ -175,7 +175,7 @@ namespace gestiones_backend.Controllers
         {
             string consulta = @$"SELECT * FROM (
                                 SELECT 'Pago' AS tipo,
-                                        TO_CHAR( p.""FechaPago""::DATE, 'YYYY-MM-DD') AS fecha,
+                                        TO_CHAR( p.""FechaRegistro""::DATE, 'YYYY-MM-DD') AS fecha,
                                         p.""Observaciones"" observaciones, 
                                         ('<strong>Banco: </strong> '  || COALESCE(bp.""Nombre"", 'N/A') || 
                                        '<br><strong>Cuenta: </strong>' || COALESCE(tcb.""Nombre"", 'N/A') || 
@@ -210,7 +210,7 @@ namespace gestiones_backend.Controllers
                                 UNION ALL
     
                                 SELECT 'Compromiso Pago' AS tipo, 
-                                        TO_CHAR( cp.""FechaCompromiso""::DATE, 'YYYY-MM-DD') AS fecha,
+                                        TO_CHAR( cp.""FechaRegistro""::DATE, 'YYYY-MM-DD') AS fecha,
                                         cp.""Observaciones"" observaciones,
                                         ('<strong>Fecha recordatorio:</strong> '  || cp.""FechaCompromiso"" || 
                                 	   	'<br><strong>Hora recordatorio</strong>' || cp.""HoraRecordatorio"" || 

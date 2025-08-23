@@ -18,6 +18,7 @@ public partial class DeudorTelefono
     public DateTime FechaAdicion { get; set; }
 
     public bool? EsValido { get; set; }
+    public string? Propietario { get; set; }
 
     public string? Origen { get; set; }
 

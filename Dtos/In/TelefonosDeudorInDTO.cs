@@ -7,5 +7,7 @@
         public DateTime? fechaAdicion { get; set; } = DateTime.Now;
         public bool? esValido { get; set; } = true;
         public string? origen { get; set; }
+        public string? propietario { get; set; }
+
     }
 }
