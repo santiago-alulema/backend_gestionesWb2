@@ -1,15 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.Logging;
 using System;
 
 public class CustomExceptionFilter : IExceptionFilter
 {
-
-    public CustomExceptionFilter()
-    {
-    }
-
     public void OnException(ExceptionContext context)
     {
         var statusCode = 500;
@@ -20,17 +14,29 @@ public class CustomExceptionFilter : IExceptionFilter
             statusCode = 400;
             message = context.Exception.Message;
         }
-        string safeMessage = ($"Error: {context.Exception.Message} {(context.Exception.InnerException is not null ? context.Exception.InnerException : "")}")
+
+        string safeMessage = $"Error: {context.Exception.Message}";
+
+        if (context.Exception.InnerException is not null)
+        {
+            safeMessage += $" | Inner: {context.Exception.InnerException.Message}";
+        }
+
+        safeMessage = safeMessage
             .Replace("\r", "")
             .Replace("\n", "")
             .Replace("\t", "")
             .Trim();
 
-        context.HttpContext.Response.Headers.Add("message", safeMessage);
+        context.HttpContext.Response.Headers["message"] = safeMessage;
 
-        context.Result = new ObjectResult(context.Exception.Message)
+        context.Result = new ObjectResult(new
         {
-            StatusCode = 500
+            error = context.Exception.Message,
+            inner = context.Exception.InnerException?.Message
+        })
+        {
+            StatusCode = statusCode
         };
 
         context.ExceptionHandled = true;

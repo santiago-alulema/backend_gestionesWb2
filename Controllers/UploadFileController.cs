@@ -5,6 +5,7 @@ using gestiones_backend.helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace gestiones_backend.Controllers
 {
@@ -79,36 +80,39 @@ namespace gestiones_backend.Controllers
         }
 
         [HttpPost("upload-excel-deudas")]
-        public IActionResult uploadFileDeudas([FromBody] List<UploadDeudasInDTO> deudasExcel)
+        public IActionResult UploadFileDeudas([FromBody] List<UploadDeudasInDTO> deudasExcel)
         {
-            List<Deuda> actualizarDeuda = [];
-            List<Deuda> grabarDeuda = [];
+            if (deudasExcel == null || deudasExcel.Count == 0)
+                return BadRequest("No se recibieron datos");
+
+            var deudoresValidos = new HashSet<string>(
+                _context.Deudores.Select(d => d.IdDeudor).ToList()
+            );
+
+            var facturasExistentes = _context.Deudas
+                .Where(d => deudasExcel.Select(x => x.NumeroFactura).Contains(d.NumeroFactura))
+                .ToDictionary(d => d.NumeroFactura, d => d);
+
+            List<Deuda> actualizarDeuda = new List<Deuda>();
+            List<Deuda> grabarDeuda = new List<Deuda>();
 
             foreach (var deudaExcel in deudasExcel)
             {
                 if (string.IsNullOrEmpty(deudaExcel.NumeroFactura))
-                {
-                    continue; 
-                }
-
-                var deudaExistente = _context.Deudas
-                    .FirstOrDefault(d => d.NumeroFactura == deudaExcel.NumeroFactura);
-                List<String> dedudores = _context.Deudores.Select(x => x.IdDeudor).ToList();
-
-                if (!dedudores.Contains(deudaExcel.CedulaDeudor))
-                {
                     continue;
-                }
 
+                if (!deudoresValidos.Contains(deudaExcel.CedulaDeudor))
+                    continue;
 
-                if (deudaExistente != null)
+                if (facturasExistentes.TryGetValue(deudaExcel.NumeroFactura, out var deudaExistente))
                 {
+                    // 🔹 Actualización
                     deudaExistente.IdDeudor = deudaExcel.CedulaDeudor;
                     deudaExistente.DeudaCapital = deudaExcel.DeudaCapital;
                     deudaExistente.Interes = deudaExcel.Interes;
                     deudaExistente.GastosCobranzas = deudaExcel.GastosCobranza;
                     deudaExistente.SaldoDeuda = deudaExcel.SaldoDeuda;
-                    deudaExistente.Descuento = (int)(Decimal.Parse(deudaExcel.Descuento.Replace("%", "")) * 100);
+                    deudaExistente.Descuento = ParseDescuento(deudaExcel.Descuento);
                     deudaExistente.MontoCobrar = deudaExcel.MontoCobrar;
                     deudaExistente.FechaVenta = StringToDateOnly(deudaExcel.FechaVenta);
                     deudaExistente.FechaUltimoPago = StringToDateOnly(deudaExcel.FechaUltimoPago);
@@ -125,10 +129,10 @@ namespace gestiones_backend.Controllers
                     deudaExistente.Empresa = deudaExcel.Empresa;
 
                     actualizarDeuda.Add(deudaExistente);
-
                 }
                 else
                 {
+                    // 🔹 Inserción
                     var nuevaDeuda = new Deuda()
                     {
                         IdDeudor = deudaExcel.CedulaDeudor,
@@ -136,7 +140,7 @@ namespace gestiones_backend.Controllers
                         Interes = deudaExcel.Interes,
                         GastosCobranzas = deudaExcel.GastosCobranza,
                         SaldoDeuda = deudaExcel.SaldoDeuda,
-                        Descuento = (int)(Decimal.Parse(deudaExcel.Descuento.Replace("%", "")) * 100),
+                        Descuento = ParseDescuento(deudaExcel.Descuento),
                         MontoCobrar = deudaExcel.MontoCobrar,
                         FechaVenta = StringToDateOnly(deudaExcel.FechaVenta),
                         FechaUltimoPago = StringToDateOnly(deudaExcel.FechaUltimoPago),
@@ -155,14 +159,39 @@ namespace gestiones_backend.Controllers
                     grabarDeuda.Add(nuevaDeuda);
                 }
             }
+
+            // 🔹 Guardar en la BD
             if (grabarDeuda.Count > 0)
                 _context.Deudas.AddRange(grabarDeuda);
-            if(actualizarDeuda.Count > 0)
+
+            if (actualizarDeuda.Count > 0)
                 _context.Deudas.UpdateRange(actualizarDeuda);
+
             _context.SaveChanges();
-            return Ok("Deudas procesadas exitosamente (actualizaciones e inserciones)");
-           
+
+            return Ok($"Procesadas {actualizarDeuda.Count} actualizaciones y {grabarDeuda.Count} inserciones");
         }
+
+        private int ParseDescuento(string descuento)
+        {
+            if (string.IsNullOrWhiteSpace(descuento))
+                return 0;
+
+            // Buscar patrones numéricos con o sin %
+            Match match = Regex.Match(descuento, @"(\d+(\.\d+)?)%|(\d+(\.\d+)?)");
+
+            if (!match.Success)
+                return 0;
+
+            string valor = match.Value;
+
+            if (valor.Contains("%"))
+                return (int)decimal.Parse(valor.Replace("%", ""));
+
+            return (int)decimal.Parse(valor);
+        }
+
+
         public static DateOnly? StringToDateOnly(string dateString)
         {
             if (string.IsNullOrWhiteSpace(dateString))

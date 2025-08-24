@@ -184,8 +184,8 @@ namespace gestiones_backend.Controllers
                                        '<br><strong>Numero Doc.: </strong>' || COALESCE(p.""NumeroDocumenro"", 'N/A') || 
                                        '<br><strong>Fecha Pago: </strong>' || COALESCE(p.""FechaPago""::text, 'N/A') || 
                                        '<br><strong>Valor: </strong>' || COALESCE(p.""MontoPagado""::text, 'N/A')) AS tracking
-                                FROM ""Deudas"" d
-                                LEFT JOIN ""Pagos"" p ON p.""IdDeuda"" = d.""IdDeuda"" 
+                                FROM ""Pagos"" p 
+                                LEFT JOIN ""Deudas"" d ON p.""IdDeuda"" = d.""IdDeuda"" 
                                 LEFT JOIN ""BancosPagos"" bp ON p.""IdBancosPago"" = bp.""Id""  
                                 LEFT JOIN ""TiposCuentaBancaria"" tcb ON p.""IdTipoCuentaBancaria"" = tcb.""Id""
                                 LEFT JOIN ""TiposTransaccion"" tt ON tt.""Id"" = p.""IdTipoTransaccion"" 
@@ -200,8 +200,8 @@ namespace gestiones_backend.Controllers
                                         ('<strong>RESULTADO:</strong> '  || tr.""Nombre"" || 
                                          '<br><strong>Tipo Constacto Cliente</strong>' || tcr.""Nombre"" || 
                                          '<br><strong>Respuesta: </strong>' || rtc.""Nombre"") as tracking
-                                FROM ""Deudas"" d
-                                JOIN ""Gestiones"" g ON g.""IdDeuda"" = d.""IdDeuda""
+                                FROM ""Gestiones"" g 
+                                JOIN ""Deudas"" d ON g.""IdDeuda"" = d.""IdDeuda""
                                 join  ""TiposResultado"" tr on tr.""Id"" = g.""IdTipoResultado""
                                 join ""TiposContactoResultado"" tcr on tcr.""Id"" = g.""IdTipoContactoResultado""
                                 join  ""RespuestasTipoContacto"" rtc on rtc.""Id"" = g.""IdRespuestaTipoContacto""
@@ -217,8 +217,8 @@ namespace gestiones_backend.Controllers
                                 	   	'<br><strong>Valor: </strong>' || cp.""MontoComprometido"" || 
                                 	   	'<br><strong>Tipo tarea: </strong>' || tr.""Nombre""|| 
                                 	   	'<br><strong>Observaciones: </strong>' || cp.""Observaciones"") as tracking
-                                FROM ""Deudas"" d
-                                JOIN ""CompromisosPagos"" cp ON cp.""IdDeuda"" = d.""IdDeuda""
+                                FROM  ""CompromisosPagos"" cp
+                                JOIN ""Deudas"" d ON cp.""IdDeuda"" = d.""IdDeuda""
                                 JOIN ""TiposTareas"" tr ON tr.""Id"" = cp.""IdTipoTarea""
                                 WHERE d.""IdDeuda"" = '{idDeuda}'
                             ) AS combined_results
