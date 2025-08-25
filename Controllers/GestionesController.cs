@@ -173,56 +173,60 @@ namespace gestiones_backend.Controllers
         [HttpGet("movimiento-deuda/{idDeuda}")]
         public async Task<IActionResult> GetMovimientoDeuda(string idDeuda)
         {
-            string consulta = @$"SELECT * FROM (
-                                SELECT 'Pago' AS tipo,
-                                        TO_CHAR( p.""FechaRegistro""::DATE, 'YYYY-MM-DD') AS fecha,
-                                        p.""Observaciones"" observaciones, 
-                                        ('<strong>Banco: </strong> '  || COALESCE(bp.""Nombre"", 'N/A') || 
-                                       '<br><strong>Cuenta: </strong>' || COALESCE(tcb.""Nombre"", 'N/A') || 
-                                       '<br><strong>Tipo Transaccion: </strong>' || COALESCE(tt.""Nombre"", 'N/A') || 
-                                       '<br><strong>Abono/Liquidacion: </strong>' || COALESCE(al.""Nombre"", 'N/A') || 
-                                       '<br><strong>Numero Doc.: </strong>' || COALESCE(p.""NumeroDocumenro"", 'N/A') || 
-                                       '<br><strong>Fecha Pago: </strong>' || COALESCE(p.""FechaPago""::text, 'N/A') || 
-                                       '<br><strong>Valor: </strong>' || COALESCE(p.""MontoPagado""::text, 'N/A')) AS tracking
-                                FROM ""Pagos"" p 
-                                LEFT JOIN ""Deudas"" d ON p.""IdDeuda"" = d.""IdDeuda"" 
-                                LEFT JOIN ""BancosPagos"" bp ON p.""IdBancosPago"" = bp.""Id""  
-                                LEFT JOIN ""TiposCuentaBancaria"" tcb ON p.""IdTipoCuentaBancaria"" = tcb.""Id""
-                                LEFT JOIN ""TiposTransaccion"" tt ON tt.""Id"" = p.""IdTipoTransaccion"" 
-                                LEFT JOIN ""AbonosLiquidacion"" al ON al.""Id"" = p.""IdAbonoLiquidacion"" 
-                                WHERE d.""IdDeuda"" = '{idDeuda}'
-    
-                                UNION ALL
-    
-                                SELECT 'Gestion' AS tipo, 
-                                        TO_CHAR(""FechaGestion""::DATE, 'YYYY-MM-DD') AS fecha, 
-                                        g.""Descripcion"" observaciones,
-                                        ('<strong>RESULTADO:</strong> '  || tr.""Nombre"" || 
-                                         '<br><strong>Tipo Constacto Cliente</strong>' || tcr.""Nombre"" || 
-                                         '<br><strong>Respuesta: </strong>' || rtc.""Nombre"") as tracking
-                                FROM ""Gestiones"" g 
-                                JOIN ""Deudas"" d ON g.""IdDeuda"" = d.""IdDeuda""
-                                join  ""TiposResultado"" tr on tr.""Id"" = g.""IdTipoResultado""
-                                join ""TiposContactoResultado"" tcr on tcr.""Id"" = g.""IdTipoContactoResultado""
-                                join  ""RespuestasTipoContacto"" rtc on rtc.""Id"" = g.""IdRespuestaTipoContacto""
-                                WHERE d.""IdDeuda"" = '{idDeuda}'
-    
-                                UNION ALL
-    
-                                SELECT 'Compromiso Pago' AS tipo, 
-                                        TO_CHAR( cp.""FechaRegistro""::DATE, 'YYYY-MM-DD') AS fecha,
-                                        cp.""Observaciones"" observaciones,
-                                        ('<strong>Fecha recordatorio:</strong> '  || cp.""FechaCompromiso"" || 
-                                	   	'<br><strong>Hora recordatorio</strong>' || cp.""HoraRecordatorio"" || 
-                                	   	'<br><strong>Valor: </strong>' || cp.""MontoComprometido"" || 
-                                	   	'<br><strong>Tipo tarea: </strong>' || tr.""Nombre""|| 
-                                	   	'<br><strong>Observaciones: </strong>' || cp.""Observaciones"") as tracking
-                                FROM  ""CompromisosPagos"" cp
-                                JOIN ""Deudas"" d ON cp.""IdDeuda"" = d.""IdDeuda""
-                                JOIN ""TiposTareas"" tr ON tr.""Id"" = cp.""IdTipoTarea""
-                                WHERE d.""IdDeuda"" = '{idDeuda}'
-                            ) AS combined_results
-                            ORDER BY fecha ASC;";
+            string consulta = @$"SELECT tipo, 
+                              TO_CHAR(fecha, 'YYYY-MM-DD') as fecha_formateada,
+                              observaciones,
+                              tracking
+                              FROM (
+                      SELECT 'Pago' AS tipo,
+                              p.""FechaRegistro"" AS fecha,
+                              p.""Observaciones"" observaciones, 
+                              ('<strong>Banco: </strong> '  || COALESCE(bp.""Nombre"", 'N/A') || 
+                             '<br><strong>Cuenta: </strong>' || COALESCE(tcb.""Nombre"", 'N/A') || 
+                             '<br><strong>Tipo Transaccion: </strong>' || COALESCE(tt.""Nombre"", 'N/A') || 
+                             '<br><strong>Abono/Liquidacion: </strong>' || COALESCE(al.""Nombre"", 'N/A') || 
+                             '<br><strong>Numero Doc.: </strong>' || COALESCE(p.""NumeroDocumenro"", 'N/A') || 
+                             '<br><strong>Fecha Pago: </strong>' || COALESCE(TO_CHAR(p.""FechaPago"", 'YYYY-MM-DD HH24:MI:SS'), 'N/A') || 
+                             '<br><strong>Valor: </strong>' || COALESCE(p.""MontoPagado""::text, 'N/A')) AS tracking
+                      FROM ""Pagos"" p 
+                      LEFT JOIN ""Deudas"" d ON p.""IdDeuda"" = d.""IdDeuda"" 
+                      LEFT JOIN ""BancosPagos"" bp ON p.""IdBancosPago"" = bp.""Id""  
+                      LEFT JOIN ""TiposCuentaBancaria"" tcb ON p.""IdTipoCuentaBancaria"" = tcb.""Id""
+                      LEFT JOIN ""TiposTransaccion"" tt ON tt.""Id"" = p.""IdTipoTransaccion"" 
+                      LEFT JOIN ""AbonosLiquidacion"" al ON al.""Id"" = p.""IdAbonoLiquidacion"" 
+                      WHERE d.""IdDeuda"" = '{idDeuda}'
+
+                      UNION ALL
+
+                      SELECT 'Gestion' AS tipo, 
+                              g.""FechaGestion"" AS fecha, 
+                              g.""Descripcion"" observaciones,
+                              ('<strong>RESULTADO:</strong> '  || tr.""Nombre"" || 
+                               '<br><strong>Tipo Contacto Cliente</strong>' || tcr.""Nombre"" || 
+                               '<br><strong>Respuesta: </strong>' || rtc.""Nombre"") as tracking
+                      FROM ""Gestiones"" g 
+                      JOIN ""Deudas"" d ON g.""IdDeuda"" = d.""IdDeuda""
+                      JOIN ""TiposResultado"" tr ON tr.""Id"" = g.""IdTipoResultado""
+                      JOIN ""TiposContactoResultado"" tcr ON tcr.""Id"" = g.""IdTipoContactoResultado""
+                      JOIN ""RespuestasTipoContacto"" rtc ON rtc.""Id"" = g.""IdRespuestaTipoContacto""
+                      WHERE d.""IdDeuda"" = '{idDeuda}'
+
+                      UNION ALL
+
+                      SELECT 'Tarea' AS tipo, 
+                              cp.""FechaRegistro"" AS fecha,
+                              cp.""Observaciones"" observaciones,
+                              ('<strong>Fecha recordatorio:</strong> '  || TO_CHAR(cp.""FechaCompromiso"", 'YYYY-MM-DD HH24:MI:SS') || 
+                         	    '<br><strong>Hora recordatorio</strong>' || cp.""HoraRecordatorio"" || 
+                         	    '<br><strong>Valor: </strong>' || cp.""MontoComprometido"" || 
+                         	    '<br><strong>Tipo tarea: </strong>' || tr.""Nombre""|| 
+                         	    '<br><strong>Observaciones: </strong>' || cp.""Observaciones"") as tracking
+                      FROM ""CompromisosPagos"" cp
+                      JOIN ""Deudas"" d ON cp.""IdDeuda"" = d.""IdDeuda""
+                      JOIN ""TiposTareas"" tr ON tr.""Id"" = cp.""IdTipoTarea""
+                      WHERE d.""IdDeuda"" = '{idDeuda}'
+                  ) AS combined_results
+                  ORDER BY fecha DESC;";
             PgConn conn = new PgConn();
             conn.cadenaConnect = Configuration.GetConnectionString("DefaultConnection");
 

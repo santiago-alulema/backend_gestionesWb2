@@ -191,24 +191,28 @@ namespace gestiones_backend.Controllers
         }
 
         [HttpGet("listar-clientes")]
-        public IActionResult Allclients([FromQuery] string? empresa, [FromQuery] bool sinGestionar = false)
+        public async Task<IActionResult> Allclients([FromQuery] string? empresa, [FromQuery] bool sinGestionar = false)
         {
             Usuario usuario = _authService.GetCurrentUser();
 
-            IQueryable<Deudores> clientesQuery = usuario.Rol == "user"
-                ? _context.Deudores.Include(x => x.Deuda)
-                                   .Include(x => x.Usuario)
-                                   .Where(x => x.IdUsuario == usuario.IdUsuario)
-                : _context.Deudores.Include(x => x.Deuda)
-                                   .Include(x => x.Usuario)
-                                   .AsQueryable();
+            // Construir query base
+            IQueryable<Deudores> clientesQuery = _context.Deudores.AsNoTracking();
 
-            if (!string.IsNullOrEmpty(empresa) && empresa != "TODOS")
+            // Filtrar por usuario si es necesario
+            if (usuario.Rol == "user")
             {
-                clientesQuery = clientesQuery.Where(c =>
-                    c.Deuda.Any(d => d.Empresa != null && d.Empresa.ToUpper() == empresa.ToUpper()));
+                clientesQuery = clientesQuery.Where(x => x.IdUsuario == usuario.IdUsuario);
             }
 
+            // Aplicar filtro de empresa
+            if (!string.IsNullOrEmpty(empresa) && empresa != "TODOS")
+            {
+                var empresaUpper = empresa.ToUpper();
+                clientesQuery = clientesQuery.Where(c =>
+                    c.Deuda.Any(d => d.Empresa != null && d.Empresa.ToUpper() == empresaUpper));
+            }
+
+            // Aplicar filtro de sin gestionar
             if (sinGestionar)
             {
                 clientesQuery = clientesQuery.Where(c =>
@@ -218,7 +222,24 @@ namespace gestiones_backend.Controllers
                         !d.Pagos.Any()));
             }
 
-            var deudoresDTO = clientesQuery.AsEnumerable().Select(c => new ClientesOutDTO()
+            // Proyección en la base de datos (más eficiente)
+            var deudoresDTO = await clientesQuery
+                .Select(c => new
+                {
+                    c.IdDeudor,
+                    c.Nombre,
+                    c.Telefono,
+                    c.Direccion,
+                    c.Descripcion,
+                    c.Correo,
+                    NumeroDeudas = c.Deuda.Count(),
+                    UsuarioNombre = c.Usuario.NombreCompleto,
+                    Deudas = c.Deuda.Select(d => d.Tramo).ToList()
+                })
+                .ToListAsync();
+
+            // Transformación final en memoria (solo lo necesario)
+            var result = deudoresDTO.Select(c => new ClientesOutDTO()
             {
                 cedula = c.IdDeudor,
                 nombre = c.Nombre,
@@ -226,14 +247,14 @@ namespace gestiones_backend.Controllers
                 direccion = c.Direccion,
                 descripcion = c.Descripcion,
                 correo = c.Correo,
-                numeroDeudas = c.Deuda.Count().ToString(),
-                tramos = c.Deuda != null ?
-                        String.Join("", c.Deuda.Select((x, index) => $"<strong>{index + 1}</strong>: {x.Tramo} <br>")) :
+                numeroDeudas = c.NumeroDeudas.ToString(),
+                tramos = c.Deudas.Any() ?
+                        string.Join("", c.Deudas.Select((tramo, index) => $"<strong>{index + 1}</strong>: {tramo} <br>")) :
                         string.Empty,
-                gestor = c.Usuario.NombreCompleto
+                gestor = c.UsuarioNombre
             }).ToList();
 
-            return Ok(deudoresDTO);
+            return Ok(result);
         }
 
         [HttpGet("listar-telefonos-activos-cliente/{cedulaCliente}")]

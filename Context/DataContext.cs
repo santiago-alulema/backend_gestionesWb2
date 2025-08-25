@@ -159,8 +159,8 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.NumeroDocumenro).HasMaxLength(50);
                 entity.Property(e => e.Observaciones).HasMaxLength(500);
                 entity.Property(e => e.FechaPago).HasDefaultValueSql("CURRENT_DATE");
-                entity.Property(e => e.FechaRegistro).HasColumnType("timestamp without time zone").HasDefaultValueSql("NOW()");
-                
+                entity.Property(e => e.FechaRegistro).HasColumnType("timestamptz")
+          .HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.HasOne(p => p.FormaPagoNavigation)
                     .WithMany()
                     .HasForeignKey(p => p.FormaPagoId)
@@ -204,7 +204,8 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.IdGestion).HasMaxLength(40);
                 entity.Property(e => e.Descripcion).HasMaxLength(900);
                 entity.Property(e => e.Email).HasMaxLength(100);
-                entity.Property(e => e.FechaGestion).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.FechaGestion).HasColumnType("timestamptz")
+          .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 // Relaciones actualizadas
                 entity.HasOne(g => g.IdUsuarioGestionaNavigation)
@@ -272,8 +273,8 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.MontoComprometido).HasColumnType("decimal(18,2)").IsRequired();
                 entity.Property(e => e.IdUsuario).HasMaxLength(13).IsRequired();
                 entity.Property(e => e.IdTipoTarea).HasMaxLength(40);
-                entity.Property(e => e.FechaRegistro).HasColumnType("timestamp without time zone").HasDefaultValueSql("NOW()");
-                
+                entity.Property(e => e.FechaRegistro).HasColumnType("timestamptz")
+          .HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.HasOne(d => d.IdDeudaNavigation)
                     .WithMany(p => p.CompromisosPagos)
                     .HasForeignKey(d => d.IdDeuda)
