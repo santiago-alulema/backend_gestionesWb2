@@ -94,12 +94,16 @@ namespace gestiones_backend.Controllers
         public IActionResult GestionarCompromisos(bool esHoy)
         {
             Usuario usuario = _authService.GetCurrentUser();
-            var hoy = DateOnly.FromDateTime(DateTime.Today);
+            //var hoy = DateOnly.FromDateTime(DateTime.Today);
             IQueryable<CompromisosPago> query = _context.CompromisosPagos
                 .Include(x => x.IdDeudaNavigation)
                 .ThenInclude(x => x.IdDeudorNavigation)
                 .Include(x => x.IdTipoTareaNavigation)
                 ;
+
+            var hoy = DateOnly.FromDateTime(TimeZoneInfo
+    .ConvertTime(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("America/Guayaquil")));
+
 
             if (esHoy)
             {
