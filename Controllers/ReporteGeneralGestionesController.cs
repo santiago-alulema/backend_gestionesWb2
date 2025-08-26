@@ -34,8 +34,8 @@ namespace gestiones_backend.Controllers
 
         [HttpGet("gestiones-por-usuario")]
         public async Task<ActionResult<IEnumerable<object>>> GetGestionesPorUsuario(
-       [FromQuery] string FechaInicio = null,
-       [FromQuery] string FechaFin = null)
+                                                                                   [FromQuery] string FechaInicio = null,
+                                                                                   [FromQuery] string FechaFin = null)
         {
             Usuario usuario = _authService.GetCurrentUser();
 
@@ -68,15 +68,7 @@ namespace gestiones_backend.Controllers
                     idUsuario = gr.Key.IdUsuarioGestiona,
                     nombreUsuario = gr.Key.NombreUsuario,
                     cantidadGestiones = gr.Count(),
-                    resultados = gr
-                        .GroupBy(g => g.IdTipoResultadoNavigation.Nombre)
-                        .Select(rg => new
-                        {
-                            TipoResultado = rg.Key,
-                            Cantidad = rg.Count(),
-                            valorTotal = 0
-                        })
-                        .ToList()
+                    valorTotal = 0
                 })
                 .Where(r => r.cantidadGestiones > 0)
                 .OrderByDescending(r => r.cantidadGestiones)
@@ -92,18 +84,20 @@ namespace gestiones_backend.Controllers
         {
             Usuario usuario = _authService.GetCurrentUser();
 
-            DateOnly fechaInicio = !string.IsNullOrEmpty(FechaInicio)
-                ? DateOnly.FromDateTime(DateTime.Parse(FechaInicio))
-                : DateOnly.FromDateTime(DateTime.Today);
+            DateTime fechaInicio = !string.IsNullOrEmpty(FechaInicio)
+                                   ? DateTime.SpecifyKind(DateTime.Parse(FechaInicio).Date, DateTimeKind.Utc)
+                                   : DateTime.SpecifyKind(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1), DateTimeKind.Utc);
 
-            DateOnly fechaFin = !string.IsNullOrEmpty(FechaFin)
-                ? DateOnly.FromDateTime(DateTime.Parse(FechaFin))
-                : DateOnly.FromDateTime(DateTime.Today);
+            DateTime fechaFin = !string.IsNullOrEmpty(FechaFin)
+                                ? DateTime.SpecifyKind(DateTime.Parse(FechaFin).Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc)
+                                : DateTime.SpecifyKind(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)
+                                    .AddMonths(1)
+                                    .AddTicks(-1), DateTimeKind.Utc);
 
             var query = _context.Pagos
                 .Where(p => p.FechaPago != null &&
-                            p.FechaPago.Value >= fechaInicio &&
-                            p.FechaPago.Value <= fechaFin);
+                            p.FechaRegistro >= fechaInicio &&
+                            p.FechaRegistro <= fechaFin);
 
             if (usuario.Rol.ToLower() != "admin")
             {
@@ -128,26 +122,25 @@ namespace gestiones_backend.Controllers
 
         [HttpGet("compromisos-pago-por-usuario")]
         public async Task<ActionResult<IEnumerable<object>>> GetCompromisosPagoPorUsuario(
-     [FromQuery] string FechaInicio = null,
-     [FromQuery] string FechaFin = null)
+                                                                                   [FromQuery] string FechaInicio = null,
+                                                                                   [FromQuery] string FechaFin = null)
         {
             Usuario usuario = _authService.GetCurrentUser();
 
-            DateOnly fechaInicio = !string.IsNullOrEmpty(FechaInicio)
-                ? DateOnly.FromDateTime(DateTime.Parse(FechaInicio))
-                : DateOnly.FromDateTime(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1));
+            DateTime fechaInicio = !string.IsNullOrEmpty(FechaInicio)
+                                   ? DateTime.SpecifyKind(DateTime.Parse(FechaInicio).Date, DateTimeKind.Utc)
+                                   : DateTime.SpecifyKind(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1), DateTimeKind.Utc);
 
-            DateOnly fechaFin = !string.IsNullOrEmpty(FechaFin)
-                ? DateOnly.FromDateTime(DateTime.Parse(FechaFin))
-                : DateOnly.FromDateTime(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)
-                                            .AddMonths(1)
-                                            .AddDays(-1));
+            DateTime fechaFin = !string.IsNullOrEmpty(FechaFin)
+                                ? DateTime.SpecifyKind(DateTime.Parse(FechaFin).Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc)
+                                : DateTime.SpecifyKind(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)
+                                    .AddMonths(1)
+                                    .AddTicks(-1), DateTimeKind.Utc);
 
             var query = _context.CompromisosPagos
-                .Where(c => c.FechaCompromiso >= fechaInicio &&
-                            c.FechaCompromiso <= fechaFin);
+                .Where(c => c.FechaRegistro >= fechaInicio &&
+                            c.FechaRegistro <= fechaFin);
 
-            // Si no es admin, filtrar solo compromisos del usuario actual
             if (usuario.Rol.ToLower() != "admin")
             {
                 query = query.Where(c => c.IdUsuario == usuario.IdUsuario);
@@ -176,8 +169,8 @@ namespace gestiones_backend.Controllers
         public async Task<ActionResult<IEnumerable<ReporteEmpresaDto>>> GetReportePorEmpresaMesActual([FromQuery] string FechaInicio = null,
                                                                                                       [FromQuery] string FechaFin = null)
         {
-                var reporte = await _reportesEmpresaService.ObtenerReportePorEmpresaMesActual(FechaInicio, FechaFin);
-                return Ok(reporte);
+            var reporte = await _reportesEmpresaService.ObtenerReportePorEmpresaMesActual(FechaInicio, FechaFin);
+            return Ok(reporte);
         }
 
 
@@ -185,7 +178,7 @@ namespace gestiones_backend.Controllers
         public IActionResult GetReporteGeneral(string fechaInicio, string fechaFin, string tipoReporte, string cliente = null)
         {
             string consulta = "";
-            string filtroCliente = cliente == "-SP-" ? "": @$"d2.""Nombre"" like '%{cliente}%' or d2.""IdDeudor"" like '%{cliente}%' or";
+            string filtroCliente = cliente == "-SP-" ? "" : @$"d2.""Nombre"" like '%{cliente}%' or d2.""IdDeudor"" like '%{cliente}%' or";
             if (tipoReporte == "pagos")
             {
                 consulta = @$"select 
@@ -210,13 +203,22 @@ namespace gestiones_backend.Controllers
 
             if (tipoReporte == "gestiones")
             {
-                consulta = @$"select  d2.""IdDeudor"" cedula, d2.""Nombre"" nombres,
-                                g.*,
-                                d.*
-                                from ""Gestiones"" g 
-                                join ""Deudas"" d ON g.""IdDeuda""  = d.""IdDeuda"" 
-                                join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
-                                where {filtroCliente} (g.""FechaGestion"" >= '{fechaInicio}' and g.""FechaGestion"" <= '{fechaFin}' ) ";
+                consulta = @$" select  d2.""IdDeudor"" cedula, 
+	                               		   d2.""Nombre"" nombres,
+	                               		   d.""NumeroFactura"",
+	                               		   d.""ValorCuota"",
+	                               		   d.""DiasMora"",
+	                               		   d.""Tramo"",
+	                               		   tr.""Nombre"" tipoResultado,
+	                               		   rtc.""Nombre"" tipoContacto,
+	                               		   tcr.""Nombre"" resultado
+	                                from ""Gestiones"" g 
+	                                join ""Deudas"" d ON g.""IdDeuda""  = d.""IdDeuda"" 
+	                                join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
+	                                join ""TiposResultado"" tr on tr.""Id"" = g.""IdTipoResultado"" 
+	                                join ""RespuestasTipoContacto"" rtc on rtc.""Id"" = g.""IdRespuestaTipoContacto"" 
+	                                join ""TiposContactoResultado"" tcr on tcr.""Id"" = g.""IdTipoContactoResultado"" 
+                                where {filtroCliente} (Date(g.""FechaGestion"") >= '{fechaInicio}' and Date(g.""FechaGestion"") <= '{fechaFin}' ) ";
             }
 
             if (tipoReporte == "compromisos")
@@ -238,7 +240,7 @@ namespace gestiones_backend.Controllers
                                 where {filtroCliente} (Date(cp.""FechaRegistro"")  >= '{fechaInicio}' and Date(cp.""FechaRegistro"")  <= '{fechaFin}' )";
             }
 
-                    PgConn conn = new PgConn();
+            PgConn conn = new PgConn();
             conn.cadenaConnect = Configuration.GetConnectionString("DefaultConnection");
 
             DataTable dataTable = conn.ejecutarconsulta_dt(consulta);

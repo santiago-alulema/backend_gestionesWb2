@@ -36,11 +36,7 @@ namespace gestiones_backend.Services
                     ? DateTime.Parse(FechaFin).ToUniversalTime().AddDays(1).AddTicks(-1)
                     : DateTime.UtcNow.Date.AddDays(1).AddTicks(-1);
 
-                // Convertir a DateOnly para comparaciones que lo requieran
-                var fechaInicioDateOnly = DateOnly.FromDateTime(fechaInicio.ToLocalTime());
-                var fechaFinDateOnly = DateOnly.FromDateTime(fechaFin.ToLocalTime());
-
-                var query = _context.Deudas.Include(d => d.IdDeudorNavigation) 
+                var query = _context.Deudas.Include(d => d.IdDeudorNavigation)
                                            .ThenInclude(deudor => deudor.Usuario).AsQueryable();
 
                 if (usuario.Rol.ToLower() != "admin")
@@ -58,21 +54,19 @@ namespace gestiones_backend.Services
                             .Count(ges => ges.FechaGestion >= fechaInicio &&
                                         ges.FechaGestion <= fechaFin),
                         CantidadCompromisosPago = g.SelectMany(d => d.CompromisosPagos)
-                            .Count(c => c.FechaCompromiso >= fechaInicioDateOnly &&
-                                      c.FechaCompromiso <= fechaFinDateOnly),
+                            .Count(c => c.FechaRegistro >= fechaInicio &&
+                                      c.FechaRegistro <= fechaFin),
                         CantidadPagos = g.SelectMany(d => d.Pagos)
-                            .Count(p => p.FechaPago.HasValue &&
-                                      DateOnly.FromDateTime(p.FechaPago.Value.ToDateTime(TimeOnly.MinValue)) >= fechaInicioDateOnly &&
-                                      DateOnly.FromDateTime(p.FechaPago.Value.ToDateTime(TimeOnly.MinValue)) <= fechaFinDateOnly),
+                            .Count(p => p.FechaRegistro >= fechaInicio &&
+                                      p.FechaRegistro <= fechaFin),
                         ValorTotalPagos = g.SelectMany(d => d.Pagos)
-                            .Where(p => p.FechaPago.HasValue &&
-                                      DateOnly.FromDateTime(p.FechaPago.Value.ToDateTime(TimeOnly.MinValue)) >= fechaInicioDateOnly &&
-                                      DateOnly.FromDateTime(p.FechaPago.Value.ToDateTime(TimeOnly.MinValue)) <= fechaFinDateOnly)
+                            .Where(p => p.FechaRegistro >= fechaInicio &&
+                                      p.FechaRegistro <= fechaFin)
                             .Sum(p => p.MontoPagado),
                         ValorTotalCompromisos = g.SelectMany(d => d.CompromisosPagos)
-                            .Where(c => c.FechaCompromiso >= fechaInicioDateOnly &&
-                                      c.FechaCompromiso <= fechaFinDateOnly)
-                            .Sum(c => c.MontoComprometido)
+                            .Where(c => c.FechaRegistro >= fechaInicio &&
+                                      c.FechaRegistro <= fechaFin)
+                            .Sum(c => c.MontoComprometido )
                     })
                     .OrderByDescending(r => r.CantidadGestiones)
                     .ToListAsync();
