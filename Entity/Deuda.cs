@@ -30,6 +30,9 @@ public partial class Deuda
     public Decimal? ValorCuota { get; set; }
     public string? Tramo { get; set; }
     public Decimal? UltimoPago { get; set; }
+    public string? ProductoDescripcion { get; set; }
+    public string? Agencia { get; set; }
+    public string? Ciudad { get; set; }
     public string? Empresa { get; set; }
     public virtual ICollection<AsignacionesCartera> AsignacionesCarteras { get; set; } = new List<AsignacionesCartera>();
     public virtual ICollection<CompromisosPago> CompromisosPagos { get; set; } = new List<CompromisosPago>();

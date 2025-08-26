@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using gestiones_backend.Context;
@@ -11,9 +12,11 @@ using gestiones_backend.Context;
 namespace gestiones_backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20250826003444_nuevosCamposDeuda")]
+    partial class nuevosCamposDeuda
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -281,11 +284,6 @@ namespace gestiones_backend.Migrations
                     b.Property<string>("NumeroFactura")
                         .HasColumnType("text");
 
-                    b.Property<string>("ProductoDescripcion")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("varchar")
-                        .HasDefaultValue("");
-
                     b.Property<decimal?>("SaldoDeuda")
                         .HasColumnType("decimal(18,2)");
 
@@ -303,6 +301,11 @@ namespace gestiones_backend.Migrations
 
                     b.Property<decimal?>("ValorCuota")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("productoDescripcion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("varchar")
+                        .HasDefaultValue("");
 
                     b.HasKey("IdDeuda");
 
@@ -363,7 +366,8 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("Descripcion")
-                        .HasColumnType("varchar");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("Direccion")
                         .HasMaxLength(255)

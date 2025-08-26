@@ -22,5 +22,9 @@
         public string? Tramo { get; set; }
         public decimal? UltimoPago { get; set; }
         public string? Empresa { get; set; }
+        public string? ProductoDescripcion { get; set; }
+        public string? Agencia { get; set; }
+        public string? Ciudad { get; set; }
+
     }
 }

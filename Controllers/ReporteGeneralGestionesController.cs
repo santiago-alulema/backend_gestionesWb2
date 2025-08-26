@@ -188,18 +188,24 @@ namespace gestiones_backend.Controllers
             string filtroCliente = cliente == "-SP-" ? "": @$"d2.""Nombre"" like '%{cliente}%' or d2.""IdDeudor"" like '%{cliente}%' or";
             if (tipoReporte == "pagos")
             {
-                consulta = @$"select  d2.""IdDeudor"" cedula, d2.""Nombre"" nombres,
-                            p.""Observaciones"", fp.""Nombre"" formaPago , bp.""Nombre"" banco, tcb.""Nombre"" cuentaBancaria, tt.""Nombre"" ""Tipos Transaccion"", al.""Nombre"" AbonoLiquidacion,
-                            d.*
+                consulta = @$"select 
+                                d2.""IdDeudor"" cedula, 
+                     		    d2.""Nombre"" nombres,
+                                p.""Observaciones"", 
+                                bp.""Nombre"" banco, 
+                                tcb.""Nombre"" cuentaBancaria, 
+                                tt.""Nombre"" ""Tipos Transaccion"", 
+                                al.""Nombre"" AbonoLiquidacion,
+                                p.""MontoPagado"",
+                                d.""Empresa"" 
                             from ""Pagos"" p 
-                            join ""FormasPago"" fp  ON p.""FormaPagoId""  = fp.""FormaPagoId""  
                             join ""BancosPagos"" bp ON p.""IdBancosPago""  = bp.""Id""  
                             join ""TiposCuentaBancaria"" tcb  ON p.""IdTipoCuentaBancaria""  = tcb.""Id""
                             join ""TiposTransaccion"" tt on tt.""Id""  = p.""IdTipoTransaccion"" 
                             join ""AbonosLiquidacion"" al on al.""Id"" = p.""IdAbonoLiquidacion"" 
                             join ""Deudas"" d ON p.""IdDeuda""  = d.""IdDeuda"" 
                             join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
-                            where {filtroCliente} (p.""FechaPago"" >= '{fechaInicio}' and p.""FechaPago"" <= '{fechaFin}' ) ";
+                            where {filtroCliente} (Date(p.""FechaRegistro"") >= '{fechaInicio}' and Date(p.""FechaRegistro"") <= '{fechaFin}' ) ";
             }
 
             if (tipoReporte == "gestiones")
@@ -215,16 +221,24 @@ namespace gestiones_backend.Controllers
 
             if (tipoReporte == "compromisos")
             {
-                consulta = @$"select  d2.""IdDeudor"" cedula, d2.""Nombre"" nombres,
-                                cp.*,
-                                d.*
+                consulta = @$"select    d2.""IdDeudor"" cedula, 
+	                                    d2.""Nombre"" nombres,
+       	                                cp.""MontoComprometido"",
+       	                                tt.""Nombre"",
+       	                                d.""Empresa"",
+       	                                d.""NumeroFactura"",
+       	                                d.""DiasMora"",
+       	                                d.""ValorCuota"",
+       	                                d.""Tramo"",
+       	                                d.""Descuento"" 
                                 from ""CompromisosPagos"" cp 
                                 join ""Deudas"" d ON cp.""IdDeuda""  = d.""IdDeuda"" 
                                 join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor""
-                                where {filtroCliente} (cp.""FechaCompromiso""  >= '{fechaInicio}' and cp.""FechaCompromiso""  <= '{fechaFin}' )";
+                                join ""TiposTareas"" tt ON tt.""Id""  = cp.""IdTipoTarea"" 
+                                where {filtroCliente} (Date(cp.""FechaRegistro"")  >= '{fechaInicio}' and Date(cp.""FechaRegistro"")  <= '{fechaFin}' )";
             }
 
-            PgConn conn = new PgConn();
+                    PgConn conn = new PgConn();
             conn.cadenaConnect = Configuration.GetConnectionString("DefaultConnection");
 
             DataTable dataTable = conn.ejecutarconsulta_dt(consulta);

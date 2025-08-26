@@ -95,53 +95,57 @@ namespace gestiones_backend.Controllers
         {
             Usuario usuario = _authService.GetCurrentUser();
             var hoy = DateOnly.FromDateTime(DateTime.Today);
-                IQueryable<CompromisosPago> query = _context.CompromisosPagos
-                    .Include(x => x.IdDeudaNavigation)
-                    .ThenInclude(x => x.IdDeudorNavigation)
-                    .Include(x => x.IdTipoTareaNavigation)
-                    ;
+            IQueryable<CompromisosPago> query = _context.CompromisosPagos
+                .Include(x => x.IdDeudaNavigation)
+                .ThenInclude(x => x.IdDeudorNavigation)
+                .Include(x => x.IdTipoTareaNavigation)
+                ;
 
             if (esHoy)
-                {
-                    query = query.Where(c => c.FechaCompromiso == hoy );
-                }
+            {
+                query = query.Where(c => c.FechaCompromiso == hoy);
+            }
 
-                var compromisos = query
-                    .Where(x => x.Estado == true && x.IdUsuario == usuario.IdUsuario)
-                    .Select(c => new CompromisoPagoOutDTO
-                    {
-                        CompromisoPagoId = c.IdCompromiso,
-                        IdDeuda = c.IdDeuda != null ? c.IdDeuda.Value : Guid.Empty,
-                        DeudaCapital = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.DeudaCapital ?? 0m) : 0m,
-                        Interes = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.Interes ?? 0m) : 0m,
-                        GastosCobranzas = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.GastosCobranzas ?? 0m) : 0m,
-                        SaldoDeuda = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.SaldoDeuda ?? 0m) : 0m,
-                        DiasMora = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.DiasMora ?? 0) : 0,
-                        FechaVenta = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.FechaVenta : null,
-                        FechaUltimoPago = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.FechaUltimoPago : null,
-                        CedulaCliente = c.IdDeudaNavigation != null && c.IdDeudaNavigation.IdDeudorNavigation != null
-                            ? c.IdDeudaNavigation.IdDeudorNavigation.IdDeudor
-                            : "",
-                        NumeroFactura = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.NumeroFactura : "",
-                        NombreCliente = c.IdDeudaNavigation != null && c.IdDeudaNavigation.IdDeudorNavigation != null
-                            ? c.IdDeudaNavigation.IdDeudorNavigation.Nombre
-                            : "",
-                        NumeroCouta = c.IdDeudaNavigation != null
-                            ?  c.IdDeudaNavigation.NumeroCuotas.ToString()
-                            : "",
-                        ValorCuota = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.ValorCuota ?? 0m) : 0m,
-                        Empresa = c.IdDeudaNavigation != null && c.IdDeudaNavigation.Empresa != null
-                            ? c.IdDeudaNavigation.Empresa
-                            : "",
-                        HoraTarea = c.HoraRecordatorio,
-                        TipoTarea = c.IdTipoTareaNavigation.Nombre,
-                        ValorCompromisoPago = c.MontoComprometido.ToString() ?? "0",
-                        MontoCobrar= c.IdDeudaNavigation.MontoCobrar.ToString(),
-                        Tramo= c.IdDeudaNavigation.Tramo
-                    }).ToList();
+            if (usuario.Rol == "user")
+            {
+                query = query.Where(x => x.Estado == true && x.IdUsuario == usuario.IdUsuario);
+            }
+
+            var compromisos = query
+                .Select(c => new CompromisoPagoOutDTO
+                {
+                    CompromisoPagoId = c.IdCompromiso,
+                    IdDeuda = c.IdDeuda != null ? c.IdDeuda.Value : Guid.Empty,
+                    DeudaCapital = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.DeudaCapital ?? 0m) : 0m,
+                    Interes = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.Interes ?? 0m) : 0m,
+                    GastosCobranzas = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.GastosCobranzas ?? 0m) : 0m,
+                    SaldoDeuda = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.SaldoDeuda ?? 0m) : 0m,
+                    DiasMora = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.DiasMora ?? 0) : 0,
+                    FechaVenta = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.FechaVenta : null,
+                    FechaUltimoPago = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.FechaUltimoPago : null,
+                    CedulaCliente = c.IdDeudaNavigation != null && c.IdDeudaNavigation.IdDeudorNavigation != null
+                        ? c.IdDeudaNavigation.IdDeudorNavigation.IdDeudor
+                        : "",
+                    NumeroFactura = c.IdDeudaNavigation != null ? c.IdDeudaNavigation.NumeroFactura : "",
+                    NombreCliente = c.IdDeudaNavigation != null && c.IdDeudaNavigation.IdDeudorNavigation != null
+                        ? c.IdDeudaNavigation.IdDeudorNavigation.Nombre
+                        : "",
+                    NumeroCouta = c.IdDeudaNavigation != null
+                        ? c.IdDeudaNavigation.NumeroCuotas.ToString()
+                        : "",
+                    ValorCuota = c.IdDeudaNavigation != null ? (c.IdDeudaNavigation.ValorCuota ?? 0m) : 0m,
+                    Empresa = c.IdDeudaNavigation != null && c.IdDeudaNavigation.Empresa != null
+                        ? c.IdDeudaNavigation.Empresa
+                        : "",
+                    HoraTarea = c.HoraRecordatorio,
+                    TipoTarea = c.IdTipoTareaNavigation.Nombre,
+                    ValorCompromisoPago = c.MontoComprometido.ToString() ?? "0",
+                    MontoCobrar = c.IdDeudaNavigation.MontoCobrar.ToString(),
+                    Tramo = c.IdDeudaNavigation.Tramo
+                }).ToList();
 
             return Ok(compromisos);
-            
+
         }
 
         [HttpPost("grabar-telefono-nuevo-cliente")]
@@ -164,7 +168,7 @@ namespace gestiones_backend.Controllers
         {
             List<string> deudoresExistentes = _context.Deudores.Select(x => x.IdDeudor).ToList();
             var telefonosValidos = telefonosDeudores
-                .Where(t => deudoresExistentes.Contains(t.cedula))  
+                .Where(t => deudoresExistentes.Contains(t.cedula))
                 .ToList();
 
             if (!telefonosValidos.Any())
@@ -260,7 +264,7 @@ namespace gestiones_backend.Controllers
         [HttpGet("listar-telefonos-activos-cliente/{cedulaCliente}")]
         public IActionResult ListarTelefonosActivosClientes(string cedulaCliente)
         {
-            List<DeudorTelefono> deudorTelefonos = _context.DeudorTelefonos.Where( x => x.IdDeudor == cedulaCliente).ToList();
+            List<DeudorTelefono> deudorTelefonos = _context.DeudorTelefonos.Where(x => x.IdDeudor == cedulaCliente).ToList();
             List<TelefonosActivosDeudorOutDTO> TelefonosDeudoresDTO = deudorTelefonos.Adapt<List<TelefonosActivosDeudorOutDTO>>();
             return Ok(TelefonosDeudoresDTO);
         }
@@ -281,7 +285,7 @@ namespace gestiones_backend.Controllers
         }
 
         [HttpGet("verificar-telefono-activos-cliente/{Telefono}")]
-        public IActionResult  VerificarTelefonoActivoCliente(string Telefono)
+        public IActionResult VerificarTelefonoActivoCliente(string Telefono)
         {
             DeudorTelefono deudorTelefono = _context.DeudorTelefonos.Where(x => x.Telefono == Telefono).FirstOrDefault();
             VerificarTelefonoClienteOutDTO TelefonoEstadoDto = new();

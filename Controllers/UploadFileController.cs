@@ -106,7 +106,6 @@ namespace gestiones_backend.Controllers
 
                 if (facturasExistentes.TryGetValue(deudaExcel.NumeroFactura, out var deudaExistente))
                 {
-                    // 🔹 Actualización
                     deudaExistente.IdDeudor = deudaExcel.CedulaDeudor;
                     deudaExistente.DeudaCapital = deudaExcel.DeudaCapital;
                     deudaExistente.Interes = deudaExcel.Interes;
@@ -127,12 +126,14 @@ namespace gestiones_backend.Controllers
                     deudaExistente.Tramo = deudaExcel.Tramo;
                     deudaExistente.UltimoPago = deudaExcel.UltimoPago;
                     deudaExistente.Empresa = deudaExcel.Empresa;
+                    deudaExistente.ProductoDescripcion = deudaExcel.ProductoDescripcion;
+                    deudaExistente.Agencia = deudaExcel.Agencia;
+                    deudaExistente.Ciudad = deudaExcel.Ciudad;
 
                     actualizarDeuda.Add(deudaExistente);
                 }
                 else
                 {
-                    // 🔹 Inserción
                     var nuevaDeuda = new Deuda()
                     {
                         IdDeudor = deudaExcel.CedulaDeudor,
@@ -154,13 +155,15 @@ namespace gestiones_backend.Controllers
                         ValorCuota = deudaExcel.ValorCuota,
                         Tramo = deudaExcel.Tramo,
                         UltimoPago = deudaExcel.UltimoPago,
-                        Empresa = deudaExcel.Empresa
+                        Empresa = deudaExcel.Empresa,
+                        ProductoDescripcion = deudaExcel.ProductoDescripcion,
+                        Agencia = deudaExcel.Agencia,
+                        Ciudad = deudaExcel.Ciudad
                     };
                     grabarDeuda.Add(nuevaDeuda);
                 }
             }
 
-            // 🔹 Guardar en la BD
             if (grabarDeuda.Count > 0)
                 _context.Deudas.AddRange(grabarDeuda);
 

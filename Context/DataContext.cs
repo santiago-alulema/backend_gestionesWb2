@@ -310,7 +310,6 @@ namespace gestiones_backend.Context
                     .OnDelete(DeleteBehavior.SetNull);
             });
 
-            // Configuración para Deuda
             modelBuilder.Entity<Deuda>(entity =>
             {
                 entity.HasKey(e => e.IdDeuda);
@@ -323,6 +322,18 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.FechaVenta);
                 entity.Property(e => e.FechaUltimoPago);
                 entity.Property(e => e.Estado);
+                entity.Property(e => e.ProductoDescripcion)
+                      .HasColumnType("varchar")
+                      .HasDefaultValue("")
+                      .IsRequired(false); 
+                entity.Property(e => e.Agencia)
+                      .HasColumnType("varchar")
+                      .HasDefaultValue("")
+                      .IsRequired(false); 
+                entity.Property(e => e.Ciudad)
+                      .HasColumnType("varchar")
+                      .HasDefaultValue("")
+                      .IsRequired(false); 
                 entity.Property(e => e.DiasMora);
                 entity.Property(e => e.NumeroFactura);
                 entity.Property(e => e.Clasificacion);
@@ -341,7 +352,6 @@ namespace gestiones_backend.Context
                     .OnDelete(DeleteBehavior.SetNull);
             });
 
-            // Configuración para DeudorTelefono
             modelBuilder.Entity<DeudorTelefono>(entity =>
             {
                 entity.HasKey(e => e.IdDeudorTelefonos);
@@ -368,7 +378,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Telefono).HasMaxLength(50);
                 entity.Property(e => e.Direccion).HasMaxLength(255);
                 entity.Property(e => e.Correo).HasMaxLength(100);
-                entity.Property(e => e.Descripcion).HasMaxLength(500);
+                entity.Property(e => e.Descripcion).HasColumnType("varchar");
                 entity.Property(e => e.IdUsuario).HasMaxLength(13);
 
                 entity.HasOne(d => d.Usuario)
