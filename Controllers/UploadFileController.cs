@@ -175,6 +175,7 @@ namespace gestiones_backend.Controllers
             return Ok($"Procesadas {actualizarDeuda.Count} actualizaciones y {grabarDeuda.Count} inserciones");
         }
 
+
         private int ParseDescuento(string descuento)
         {
             if (string.IsNullOrWhiteSpace(descuento))
@@ -195,17 +196,13 @@ namespace gestiones_backend.Controllers
         }
 
 
-        public static DateOnly? StringToDateOnly(string dateString)
+        private DateOnly? StringToDateOnly(string dateString)
         {
-            if (string.IsNullOrWhiteSpace(dateString))
+            if (string.IsNullOrEmpty(dateString))
                 return null;
 
-            if (DateTime.TryParse(dateString, out DateTime dateTime))
-                return DateOnly.FromDateTime(dateTime);
-
-            // Intenta con formatos específicos
-            if (DateOnly.TryParseExact(dateString, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
-                return date;
+            if (DateOnly.TryParse(dateString, out DateOnly result))
+                return result;
 
             return null;
         }
