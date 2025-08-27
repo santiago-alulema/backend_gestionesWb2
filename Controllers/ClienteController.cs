@@ -102,13 +102,13 @@ namespace gestiones_backend.Controllers
                 ;
 
             var hoy = DateOnly.FromDateTime(TimeZoneInfo
-    .ConvertTime(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("America/Guayaquil")));
-
+                              .ConvertTime(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("America/Guayaquil")));
 
             if (esHoy)
             {
                 query = query.Where(c => c.FechaCompromiso == hoy);
             }
+            query = query.Where(x => x.Estado == true);
 
             if (usuario.Rol == "user")
             {

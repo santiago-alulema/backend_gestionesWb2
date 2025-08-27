@@ -11,6 +11,7 @@ namespace gestiones_backend.Dtos.In
         public decimal MontoPagado { get; set; }
 
         public string? MedioPago { get; set; }
+        public string? Telefono { get; set; }
 
         public string? Observaciones { get; set; }
 

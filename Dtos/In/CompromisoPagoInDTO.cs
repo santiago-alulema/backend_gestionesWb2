@@ -9,5 +9,7 @@
         public string HoraRecordatorio { get; set; }
         public bool? Estado { get; set; }
         public string? Observaciones { get; set; }
+        public string? Telefono { get; set; }
+
     }
 }

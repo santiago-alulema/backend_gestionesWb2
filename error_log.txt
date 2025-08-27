@@ -52,3 +52,9 @@ POSITION: 1482
 lunes, 18 de agosto de 2025 - - - - - - - 22P02: invalid input syntax for type uuid: "undefined"
 
 POSITION: 1482
+miércoles, 27 de agosto de 2025 - - - - - - - 42703: column cp.IdUsuarioGestiona does not exist
+
+POSITION: 1982
+miércoles, 27 de agosto de 2025 - - - - - - - 42601: syntax error at or near "."
+
+POSITION: 192

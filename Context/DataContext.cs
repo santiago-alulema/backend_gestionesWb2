@@ -160,7 +160,11 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Observaciones).HasMaxLength(500);
                 entity.Property(e => e.FechaPago).HasDefaultValueSql("CURRENT_DATE");
                 entity.Property(e => e.FechaRegistro).HasColumnType("timestamptz")
-          .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                                      .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.Telefono)
+                      .HasColumnType("varchar")
+                      .HasDefaultValue("")
+                      .IsRequired(false);
                 entity.HasOne(p => p.FormaPagoNavigation)
                     .WithMany()
                     .HasForeignKey(p => p.FormaPagoId)
@@ -205,8 +209,11 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Descripcion).HasMaxLength(900);
                 entity.Property(e => e.Email).HasMaxLength(100);
                 entity.Property(e => e.FechaGestion).HasColumnType("timestamptz")
-          .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
+                                                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.Telefono)
+                     .HasColumnType("varchar")
+                     .HasDefaultValue("")
+                     .IsRequired(false);
                 // Relaciones actualizadas
                 entity.HasOne(g => g.IdUsuarioGestionaNavigation)
                     .WithMany(u => u.Gestiones)
@@ -274,7 +281,11 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.IdUsuario).HasMaxLength(13).IsRequired();
                 entity.Property(e => e.IdTipoTarea).HasMaxLength(40);
                 entity.Property(e => e.FechaRegistro).HasColumnType("timestamptz")
-          .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                                                     .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.Telefono)
+                     .HasColumnType("varchar")
+                     .HasDefaultValue("")
+                     .IsRequired(false);
                 entity.HasOne(d => d.IdDeudaNavigation)
                     .WithMany(p => p.CompromisosPagos)
                     .HasForeignKey(d => d.IdDeuda)

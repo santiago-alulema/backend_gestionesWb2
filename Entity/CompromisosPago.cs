@@ -14,6 +14,7 @@ public partial class CompromisosPago
     public DateOnly FechaCompromiso { get; set; }
     public DateTime FechaRegistro { get; set; }
     public decimal MontoComprometido { get; set; }
+    public string Telefono { get; set; } = null!;
     public bool? Estado { get; set; } 
     public bool? IncumplioCompromisoPago { get; set; }
     public DateOnly? FechaCumplimientoReal { get; set; }

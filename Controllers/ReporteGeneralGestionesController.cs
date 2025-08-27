@@ -182,15 +182,41 @@ namespace gestiones_backend.Controllers
             if (tipoReporte == "pagos")
             {
                 consulta = @$"select 
-                                d2.""IdDeudor"" cedula, 
-                     		    d2.""Nombre"" nombres,
+                                 d2.""IdDeudor"" AS cedula, 
+                                d2.""Nombre"" AS nombres,
                                 p.""Observaciones"", 
-                                bp.""Nombre"" banco, 
-                                tcb.""Nombre"" cuentaBancaria, 
-                                tt.""Nombre"" ""Tipos Transaccion"", 
-                                al.""Nombre"" AbonoLiquidacion,
+                                bp.""Nombre"" AS banco, 
+                                tcb.""Nombre"" AS cuenta_bancaria, 
+                                tt.""Nombre"" AS tipos_transaccion, 
+                                al.""Nombre"" AS abono_liquidacion,
                                 p.""MontoPagado"",
-                                d.""Empresa"" 
+                                p.""FechaRegistro"" fechaPago,
+                                p.""NumeroDocumenro"",
+                                p.""Observaciones"" ,
+                                d.""Empresa"",
+                                d.""FechaVenta"",
+                                d.""Estado"",
+                                d.""NumeroFactura"",
+                                d.""SaldoDeuda"",
+                                d.""NumeroCuotas"",
+                                d.""DiasMora"",
+                                d.""ValorCuota"",
+                                d.""Tramo"",
+                                d.""UltimoPago"",
+                                d.""Clasificacion"",
+                                d.""Creditos"",
+                                d.""Descuento"",
+                                d.""DeudaCapital"",
+                                d.""FechaUltimoPago"",
+                                d.""GastosCobranzas"",
+                                d.""Interes"",
+                                d.""MontoCobrar"",
+                                d.""TipoDocumento"",
+                                d.""Agencia"",
+                                d.""Ciudad"",
+                                d.""ProductoDescripcion"",
+                                u.""NombreUsuario"",
+                                u.""NombreCompleto"" gestor
                             from ""Pagos"" p 
                             join ""BancosPagos"" bp ON p.""IdBancosPago""  = bp.""Id""  
                             join ""TiposCuentaBancaria"" tcb  ON p.""IdTipoCuentaBancaria""  = tcb.""Id""
@@ -198,45 +224,96 @@ namespace gestiones_backend.Controllers
                             join ""AbonosLiquidacion"" al on al.""Id"" = p.""IdAbonoLiquidacion"" 
                             join ""Deudas"" d ON p.""IdDeuda""  = d.""IdDeuda"" 
                             join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
+                            join ""Usuarios"" u on u.""IdUsuario"" = p.""IdUsuario"" 
                             where {filtroCliente} (Date(p.""FechaRegistro"") >= '{fechaInicio}' and Date(p.""FechaRegistro"") <= '{fechaFin}' ) ";
             }
 
             if (tipoReporte == "gestiones")
             {
-                consulta = @$" select  d2.""IdDeudor"" cedula, 
-	                               		   d2.""Nombre"" nombres,
-	                               		   d.""NumeroFactura"",
-	                               		   d.""ValorCuota"",
-	                               		   d.""DiasMora"",
-	                               		   d.""Tramo"",
-	                               		   tr.""Nombre"" tipoResultado,
-	                               		   rtc.""Nombre"" tipoContacto,
-	                               		   tcr.""Nombre"" resultado
+                consulta = @$" select       g.""Descripcion"",
+	                                        g.""Email"",
+	                                        g.""FechaGestion"",
+                                            d2.""IdDeudor"" cedula, 
+	                               		    d2.""Nombre"" nombres,
+	                               		    tr.""Nombre"" tipoResultado,
+	                               		    rtc.""Nombre"" tipoContacto,
+	                               		    tcr.""Nombre"" resultado,
+                                            d.""Empresa"",
+                                            d.""FechaVenta"",
+                                            d.""Estado"",
+                                            d.""NumeroFactura"",
+                                            d.""SaldoDeuda"",
+                                            d.""NumeroCuotas"",
+                                            d.""DiasMora"",
+                                            d.""ValorCuota"",
+                                            d.""Tramo"",
+                                            d.""UltimoPago"",
+                                            d.""Clasificacion"",
+                                            d.""Creditos"",
+                                            d.""Descuento"",
+                                            d.""DeudaCapital"",
+                                            d.""FechaUltimoPago"",
+                                            d.""GastosCobranzas"",
+                                            d.""Interes"",
+                                            d.""MontoCobrar"",
+                                            d.""TipoDocumento"",
+                                            d.""Agencia"",
+                                            d.""Ciudad"",
+                                            d.""ProductoDescripcion"",
+                                            u.""NombreUsuario"",
+                                            u.""NombreCompleto"" gestor
 	                                from ""Gestiones"" g 
 	                                join ""Deudas"" d ON g.""IdDeuda""  = d.""IdDeuda"" 
 	                                join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
 	                                join ""TiposResultado"" tr on tr.""Id"" = g.""IdTipoResultado"" 
 	                                join ""RespuestasTipoContacto"" rtc on rtc.""Id"" = g.""IdRespuestaTipoContacto"" 
-	                                join ""TiposContactoResultado"" tcr on tcr.""Id"" = g.""IdTipoContactoResultado"" 
+	                                join ""TiposContactoResultado"" tcr on tcr.""Id"" = g.""IdTipoContactoResultado""
+                                    join ""Usuarios"" u on u.""IdUsuario"" = g.""IdUsuarioGestiona"" 
                                 where {filtroCliente} (Date(g.""FechaGestion"") >= '{fechaInicio}' and Date(g.""FechaGestion"") <= '{fechaFin}' ) ";
             }
 
             if (tipoReporte == "compromisos")
             {
-                consulta = @$"select    d2.""IdDeudor"" cedula, 
+                consulta = @$"select    
+                                        cp.""FechaCompromiso"", 
+                                        cp.""FechaRegistro"", 
+                                        cp.""MontoComprometido"", 
+                                        cp.""Observaciones"", 
+                                        cp.""IncumplioCompromisoPago"", 
+                                        cp.""HoraRecordatorio"",
+                                        d2.""IdDeudor"" cedula, 
 	                                    d2.""Nombre"" nombres,
        	                                cp.""MontoComprometido"",
        	                                tt.""Nombre"",
        	                                d.""Empresa"",
-       	                                d.""NumeroFactura"",
-       	                                d.""DiasMora"",
-       	                                d.""ValorCuota"",
-       	                                d.""Tramo"",
-       	                                d.""Descuento"" 
+                                        d.""FechaVenta"",
+                                        d.""Estado"",
+                                        d.""NumeroFactura"",
+                                        d.""SaldoDeuda"",
+                                        d.""NumeroCuotas"",
+                                        d.""DiasMora"",
+                                        d.""ValorCuota"",
+                                        d.""Tramo"",
+                                        d.""UltimoPago"",
+                                        d.""Clasificacion"",
+                                        d.""Creditos"",
+                                        d.""Descuento"",
+                                        d.""DeudaCapital"",
+                                        d.""FechaUltimoPago"",
+                                        d.""GastosCobranzas"",
+                                        d.""Interes"",
+                                        d.""MontoCobrar"",
+                                        d.""TipoDocumento"",
+                                        d.""Agencia"",
+                                        d.""Ciudad"",
+                                        d.""ProductoDescripcion"",
+                                        u.""NombreUsuario"",
+                                        u.""NombreCompleto"" gestor
                                 from ""CompromisosPagos"" cp 
                                 join ""Deudas"" d ON cp.""IdDeuda""  = d.""IdDeuda"" 
                                 join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor""
                                 join ""TiposTareas"" tt ON tt.""Id""  = cp.""IdTipoTarea"" 
+                                join ""Usuarios"" u on u.""IdUsuario"" = cp.""IdUsuario"" 
                                 where {filtroCliente} (Date(cp.""FechaRegistro"")  >= '{fechaInicio}' and Date(cp.""FechaRegistro"")  <= '{fechaFin}' )";
             }
 

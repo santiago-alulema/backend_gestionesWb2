@@ -9,6 +9,7 @@
         public string idTipoContactoCliente { get; set; }
         public string IdRespuesta { get; set; }
         public string Email { get; set; }
+        public string Telefono { get; set; }
 
     }
 }

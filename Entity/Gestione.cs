@@ -16,8 +16,8 @@ public partial class Gestione
     public string Descripcion { get; set; } = null!;
     public string Email { get; set; } = null!;
     public string IdUsuarioGestiona { get; set; } = null!;
+    public string Telefono { get; set; } = null!;
 
-    // Corregido nombre de propiedad
     public string IdTipoContactoResultado { get; set; } = null!;
     public string IdTipoResultado { get; set; } = null!;
     public string IdRespuestaTipoContacto { get; set; } = null!;

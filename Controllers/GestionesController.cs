@@ -83,6 +83,7 @@ namespace gestiones_backend.Controllers
             gestione.IdTipoContactoResultado = nuevaGestion.idTipoContactoCliente;
             gestione.IdRespuestaTipoContacto = nuevaGestion.IdRespuesta;
             gestione.Email = nuevaGestion.Email;
+            gestione.Telefono = nuevaGestion.Telefono;
             _context.Gestiones.Add(gestione);
             _context.SaveChanges();
             return Ok("Se grabo exitosamente");
@@ -99,6 +100,7 @@ namespace gestiones_backend.Controllers
             compromisoPago.HoraRecordatorio = compromisoPagoNuevo.HoraRecordatorio;
             compromisoPago.IdCompromiso = Guid.NewGuid().ToString();
             compromisoPago.IdUsuario = usuario.IdUsuario;
+            compromisoPago.Telefono = compromisoPagoNuevo.Telefono;
             _context.CompromisosPagos.Add(compromisoPago);
             _context.SaveChanges();
             return Ok("Se grabo exitosamente");
@@ -128,7 +130,7 @@ namespace gestiones_backend.Controllers
                 IdTipoCuentaBancaria = pagoDto.CuentaId,
                 IdTipoTransaccion = pagoDto.TipoTransaccionId,
                 IdAbonoLiquidacion = pagoDto.AbonoLiquidacionId,
-                
+                Telefono = pagoDto.Telefono,
             };
             
             _context.Pagos.Add(pago);
@@ -187,7 +189,8 @@ namespace gestiones_backend.Controllers
                              '<br><strong>Abono/Liquidacion: </strong>' || COALESCE(al.""Nombre"", 'N/A') || 
                              '<br><strong>Numero Doc.: </strong>' || COALESCE(p.""NumeroDocumenro"", 'N/A') || 
                              '<br><strong>Fecha Pago: </strong>' || COALESCE(TO_CHAR(p.""FechaPago"", 'YYYY-MM-DD HH24:MI:SS'), 'N/A') || 
-                             '<br><strong>Valor: </strong>' || COALESCE(p.""MontoPagado""::text, 'N/A')) AS tracking
+                             '<br><strong>Valor: </strong>' || COALESCE(p.""MontoPagado""::text, 'N/A') ||
+                             '<br><strong>Telefono: </strong>' || COALESCE(p.""Telefono""::text, 'N/A')  ) AS tracking
                       FROM ""Pagos"" p 
                       LEFT JOIN ""Deudas"" d ON p.""IdDeuda"" = d.""IdDeuda"" 
                       LEFT JOIN ""BancosPagos"" bp ON p.""IdBancosPago"" = bp.""Id""  
@@ -203,7 +206,8 @@ namespace gestiones_backend.Controllers
                               g.""Descripcion"" observaciones,
                               ('<strong>RESULTADO:</strong> '  || tr.""Nombre"" || 
                                '<br><strong>Tipo Contacto Cliente</strong>' || tcr.""Nombre"" || 
-                               '<br><strong>Respuesta: </strong>' || rtc.""Nombre"") as tracking
+                               '<br><strong>Respuesta: </strong>' || rtc.""Nombre"" ||
+                               '<br><strong>Telefono: </strong>' || g.""Telefono"") as tracking
                       FROM ""Gestiones"" g 
                       JOIN ""Deudas"" d ON g.""IdDeuda"" = d.""IdDeuda""
                       JOIN ""TiposResultado"" tr ON tr.""Id"" = g.""IdTipoResultado""
@@ -220,7 +224,8 @@ namespace gestiones_backend.Controllers
                          	    '<br><strong>Hora recordatorio</strong>' || cp.""HoraRecordatorio"" || 
                          	    '<br><strong>Valor: </strong>' || cp.""MontoComprometido"" || 
                          	    '<br><strong>Tipo tarea: </strong>' || tr.""Nombre""|| 
-                         	    '<br><strong>Observaciones: </strong>' || cp.""Observaciones"") as tracking
+                         	    '<br><strong>Observaciones: </strong>' || cp.""Observaciones"" ||
+                                '<br><strong>Telefono: </strong>' || cp.""Telefono"") as tracking
                       FROM ""CompromisosPagos"" cp
                       JOIN ""Deudas"" d ON cp.""IdDeuda"" = d.""IdDeuda""
                       JOIN ""TiposTareas"" tr ON tr.""Id"" = cp.""IdTipoTarea""

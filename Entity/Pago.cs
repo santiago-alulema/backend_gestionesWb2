@@ -14,6 +14,8 @@ public partial class Pago
     public DateTime? FechaRegistro { get; set; }
 
     public decimal MontoPagado { get; set; }
+    public string Telefono { get; set; }
+
     public string? MedioPago { get; set; }
     public string? NumeroDocumenro { get; set; }
     public string? Observaciones { get; set; }
