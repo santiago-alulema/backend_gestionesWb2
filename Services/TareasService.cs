@@ -60,7 +60,7 @@ namespace gestiones_backend.Services
                 HoraRecordatorio = t.HoraRecordatorio,
                 Cedula = t.IdDeudaNavigation.IdDeudorNavigation.IdDeudor,
                 Nombre = t.IdDeudaNavigation.IdDeudorNavigation.Nombre
-            }).ToList();
+            }).OrderByDescending(x => x.FechaRegistro).ToList();
         }
 
         public TareaDto? UpdateAsync(string idCompromiso, UpdateTareaDto dto)

@@ -46,7 +46,7 @@ namespace gestiones_backend.Services
                 query = query.Where(x => x.IdUsuario == usuario.IdUsuario);
             }
 
-            return query.Select(p => new PagoDto
+            return query.OrderByDescending(x => x.FechaPago).Select(p => new PagoDto
             {
                 IdPago = p.IdPago.ToString(),
                 IdDeuda = p.IdDeuda,

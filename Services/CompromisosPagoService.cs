@@ -37,7 +37,7 @@ namespace gestiones_backend.Services
                     c.IdDeudaNavigation.IdDeudorNavigation.Nombre.Contains(deudorName));
             }
 
-            return await query
+            return await query.OrderByDescending(x => x.FechaRegistro)
                 .Select(c => new CompromisoPagoDto
                 {
                     IdCompromiso = c.IdCompromiso ?? "",
