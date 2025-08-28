@@ -25,7 +25,7 @@ namespace gestiones_backend.Controllers
         }
 
         [HttpGet("deudas-por-cliente/{cedulaCliente}")]
-        public IActionResult DeudasPorCliente(string cedulaCliente, [FromQuery] string? empresa, [FromQuery] bool sinGestionar = false)
+        public IActionResult DeudasPorCliente(string cedulaCliente, [FromQuery] string? empresa, [FromQuery] string opcionFiltro = "")
         {
             IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking().Where(x => x.IdDeudor == cedulaCliente);
 
@@ -36,14 +36,29 @@ namespace gestiones_backend.Controllers
                     d.Empresa.ToUpper() == empresa.ToUpper());
             }
 
-            if (sinGestionar)
+            if (opcionFiltro == "SG")
             {
                 deudasQuery = deudasQuery.Where(d =>
                     !d.CompromisosPagos.Any() &&
                     !d.Gestiones.Any() &&
                     !d.Pagos.Any());
-
             }
+
+            if (opcionFiltro == "G")
+            {
+                deudasQuery = deudasQuery.Where(d =>
+                    d.CompromisosPagos.Any() ||
+                    d.Gestiones.Any() ||
+                    d.Pagos.Any());
+            }
+
+            if (opcionFiltro == "IN")
+            {
+                deudasQuery = deudasQuery
+                                .Where(d => d.CompromisosPagos.All(cp => cp.IncumplioCompromisoPago == true));
+            }
+
+
             List<Deuda> deudas = deudasQuery.ToList();
             List<DeudasClienteOutDTO> deudoresDTO = deudas.Adapt<List<DeudasClienteOutDTO>>();
             return Ok(deudoresDTO);
@@ -94,7 +109,6 @@ namespace gestiones_backend.Controllers
         public IActionResult GestionarCompromisos(bool esHoy)
         {
             Usuario usuario = _authService.GetCurrentUser();
-            //var hoy = DateOnly.FromDateTime(DateTime.Today);
             IQueryable<CompromisosPago> query = _context.CompromisosPagos
                 .Include(x => x.IdDeudaNavigation)
                 .ThenInclude(x => x.IdDeudorNavigation)
@@ -199,20 +213,17 @@ namespace gestiones_backend.Controllers
         }
 
         [HttpGet("listar-clientes")]
-        public async Task<IActionResult> Allclients([FromQuery] string? empresa, [FromQuery] bool sinGestionar = false)
+        public async Task<IActionResult> Allclients([FromQuery] string? empresa, [FromQuery] string tipoFiltro = "")
         {
             Usuario usuario = _authService.GetCurrentUser();
 
-            // Construir query base
             IQueryable<Deudores> clientesQuery = _context.Deudores.AsNoTracking();
 
-            // Filtrar por usuario si es necesario
             if (usuario.Rol == "user")
             {
                 clientesQuery = clientesQuery.Where(x => x.IdUsuario == usuario.IdUsuario);
             }
 
-            // Aplicar filtro de empresa
             if (!string.IsNullOrEmpty(empresa) && empresa != "TODOS")
             {
                 var empresaUpper = empresa.ToUpper();
@@ -220,8 +231,7 @@ namespace gestiones_backend.Controllers
                     c.Deuda.Any(d => d.Empresa != null && d.Empresa.ToUpper() == empresaUpper));
             }
 
-            // Aplicar filtro de sin gestionar
-            if (sinGestionar)
+            if (tipoFiltro == "SG")
             {
                 clientesQuery = clientesQuery.Where(c =>
                     c.Deuda.Any(d =>
@@ -230,7 +240,20 @@ namespace gestiones_backend.Controllers
                         !d.Pagos.Any()));
             }
 
-            // Proyección en la base de datos (más eficiente)
+            if (tipoFiltro == "G")
+            {
+                clientesQuery = clientesQuery.Where(c =>
+                    c.Deuda.Any(d =>
+                        d.CompromisosPagos.Any()  ||
+                        d.Gestiones.Any() ||
+                        d.Pagos.Any()));
+            }
+
+            if (tipoFiltro == "IN")
+            {
+                clientesQuery = clientesQuery.Where(c => c.Deuda.Any(d => d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true)));
+            }
+
             var deudoresDTO = await clientesQuery
                 .Select(c => new
                 {
@@ -246,7 +269,6 @@ namespace gestiones_backend.Controllers
                 })
                 .ToListAsync();
 
-            // Transformación final en memoria (solo lo necesario)
             var result = deudoresDTO.Select(c => new ClientesOutDTO()
             {
                 cedula = c.IdDeudor,

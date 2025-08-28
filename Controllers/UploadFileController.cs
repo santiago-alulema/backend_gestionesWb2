@@ -195,16 +195,30 @@ namespace gestiones_backend.Controllers
             return (int)decimal.Parse(valor);
         }
 
-
         private DateOnly? StringToDateOnly(string dateString)
         {
-            if (string.IsNullOrEmpty(dateString))
+            if (string.IsNullOrWhiteSpace(dateString))
                 return null;
 
-            if (DateOnly.TryParse(dateString, out DateOnly result))
+            if (DateOnly.TryParseExact(dateString, "dd/MM/yyyy",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var result))
+            {
                 return result;
+            }
 
             return null;
         }
+
+        //private DateOnly? StringToDateOnly(string dateString)
+        //{
+        //    if (string.IsNullOrEmpty(dateString))
+        //        return null;
+
+        //    if (DateOnly.TryParse(dateString, out DateOnly result))
+        //        return result;
+
+        //    return null;
+        //}
     }
 }
