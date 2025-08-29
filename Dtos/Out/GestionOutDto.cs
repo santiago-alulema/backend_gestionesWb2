@@ -4,7 +4,7 @@
     {
         public string IdGestion { get; set; }
         public Guid IdDeuda { get; set; }
-        public DateTime FechaGestion { get; set; }
+        public string FechaGestion { get; set; }
         public string Descripcion { get; set; }
         public string Email { get; set; }
         public string Cedula { get; set; }

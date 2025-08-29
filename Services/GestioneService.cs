@@ -15,9 +15,9 @@ namespace gestiones_backend.Services
         }
 
         public async Task<List<GestionDto>> GetGestionesByFiltersAsync(
-    DateTime? startDate = null,
-    DateTime? endDate = null,
-    string? deudorName = null)
+                                                                        DateTime? startDate = null,
+                                                                        DateTime? endDate = null,
+                                                                        string? deudorName = null)
         {
             var query = _context.Gestiones
                 .Include(g => g.IdDeudaNavigation)

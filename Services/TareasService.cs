@@ -4,6 +4,7 @@ using gestiones_backend.Dtos.Out;
 using gestiones_backend.Entity;
 using gestiones_backend.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace gestiones_backend.Services
 {
@@ -49,7 +50,9 @@ namespace gestiones_backend.Services
                 IdDeuda = t.IdDeuda,
                 FechaCompromiso = t.FechaCompromiso,
                 FechaRegistro = t.FechaRegistro,
+                FechaRegistroString = t.FechaRegistro.ToString("yyyy/MM/dd"),
                 MontoComprometido = t.MontoComprometido,
+                MontoComprometidoString = "$" + t.MontoComprometido.ToString(),
                 Estado = t.Estado,
                 IncumplioCompromisoPago = t.IncumplioCompromisoPago,
                 FechaCumplimientoReal = t.FechaCumplimientoReal,
@@ -82,6 +85,8 @@ namespace gestiones_backend.Services
                 FechaCompromiso = tarea.FechaCompromiso,
                 FechaRegistro = tarea.FechaRegistro,
                 MontoComprometido = tarea.MontoComprometido,
+                MontoComprometidoString = "$"+tarea.MontoComprometido.ToString(),
+                FechaRegistroString = tarea.FechaRegistro.ToString("yyyy/MM/dd"),
                 Estado = tarea.Estado,
                 IncumplioCompromisoPago = tarea.IncumplioCompromisoPago,
                 FechaCumplimientoReal = tarea.FechaCumplimientoReal,

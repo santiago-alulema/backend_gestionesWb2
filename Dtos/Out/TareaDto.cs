@@ -6,7 +6,10 @@
         public Guid? IdDeuda { get; set; }
         public DateOnly FechaCompromiso { get; set; }
         public DateTime FechaRegistro { get; set; }
+        public string FechaRegistroString { get; set; }
         public decimal MontoComprometido { get; set; }
+        public string MontoComprometidoString { get; set; }
+
         public bool? Estado { get; set; }
         public bool? IncumplioCompromisoPago { get; set; }
         public DateOnly? FechaCumplimientoReal { get; set; }

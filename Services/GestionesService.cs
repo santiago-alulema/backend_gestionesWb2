@@ -29,6 +29,7 @@ namespace gestiones_backend.Services
                 .Include(x => x.IdTipoResultadoNavigation)
                 .Include(x => x.RespuestaTipoContactoNavigation)
                 .Include(x => x.IdTipoContactoResultadoNavigation)
+                    .ThenInclude(x => x.TipoResultadoNavigation)
                 .Include(x => x.IdUsuarioGestionaNavigation);
 
             if (usuario.Rol != "admin")
@@ -40,7 +41,7 @@ namespace gestiones_backend.Services
             {
                 IdGestion = g.IdGestion,
                 IdDeuda = g.IdDeuda,
-                FechaGestion = g.FechaGestion,
+                FechaGestion = g.FechaGestion.ToString("yyyy/MM/dd"),
                 Descripcion = g.Descripcion,
                 Email = g.Email,
                 IdUsuarioGestiona = g.IdUsuarioGestiona,
@@ -48,7 +49,7 @@ namespace gestiones_backend.Services
                 IdTipoContactoResultado = g.IdTipoContactoResultado,
                 TipoContactoResultado = g.IdTipoContactoResultadoNavigation.Nombre,
                 IdTipoResultado = g.IdTipoResultado,
-                TipoResultado = g.IdTipoResultadoNavigation.Nombre,
+                TipoResultado = g.IdTipoContactoResultadoNavigation.TipoResultadoNavigation.Nombre,
                 IdRespuestaTipoContacto = g.IdRespuestaTipoContacto,
                 RespuestaTipoContacto = g.RespuestaTipoContactoNavigation.Nombre,
                 Cedula = g.IdDeudaNavigation.IdDeudorNavigation.IdDeudor,
@@ -73,7 +74,7 @@ namespace gestiones_backend.Services
             {
                 IdGestion = gestion.IdGestion,
                 IdDeuda = gestion.IdDeuda,
-                FechaGestion = gestion.FechaGestion,
+                FechaGestion = gestion.FechaGestion.ToString("yyyy/MM/dd"),
                 Descripcion = gestion.Descripcion,
                 Email = gestion.Email,
                 IdUsuarioGestiona = gestion.IdUsuarioGestiona,
