@@ -384,7 +384,7 @@ namespace gestiones_backend.Context
             modelBuilder.Entity<Deudores>(entity =>
             {
                 entity.HasKey(e => e.IdDeudor);
-                entity.Property(e => e.IdDeudor).HasMaxLength(13);
+                entity.Property(e => e.IdDeudor).HasMaxLength(36);
                 entity.Property(e => e.Nombre).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.Telefono).HasMaxLength(50);
                 entity.Property(e => e.Direccion).HasMaxLength(255);
