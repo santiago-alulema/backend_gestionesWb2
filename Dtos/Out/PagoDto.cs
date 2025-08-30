@@ -11,6 +11,7 @@
         public string? Observaciones { get; set; }
         public string? Cedula { get; set; }
         public string? Nombre { get; set; }
+        public string? Gestor { get; set; }
 
         public string? IdBanco { get; set; }
         public string? Banco { get; set; }

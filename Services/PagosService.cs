@@ -34,6 +34,7 @@ namespace gestiones_backend.Services
             Usuario usuario = _authService.GetCurrentUser();
 
             IQueryable<Pago> query = _context.Pagos
+                .Include(x => x.IdUsuarioNavigation)
                 .Include(x => x.BancosNavigation)
                 .Include(x => x.TipoCuentaBancariaNavigation)
                 .Include(x => x.TipoTransaccionNavigation)
@@ -64,7 +65,8 @@ namespace gestiones_backend.Services
                 IdTipoTransaccion = p.TipoTransaccionNavigation.Id,
                 TipoTransaccion = p.TipoTransaccionNavigation.Nombre,
                 IdAbonoLiquidacion = p.AbonoLiquidacionNavigation.Id,
-                AbonoLiquidacion = p.AbonoLiquidacionNavigation.Nombre
+                AbonoLiquidacion = p.AbonoLiquidacionNavigation.Nombre,
+                Gestor = p.IdUsuarioNavigation.NombreCompleto
             }).ToList();
         }
         public PagoDto? UpdateAsync(string idPago, UpdatePagoDto dto)

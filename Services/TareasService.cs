@@ -35,6 +35,7 @@ namespace gestiones_backend.Services
             Usuario usuario = _authService.GetCurrentUser();
 
             IQueryable<CompromisosPago> query = _context.CompromisosPagos
+                .Include(x => x.IdUsuarioNavigation)
                 .Include(x => x.IdDeudaNavigation)
                     .ThenInclude(x => x.IdDeudorNavigation)
                 .Include(x => x.IdTipoTareaNavigation);
@@ -59,6 +60,7 @@ namespace gestiones_backend.Services
                 Observaciones = t.Observaciones,
                 IdUsuario = t.IdUsuario,
                 IdTipoTarea = t.IdTipoTarea,
+                Gestor = t.IdUsuarioNavigation.NombreCompleto,
                 TipoTarea = t.IdTipoTareaNavigation.Nombre,
                 HoraRecordatorio = t.HoraRecordatorio,
                 Cedula = t.IdDeudaNavigation.IdDeudorNavigation.IdDeudor,
