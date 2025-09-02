@@ -79,37 +79,33 @@ namespace gestiones_backend.Controllers
 
         [HttpGet("gestiones-pago-por-usuario")]
         public async Task<ActionResult<IEnumerable<object>>> GetUsuariosConPagos(
-                                                                                    [FromQuery] string FechaInicio,
-                                                                                    [FromQuery] string FechaFin)
+     [FromQuery] string FechaInicio,
+     [FromQuery] string FechaFin)
         {
-            Usuario usuario = _authService.GetCurrentUser();
+            var usuario = _authService.GetCurrentUser();
 
-            DateTime fechaInicio = !string.IsNullOrEmpty(FechaInicio)
-                                   ? DateTime.SpecifyKind(DateTime.Parse(FechaInicio).Date, DateTimeKind.Utc)
-                                   : DateTime.SpecifyKind(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1), DateTimeKind.Utc);
+            DateOnly fi = !string.IsNullOrWhiteSpace(FechaInicio)
+                ? DateOnly.FromDateTime(DateTime.Parse(FechaInicio))
+                : new DateOnly(DateTime.Now.Year, DateTime.Now.Month, 1);
 
-            DateTime fechaFin = !string.IsNullOrEmpty(FechaFin)
-                                ? DateTime.SpecifyKind(DateTime.Parse(FechaFin).Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc)
-                                : DateTime.SpecifyKind(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)
-                                    .AddMonths(1)
-                                    .AddTicks(-1), DateTimeKind.Utc);
+            DateOnly ff = !string.IsNullOrWhiteSpace(FechaFin)
+                ? DateOnly.FromDateTime(DateTime.Parse(FechaFin))
+                : new DateOnly(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(1).AddDays(-1);
 
             var query = _context.Pagos
                 .Where(p => p.FechaPago != null &&
-                            p.FechaRegistro >= fechaInicio &&
-                            p.FechaRegistro <= fechaFin);
+                            p.FechaPago.Value >= fi &&
+                            p.FechaPago.Value <= ff);
 
-            if (usuario.Rol.ToLower() != "admin")
-            {
+            if (usuario.Rol?.ToLower() != "admin")
                 query = query.Where(p => p.IdUsuario == usuario.IdUsuario);
-            }
 
             var resultado = await query
                 .GroupBy(p => new { p.IdUsuario, p.IdUsuarioNavigation.NombreUsuario })
                 .Select(g => new
                 {
                     idUsuario = g.Key.IdUsuario,
-                    nombreUsuario = g.Key.NombreUsuario == null ? "Sin Gestor" : g.Key.NombreUsuario,
+                    nombreUsuario = g.Key.NombreUsuario ?? "Sin Gestor",
                     cantidadPagos = g.Count(),
                     valorTotal = g.Sum(p => p.MontoPagado)
                 })
@@ -118,7 +114,6 @@ namespace gestiones_backend.Controllers
 
             return Ok(resultado);
         }
-
 
         [HttpGet("compromisos-pago-por-usuario")]
         public async Task<ActionResult<IEnumerable<object>>> GetCompromisosPagoPorUsuario(
