@@ -20,26 +20,33 @@ namespace gestiones_backend.Services
             _logger = logger;
             _authService = authService;
         }
-
         public async Task<IEnumerable<ReporteEmpresaDto>> ObtenerReportePorEmpresaMesActual(string FechaInicio, string FechaFin)
         {
             try
             {
                 Usuario usuario = _authService.GetCurrentUser();
 
-                // Manejo de fechas con valores por defecto (últimos 30 días si no se especifican)
-                DateTime fechaInicio = !string.IsNullOrEmpty(FechaInicio)
-                    ? DateTime.Parse(FechaInicio).ToUniversalTime()
-                    : DateTime.UtcNow.AddDays(-30).Date;
+                // Rango base en UTC (inicio de día y fin de día)
+                DateTime fechaInicio = !string.IsNullOrWhiteSpace(FechaInicio)
+                    ? DateTime.SpecifyKind(DateTime.Parse(FechaInicio).Date, DateTimeKind.Utc)                              // 00:00
+                    : DateTime.UtcNow.Date.AddDays(-30);
 
-                DateTime fechaFin = !string.IsNullOrEmpty(FechaFin)
-                    ? DateTime.Parse(FechaFin).ToUniversalTime().AddDays(1).AddTicks(-1)
+                DateTime fechaFin = !string.IsNullOrWhiteSpace(FechaFin)
+                    ? DateTime.SpecifyKind(DateTime.Parse(FechaFin).Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc)         // 23:59:59.9999999
                     : DateTime.UtcNow.Date.AddDays(1).AddTicks(-1);
 
-                var query = _context.Deudas.Include(d => d.IdDeudorNavigation)
-                                           .ThenInclude(deudor => deudor.Usuario).AsQueryable();
+                // Derivados para columnas DateOnly (como FechaPago)
+                var fechaInicioOnly = DateOnly.FromDateTime(fechaInicio);
+                var fechaFinOnly = DateOnly.FromDateTime(fechaFin);
 
-                if (usuario.Rol.ToLower() != "admin")
+                IQueryable<Deuda> query = _context.Deudas
+                    .Include(d => d.IdDeudorNavigation)
+                        .ThenInclude(deudor => deudor.Usuario)
+                    .Include(d => d.Pagos)
+                    .Include(d => d.CompromisosPagos)
+                    .Include(d => d.Gestiones);
+
+                if (!string.Equals(usuario.Rol, "admin", StringComparison.OrdinalIgnoreCase))
                 {
                     query = query.Where(d => d.IdDeudorNavigation.IdUsuario == usuario.IdUsuario);
                 }
@@ -50,23 +57,28 @@ namespace gestiones_backend.Services
                     .Select(g => new ReporteEmpresaDto
                     {
                         Empresa = g.Key,
+
+                        // DateTime vs DateTime
                         CantidadGestiones = g.SelectMany(d => d.Gestiones)
-                            .Count(ges => ges.FechaGestion >= fechaInicio &&
-                                        ges.FechaGestion <= fechaFin),
+                            .Count(ges => ges.FechaGestion >= fechaInicio && ges.FechaGestion <= fechaFin),
+
+                        // DateTime vs DateTime
                         CantidadCompromisosPago = g.SelectMany(d => d.CompromisosPagos)
-                            .Count(c => c.FechaRegistro >= fechaInicio &&
-                                      c.FechaRegistro <= fechaFin),
+                            .Count(c => c.FechaRegistro >= fechaInicio && c.FechaRegistro <= fechaFin),
+
+                        // DateOnly vs DateOnly (NO uses Parse/ToString)
                         CantidadPagos = g.SelectMany(d => d.Pagos)
-                            .Count(p => p.FechaRegistro >= fechaInicio &&
-                                      p.FechaRegistro <= fechaFin),
+                            .Count(p => p.FechaPago >= fechaInicioOnly && p.FechaPago <= fechaFinOnly),
+
+                        // Usa tam-bién FechaPago para coherencia con CantidadPagos
                         ValorTotalPagos = g.SelectMany(d => d.Pagos)
-                            .Where(p => p.FechaRegistro >= fechaInicio &&
-                                      p.FechaRegistro <= fechaFin)
-                            .Sum(p => p.MontoPagado),
+                            .Where(p => p.FechaPago >= fechaInicioOnly && p.FechaPago <= fechaFinOnly)
+                            .Sum(p => (decimal?)p.MontoPagado) ?? 0m,
+
+                        // DateTime vs DateTime
                         ValorTotalCompromisos = g.SelectMany(d => d.CompromisosPagos)
-                            .Where(c => c.FechaRegistro >= fechaInicio &&
-                                      c.FechaRegistro <= fechaFin)
-                            .Sum(c => c.MontoComprometido )
+                            .Where(c => c.FechaCompromiso >= fechaInicioOnly && c.FechaCompromiso <= fechaFinOnly)
+                            .Sum(c => (decimal?)c.MontoComprometido) ?? 0m
                     })
                     .OrderByDescending(r => r.CantidadGestiones)
                     .ToListAsync();
