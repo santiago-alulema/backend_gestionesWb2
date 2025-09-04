@@ -190,7 +190,7 @@ public async Task<ActionResult<IEnumerable<object>>> GetUsuariosConPagos(
                                 tt.""Nombre"" AS tipos_transaccion, 
                                 al.""Nombre"" AS abono_liquidacion,
                                 p.""MontoPagado"",
-                                p.""FechaRegistro"" fechaPago,
+                                p.""FechaPago"" fechaPago,
                                 p.""NumeroDocumenro"",
                                 p.""Observaciones"" ,
                                 d.""Empresa"",
