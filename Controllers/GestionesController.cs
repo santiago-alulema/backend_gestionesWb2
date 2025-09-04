@@ -181,7 +181,7 @@ namespace gestiones_backend.Controllers
                               tracking
                               FROM (
                       SELECT 'Pago' AS tipo,
-                              p.""FechaRegistro"" AS fecha,
+                              p.""FechaPago"" AS fecha,
                               p.""Observaciones"" observaciones, 
                               ('<strong>Banco: </strong> '  || COALESCE(bp.""Nombre"", 'N/A') || 
                              '<br><strong>Cuenta: </strong>' || COALESCE(tcb.""Nombre"", 'N/A') || 

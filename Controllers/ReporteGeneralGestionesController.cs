@@ -219,13 +219,13 @@ public async Task<ActionResult<IEnumerable<object>>> GetUsuariosConPagos(
                                 u.""NombreCompleto"" gestor
                             from ""Pagos"" p 
                             join ""BancosPagos"" bp ON p.""IdBancosPago""  = bp.""Id""  
-                            join ""TiposCuentaBancaria"" tcb  ON p.""IdTipoCuentaBancaria""  = tcb.""Id""
-                            join ""TiposTransaccion"" tt on tt.""Id""  = p.""IdTipoTransaccion"" 
-                            join ""AbonosLiquidacion"" al on al.""Id"" = p.""IdAbonoLiquidacion"" 
+                            left join ""TiposCuentaBancaria"" tcb  ON p.""IdTipoCuentaBancaria""  = tcb.""Id""
+                            left join ""TiposTransaccion"" tt on tt.""Id""  = p.""IdTipoTransaccion"" 
+                            left join ""AbonosLiquidacion"" al on al.""Id"" = p.""IdAbonoLiquidacion"" 
                             join ""Deudas"" d ON p.""IdDeuda""  = d.""IdDeuda"" 
                             join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
                             join ""Usuarios"" u on u.""IdUsuario"" = p.""IdUsuario"" 
-                            where {filtroCliente} (Date(p.""FechaRegistro"") >= '{fechaInicio}' and Date(p.""FechaRegistro"") <= '{fechaFin}' ) ";
+                            where {filtroCliente} (Date(p.""FechaPago"") >= '{fechaInicio}' and Date(p.""FechaPago"") <= '{fechaFin}' ) ";
             }
 
             if (tipoReporte == "gestiones")
@@ -265,9 +265,9 @@ public async Task<ActionResult<IEnumerable<object>>> GetUsuariosConPagos(
 	                                from ""Gestiones"" g 
 	                                join ""Deudas"" d ON g.""IdDeuda""  = d.""IdDeuda"" 
 	                                join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
-	                                join ""TiposResultado"" tr on tr.""Id"" = g.""IdTipoResultado"" 
-	                                join ""RespuestasTipoContacto"" rtc on rtc.""Id"" = g.""IdRespuestaTipoContacto"" 
-	                                join ""TiposContactoResultado"" tcr on tcr.""Id"" = g.""IdTipoContactoResultado""
+	                                Left join ""TiposResultado"" tr on tr.""Id"" = g.""IdTipoResultado"" 
+	                                Left join ""RespuestasTipoContacto"" rtc on rtc.""Id"" = g.""IdRespuestaTipoContacto"" 
+	                                Left join ""TiposContactoResultado"" tcr on tcr.""Id"" = g.""IdTipoContactoResultado""
                                     join ""Usuarios"" u on u.""IdUsuario"" = g.""IdUsuarioGestiona"" 
                                 where {filtroCliente} (Date(g.""FechaGestion"") >= '{fechaInicio}' and Date(g.""FechaGestion"") <= '{fechaFin}' ) ";
             }
@@ -312,7 +312,7 @@ public async Task<ActionResult<IEnumerable<object>>> GetUsuariosConPagos(
                                 from ""CompromisosPagos"" cp 
                                 join ""Deudas"" d ON cp.""IdDeuda""  = d.""IdDeuda"" 
                                 join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor""
-                                join ""TiposTareas"" tt ON tt.""Id""  = cp.""IdTipoTarea"" 
+                                Left join ""TiposTareas"" tt ON tt.""Id""  = cp.""IdTipoTarea"" 
                                 join ""Usuarios"" u on u.""IdUsuario"" = cp.""IdUsuario"" 
                                 where {filtroCliente} (Date(cp.""FechaRegistro"")  >= '{fechaInicio}' and Date(cp.""FechaRegistro"")  <= '{fechaFin}' )";
             }
