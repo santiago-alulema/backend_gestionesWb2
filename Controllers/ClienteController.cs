@@ -27,7 +27,7 @@ namespace gestiones_backend.Controllers
         [HttpGet("deudas-por-cliente/{cedulaCliente}")]
         public IActionResult DeudasPorCliente(string cedulaCliente, [FromQuery] string? empresa, [FromQuery] string opcionFiltro = "")
         {
-            IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking().Where(x => x.IdDeudor == cedulaCliente);
+            IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking().Where(x => x.IdDeudor == cedulaCliente && x.EsActivo == true);
 
             if (!string.IsNullOrEmpty(empresa) && empresa != "TODOS")
             {
@@ -67,7 +67,7 @@ namespace gestiones_backend.Controllers
         [HttpGet("buscar-deuda-por-id/{idDeuda}")]
         public IActionResult DeudasPorId(string idDeuda)
         {
-            Deuda deudasQuery = _context.Deudas.AsNoTracking().FirstOrDefault(x => x.IdDeuda == Guid.Parse(idDeuda));
+            Deuda deudasQuery = _context.Deudas.AsNoTracking().FirstOrDefault(x => x.IdDeuda == Guid.Parse(idDeuda) && x.EsActivo == true);
             if (deudasQuery == null)
             {
                 return BadRequest("No existe deuda;");
@@ -254,7 +254,7 @@ namespace gestiones_backend.Controllers
                 clientesQuery = clientesQuery.Where(c => c.Deuda.Any(d => d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true)));
             }
 
-            var deudoresDTO = await clientesQuery
+            var deudoresDTO = await clientesQuery.Where(x => x.Deuda.Any(x => x.EsActivo == true))
                 .Select(c => new
                 {
                     c.IdDeudor,
@@ -265,7 +265,10 @@ namespace gestiones_backend.Controllers
                     c.Correo,
                     NumeroDeudas = c.Deuda.Count(),
                     UsuarioNombre = c.Usuario.NombreCompleto,
-                    Deudas = c.Deuda.Select(d => d.Tramo).ToList()
+                    Deudas = c.Deuda
+                        .Where(d => d.EsActivo == true)
+                        .Select(d => d.Tramo)
+                        .ToList()
                 })
                 .ToListAsync();
 

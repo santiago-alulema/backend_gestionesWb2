@@ -4,6 +4,7 @@ using gestiones_backend.Entity;
 using gestiones_backend.helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -82,6 +83,17 @@ namespace gestiones_backend.Controllers
         [HttpPost("upload-excel-deudas")]
         public IActionResult UploadFileDeudas([FromBody] List<UploadDeudasInDTO> deudasExcel)
         {
+            List<string> empresasExcel = deudasExcel.Select(x => x.Empresa).Distinct().ToList();
+
+            if (empresasExcel.Count > 1)
+            {
+                throw new Exception("Esta subiendo mas de una empresa: " +  String.Join(", ", empresasExcel) );
+            }
+
+            _context.Deudas
+                 .Where(x => x.Empresa == empresasExcel[0] && x.EsActivo == true)
+                 .ExecuteUpdate(setters => setters.SetProperty(x => x.EsActivo, false));
+
             if (deudasExcel == null || deudasExcel.Count == 0)
                 return BadRequest("No se recibieron datos");
 
@@ -129,7 +141,7 @@ namespace gestiones_backend.Controllers
                     deudaExistente.ProductoDescripcion = deudaExcel.ProductoDescripcion;
                     deudaExistente.Agencia = deudaExcel.Agencia;
                     deudaExistente.Ciudad = deudaExcel.Ciudad;
-
+                    deudaExistente.EsActivo = true;
                     actualizarDeuda.Add(deudaExistente);
                 }
                 else
@@ -158,7 +170,8 @@ namespace gestiones_backend.Controllers
                         Empresa = deudaExcel.Empresa,
                         ProductoDescripcion = deudaExcel.ProductoDescripcion,
                         Agencia = deudaExcel.Agencia,
-                        Ciudad = deudaExcel.Ciudad
+                        Ciudad = deudaExcel.Ciudad,
+                        EsActivo = true
                     };
                     grabarDeuda.Add(nuevaDeuda);
                 }

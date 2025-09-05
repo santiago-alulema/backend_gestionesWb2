@@ -344,7 +344,11 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Ciudad)
                       .HasColumnType("varchar")
                       .HasDefaultValue("")
-                      .IsRequired(false); 
+                      .IsRequired(false);
+                entity.Property(e => e.EsActivo)
+                      .HasColumnType("bool")
+                      .HasDefaultValue(true)
+                      .IsRequired(false);
                 entity.Property(e => e.DiasMora);
                 entity.Property(e => e.NumeroFactura);
                 entity.Property(e => e.Clasificacion);
