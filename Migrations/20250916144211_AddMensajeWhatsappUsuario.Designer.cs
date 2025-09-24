@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using gestiones_backend.Context;
@@ -11,9 +12,11 @@ using gestiones_backend.Context;
 namespace gestiones_backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20250916144211_AddMensajeWhatsappUsuario")]
+    partial class AddMensajeWhatsappUsuario
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -492,6 +495,11 @@ namespace gestiones_backend.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("IdUsuario")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("character varying(13)");
+
                     b.Property<string>("Mensaje")
                         .IsRequired()
                         .HasMaxLength(2000)
@@ -504,7 +512,9 @@ namespace gestiones_backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MensajesWhatsapp");
+                    b.HasIndex("IdUsuario");
+
+                    b.ToTable("MensajeWhatsappUsuario");
                 });
 
             modelBuilder.Entity("gestiones_backend.Entity.Pago", b =>
@@ -923,6 +933,17 @@ namespace gestiones_backend.Migrations
                     b.Navigation("RespuestaTipoContactoNavigation");
                 });
 
+            modelBuilder.Entity("gestiones_backend.Entity.MensajeWhatsappUsuario", b =>
+                {
+                    b.HasOne("gestiones_backend.Entity.Usuario", "Usuario")
+                        .WithMany("MensajesWhatsapp")
+                        .HasForeignKey("IdUsuario")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
             modelBuilder.Entity("gestiones_backend.Entity.Pago", b =>
                 {
                     b.HasOne("gestiones_backend.Entity.FormaPago", "FormaPagoNavigation")
@@ -1058,6 +1079,8 @@ namespace gestiones_backend.Migrations
                     b.Navigation("Deudores");
 
                     b.Navigation("Gestiones");
+
+                    b.Navigation("MensajesWhatsapp");
 
                     b.Navigation("Pagos");
                 });

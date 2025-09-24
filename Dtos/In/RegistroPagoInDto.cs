@@ -15,13 +15,13 @@ namespace gestiones_backend.Dtos.In
         public string Archivo { get; set; }
 
         [JsonPropertyName("calificacion")]
-        public string Calificacion { get; set; }
+        public string? Calificacion { get; set; } = string.Empty;
 
         [JsonPropertyName("malla")]
         public string Malla { get; set; }
 
         [JsonPropertyName("tramo")]
-        public string Tramo { get; set; }
+        public string? Tramo { get; set; } = string.Empty;
 
         [JsonPropertyName("cxc")]
         public string CXC { get; set; }
@@ -39,7 +39,7 @@ namespace gestiones_backend.Dtos.In
         public decimal? Monto { get; set; }
 
         [JsonPropertyName("nroControl")]
-        public string NroControl { get; set; }
+        public string? NroControl { get; set; } = string.Empty;
 
         [JsonPropertyName("nro_Documento")]
         public string NroDocumento { get; set; }
@@ -50,7 +50,7 @@ namespace gestiones_backend.Dtos.In
         [JsonPropertyName("abonoLiquidacion")]
         public string AbonoLiquidacion { get; set; }
 
-        [JsonPropertyName("verificado")]
-        public bool? Verificado { get; set; }
+        //[JsonPropertyName("verificado")]
+        //public bool? Verificado { get; set; }
     }
 }

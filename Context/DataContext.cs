@@ -28,6 +28,8 @@ namespace gestiones_backend.Context
         public virtual DbSet<TipoTransaccion> TiposTransaccion { get; set; }
         public virtual DbSet<Usuario> Usuarios { get; set; }
         public virtual DbSet<TipoTarea> TiposTareas { get; set; }
+        public virtual DbSet<MensajeWhatsappUsuario> MensajesWhatsapp { get; set; }
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -44,6 +46,21 @@ namespace gestiones_backend.Context
 
         private void ConfigureSimpleEntities(ModelBuilder modelBuilder)
         {
+
+            modelBuilder.Entity<MensajeWhatsappUsuario>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasMaxLength(50);
+                entity.Property(e => e.Mensaje).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.TipoMensaje).IsRequired().HasMaxLength(50);
+                //entity.Property(e => e.IdUsuario).IsRequired().HasMaxLength(13);
+
+                //entity.HasOne(m => m.Usuario)
+                //    .WithMany(u => u.MensajesWhatsapp)
+                //    .HasForeignKey(m => m.IdUsuario)
+                //    .OnDelete(DeleteBehavior.Cascade);
+            });
+
             modelBuilder.Entity<AbonoLiquidacion>(entity =>
             {
                 entity.HasKey(e => e.Id);

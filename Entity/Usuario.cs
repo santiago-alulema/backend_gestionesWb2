@@ -26,4 +26,6 @@ public partial class Usuario
 
     public virtual ICollection<Deudores> Deudores { get; set; } = new List<Deudores>();
     public virtual ICollection<Pago> Pagos { get; set; } = new List<Pago>();
+
+    //public virtual ICollection<MensajeWhatsappUsuario> MensajesWhatsapp { get; set; } = new List<MensajeWhatsappUsuario>();
 }

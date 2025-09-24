@@ -123,7 +123,7 @@ namespace gestiones_backend.Controllers
                     deudaExistente.Interes = deudaExcel.Interes;
                     deudaExistente.GastosCobranzas = deudaExcel.GastosCobranza;
                     deudaExistente.SaldoDeuda = deudaExcel.SaldoDeuda;
-                    deudaExistente.Descuento = ParseDescuento(deudaExcel.Descuento);
+                    deudaExistente.Descuento = deudaExcel.Descuento;
                     deudaExistente.MontoCobrar = deudaExcel.MontoCobrar;
                     deudaExistente.FechaVenta = StringToDateOnly(deudaExcel.FechaVenta);
                     deudaExistente.FechaUltimoPago = StringToDateOnly(deudaExcel.FechaUltimoPago);
@@ -153,7 +153,7 @@ namespace gestiones_backend.Controllers
                         Interes = deudaExcel.Interes,
                         GastosCobranzas = deudaExcel.GastosCobranza,
                         SaldoDeuda = deudaExcel.SaldoDeuda,
-                        Descuento = ParseDescuento(deudaExcel.Descuento),
+                        Descuento = deudaExcel.Descuento,
                         MontoCobrar = deudaExcel.MontoCobrar,
                         FechaVenta = StringToDateOnly(deudaExcel.FechaVenta),
                         FechaUltimoPago = StringToDateOnly(deudaExcel.FechaUltimoPago),
@@ -213,11 +213,26 @@ namespace gestiones_backend.Controllers
             if (string.IsNullOrWhiteSpace(dateString))
                 return null;
 
-            if (DateOnly.TryParseExact(dateString, "dd/MM/yyyy",
-                System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None, out var result))
+            string[] formatos =
             {
-                return result;
+        "dd/MM/yyyy",
+        "MM/dd/yyyy",
+        "yyyy-MM-dd",
+        "dd-MM-yyyy",
+        "dd.MM.yyyy"
+    };
+
+            if (DateTime.TryParseExact(dateString, formatos,
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var dateTime))
+            {
+                return DateOnly.FromDateTime(dateTime);
+            }
+
+            // fallback: intentar con TryParse normal (acepta más variaciones de cultura)
+            if (DateTime.TryParse(dateString, out var parsedDate))
+            {
+                return DateOnly.FromDateTime(parsedDate);
             }
 
             return null;

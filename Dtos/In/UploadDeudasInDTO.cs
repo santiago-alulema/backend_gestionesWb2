@@ -7,7 +7,7 @@
         public decimal? Interes { get; set; }
         public decimal? GastosCobranza { get; set; }
         public decimal? SaldoDeuda { get; set; }
-        public string? Descuento { get; set; }
+        public int? Descuento { get; set; }
         public decimal? MontoCobrar { get; set; }
         public string? FechaVenta { get; set; }
         public string? FechaUltimoPago { get; set; }

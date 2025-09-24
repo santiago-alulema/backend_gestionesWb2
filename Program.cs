@@ -58,6 +58,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigin",
         builder => builder
             .WithOrigins("http://localhost:5173", "http://localhost:5176", "http://207.180.205.100:5173", "http://207.180.205.100")
+             .WithExposedHeaders("message")
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials());
@@ -73,6 +74,9 @@ builder.Services.AddScoped<IReportesEmpresaService, ReportesEmpresaService>();
 builder.Services.AddScoped<IPagosService, PagosService>();
 builder.Services.AddScoped<ITareasService, TareasService>();
 builder.Services.AddScoped<IGestionesService, GestionesService>();
+builder.Services.AddScoped<IMensajesWhatsapp, MensajesWhatsappServices>();
+builder.Services.AddScoped<IImageService, ImageService>();
+
 
 builder.Services.AddMapster();
 
