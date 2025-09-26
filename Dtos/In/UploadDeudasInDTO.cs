@@ -25,6 +25,8 @@
         public string? ProductoDescripcion { get; set; }
         public string? Agencia { get; set; }
         public string? Ciudad { get; set; }
+        public string? Usuario { get; set; }
+
 
     }
 }

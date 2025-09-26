@@ -96,7 +96,7 @@ namespace gestiones_backend.Controllers
             }
             _context.Gestiones.AddRange(gestiones);
             _context.CompromisosPagos.AddRange(compromisosPago);
-            _context.SaveChanges();
+           // _context.SaveChanges();
             return Ok("migraciones realizadas correctamente");
         }
 
@@ -119,7 +119,8 @@ namespace gestiones_backend.Controllers
                 string abonoLiquidacion = abonoLiquidacions.FirstOrDefault(x => x.Nombre == mig.AbonoLiquidacion).Id;
                 if (deuda == null)
                 {
-                    continue;
+                    string idDeudor = GrabarDeudor(mig);
+                    deuda = GrabarDeudaMigrado(mig, idDeudor);
                 }
                 if (abonoLiquidacion.IsNullOrEmpty())
                 {
@@ -132,9 +133,7 @@ namespace gestiones_backend.Controllers
                     FechaPago = mig.FechaPago.HasValue
                                 ? DateOnly.FromDateTime(mig.FechaPago.Value)
                                 : DateOnly.FromDateTime(DateTime.UtcNow),
-                    FechaRegistro = mig.FechaPago.HasValue
-                                    ? DateTime.SpecifyKind(mig.FechaPago.Value, DateTimeKind.Utc)
-                                    : DateTime.UtcNow,
+                    FechaRegistro =  DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc),
                     MontoPagado = mig.Monto ?? 0m,
                     Telefono = "",
                     MedioPago = null,
@@ -154,6 +153,87 @@ namespace gestiones_backend.Controllers
             _context.SaveChanges();
            
             return Ok("migraciones realizadas correctamente");
+        }
+
+        [NonAction]
+        public Deuda GrabarDeudaMigrado(RegistroPagoInDto item, string idDeudor)
+        {
+
+            var key = (item.Usuario ?? "").Replace(" ", "");
+
+            var usuario = _context.Usuarios
+                .FromSqlInterpolated($@"SELECT *
+                                        FROM ""Usuarios""
+                                        WHERE
+                                          upper(
+                                            split_part(regexp_replace(""NombreCompleto"", '\s+', ' ', 'g'), ' ', 1) ||
+                                            split_part(regexp_replace(""NombreCompleto"", '\s+', ' ', 'g'), ' ', 3)
+                                          ) = upper({key})
+                                        OR
+                                          upper(
+                                            split_part(regexp_replace(""NombreCompleto"", '\s+', ' ', 'g'), ' ', 2) ||
+                                            split_part(regexp_replace(""NombreCompleto"", '\s+', ' ', 'g'), ' ', 3)
+                                          ) = upper({key})
+                                        LIMIT 1")
+                .AsNoTracking()
+                .FirstOrDefault();
+
+            Guid idDeuda = Guid.NewGuid();
+            Deuda deuda = new Deuda()
+            {
+                IdDeuda = idDeuda,
+                IdDeudor = idDeudor,
+                TipoDocumento = "[MIGRACION]" + DateTime.Now.ToString("dd-MM-yyyy hh:mm"),
+                Empresa = item.Archivo,
+                Tramo = item.Tramo,
+                MontoCobrar = item.Monto,
+                NumeroFactura = item.NroDocumento,
+                EsActivo = false,
+                IdUsuario = usuario.IdUsuario
+                
+            };
+            _context.Deudas.Add(deuda);
+            _context.SaveChanges();
+            return deuda;
+        }
+
+
+        [NonAction]
+        public string GrabarDeudor(RegistroPagoInDto item)
+        {
+            var key = (item.Usuario ?? "").Replace(" ", "");
+
+            var usuario =  _context.Usuarios
+                .FromSqlInterpolated($@"SELECT *
+                                        FROM ""Usuarios""
+                                        WHERE
+                                          upper(
+                                            split_part(regexp_replace(""NombreCompleto"", '\s+', ' ', 'g'), ' ', 1) ||
+                                            split_part(regexp_replace(""NombreCompleto"", '\s+', ' ', 'g'), ' ', 3)
+                                          ) = upper({key})
+                                        OR
+                                          upper(
+                                            split_part(regexp_replace(""NombreCompleto"", '\s+', ' ', 'g'), ' ', 2) ||
+                                            split_part(regexp_replace(""NombreCompleto"", '\s+', ' ', 'g'), ' ', 3)
+                                          ) = upper({key})
+                                        LIMIT 1")
+                .AsNoTracking()
+                .FirstOrDefault();
+            var cedula = item.CedulaDeudor?.Trim();
+            var existe = _context.Deudores.AsNoTracking().Any(d => d.IdDeudor == cedula);
+            if (existe) return cedula;
+
+            Deudores deudor = new Deudores()
+            {
+                IdDeudor = item.CedulaDeudor,
+                Nombre = item.NombreDeudor,
+                IdUsuario = usuario.IdUsuario,
+                Descripcion = "[MIGRACION]" + DateTime.Now.ToString("dd-MM-yyyy hh:mm"),
+
+            };
+            _context.Deudores.Add(deudor);
+            _context.SaveChanges();
+            return item.CedulaDeudor;
         }
     }
 }

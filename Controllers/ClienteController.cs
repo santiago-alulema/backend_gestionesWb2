@@ -27,7 +27,11 @@ namespace gestiones_backend.Controllers
         [HttpGet("deudas-por-cliente/{cedulaCliente}")]
         public IActionResult DeudasPorCliente(string cedulaCliente, [FromQuery] string? empresa, [FromQuery] string opcionFiltro = "")
         {
-            IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking().Where(x => x.IdDeudor == cedulaCliente && x.EsActivo == true);
+            Usuario usuario = _authService.GetCurrentUser();
+
+            IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking().Where(x => x.IdDeudor == cedulaCliente && 
+                                                                                      x.EsActivo == true && 
+                                                                                      x.IdUsuario == usuario.IdUsuario);
 
             if (!string.IsNullOrEmpty(empresa) && empresa != "TODOS")
             {
@@ -217,11 +221,11 @@ namespace gestiones_backend.Controllers
         {
             Usuario usuario = _authService.GetCurrentUser();
 
-            IQueryable<Deudores> clientesQuery = _context.Deudores.AsNoTracking();
-
+            IQueryable<Deudores> clientesQuery = _context.Deudores.Include(x => x.Deuda)
+                                                                  .AsNoTracking();
             if (usuario.Rol == "user")
             {
-                clientesQuery = clientesQuery.Where(x => x.IdUsuario == usuario.IdUsuario);
+                clientesQuery = clientesQuery.Where(x => x.Deuda.Any(x => x.IdUsuario == usuario.IdUsuario));
             }
 
             if (!string.IsNullOrEmpty(empresa) && empresa != "TODOS")
@@ -266,7 +270,7 @@ namespace gestiones_backend.Controllers
                     NumeroDeudas = c.Deuda.Count(),
                     UsuarioNombre = c.Usuario.NombreCompleto,
                     Deudas = c.Deuda
-                        .Where(d => d.EsActivo == true)
+                        .Where(d => d.EsActivo == true && d.IdUsuario == usuario.IdUsuario)
                         .Select(d => d.Tramo)
                         .ToList()
                 })

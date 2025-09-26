@@ -46,7 +46,6 @@ namespace gestiones_backend.Controllers
                         deudorExistente.Telefono = deudorExcel.Telefono;
                         deudorExistente.Correo = deudorExcel.Correo;
                         deudorExistente.Descripcion = deudorExcel.Descripcion;
-                        deudorExistente.IdUsuario = deudorExcel.Usuario;
 
                         actualizarDeudor.Add(deudorExistente);
                     }
@@ -63,7 +62,6 @@ namespace gestiones_backend.Controllers
                             Telefono = deudorExcel.Telefono,
                             Correo = deudorExcel.Correo,
                             Descripcion = deudorExcel.Descripcion,
-                            IdUsuario = deudorExcel.Usuario
                         });
                     }
                 }
@@ -75,7 +73,7 @@ namespace gestiones_backend.Controllers
             if (actualizarDeudor.Count > 0)
                 _context.Deudores.UpdateRange(actualizarDeudor);
 
-            _context.SaveChanges();
+            //_context.SaveChanges();
 
             return Ok($"Datos procesados exitosamente: {grabarDeudor.Count} insertados, {actualizarDeudor.Count} actualizados.");
         }
@@ -142,6 +140,7 @@ namespace gestiones_backend.Controllers
                     deudaExistente.Agencia = deudaExcel.Agencia;
                     deudaExistente.Ciudad = deudaExcel.Ciudad;
                     deudaExistente.EsActivo = true;
+                    deudaExistente.IdUsuario = deudaExcel.Usuario;
                     actualizarDeuda.Add(deudaExistente);
                 }
                 else
@@ -171,7 +170,9 @@ namespace gestiones_backend.Controllers
                         ProductoDescripcion = deudaExcel.ProductoDescripcion,
                         Agencia = deudaExcel.Agencia,
                         Ciudad = deudaExcel.Ciudad,
-                        EsActivo = true
+                        EsActivo = true,
+                        IdUsuario = deudaExcel.Usuario
+
                     };
                     grabarDeuda.Add(nuevaDeuda);
                 }
@@ -183,29 +184,9 @@ namespace gestiones_backend.Controllers
             if (actualizarDeuda.Count > 0)
                 _context.Deudas.UpdateRange(actualizarDeuda);
 
-            _context.SaveChanges();
+           // _context.SaveChanges();
 
             return Ok($"Procesadas {actualizarDeuda.Count} actualizaciones y {grabarDeuda.Count} inserciones");
-        }
-
-
-        private int ParseDescuento(string descuento)
-        {
-            if (string.IsNullOrWhiteSpace(descuento))
-                return 0;
-
-            // Buscar patrones numéricos con o sin %
-            Match match = Regex.Match(descuento, @"(\d+(\.\d+)?)%|(\d+(\.\d+)?)");
-
-            if (!match.Success)
-                return 0;
-
-            string valor = match.Value;
-
-            if (valor.Contains("%"))
-                return (int)decimal.Parse(valor.Replace("%", ""));
-
-            return (int)decimal.Parse(valor);
         }
 
         private DateOnly? StringToDateOnly(string dateString)
@@ -215,12 +196,12 @@ namespace gestiones_backend.Controllers
 
             string[] formatos =
             {
-        "dd/MM/yyyy",
-        "MM/dd/yyyy",
-        "yyyy-MM-dd",
-        "dd-MM-yyyy",
-        "dd.MM.yyyy"
-    };
+                "dd/MM/yyyy",
+                "MM/dd/yyyy",
+                "yyyy-MM-dd",
+                "dd-MM-yyyy",
+                "dd.MM.yyyy"
+            };
 
             if (DateTime.TryParseExact(dateString, formatos,
                 System.Globalization.CultureInfo.InvariantCulture,
@@ -229,7 +210,6 @@ namespace gestiones_backend.Controllers
                 return DateOnly.FromDateTime(dateTime);
             }
 
-            // fallback: intentar con TryParse normal (acepta más variaciones de cultura)
             if (DateTime.TryParse(dateString, out var parsedDate))
             {
                 return DateOnly.FromDateTime(parsedDate);
@@ -238,15 +218,5 @@ namespace gestiones_backend.Controllers
             return null;
         }
 
-        //private DateOnly? StringToDateOnly(string dateString)
-        //{
-        //    if (string.IsNullOrEmpty(dateString))
-        //        return null;
-
-        //    if (DateOnly.TryParse(dateString, out DateOnly result))
-        //        return result;
-
-        //    return null;
-        //}
     }
 }

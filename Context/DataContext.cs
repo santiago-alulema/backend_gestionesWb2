@@ -53,12 +53,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Id).HasMaxLength(50);
                 entity.Property(e => e.Mensaje).IsRequired().HasMaxLength(2000);
                 entity.Property(e => e.TipoMensaje).IsRequired().HasMaxLength(50);
-                //entity.Property(e => e.IdUsuario).IsRequired().HasMaxLength(13);
-
-                //entity.HasOne(m => m.Usuario)
-                //    .WithMany(u => u.MensajesWhatsapp)
-                //    .HasForeignKey(m => m.IdUsuario)
-                //    .OnDelete(DeleteBehavior.Cascade);
+             
             });
 
             modelBuilder.Entity<AbonoLiquidacion>(entity =>
@@ -283,6 +278,8 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Direccion).HasMaxLength(255);
                 entity.Property(e => e.TelefonoContacto).HasMaxLength(50);
                 entity.Property(e => e.Correo).HasMaxLength(100);
+
+                entity.HasIndex(e => e.Cedula);
             });
 
             // Configuración para CompromisosPago
@@ -377,6 +374,16 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Tramo);
                 entity.Property(e => e.UltimoPago).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.Empresa);
+                entity.Property(e => e.IdUsuario)
+                    .HasMaxLength(13)  
+                    .IsRequired(false);
+                entity.HasIndex(e => e.IdUsuario);
+                entity.HasIndex(e => e.NumeroFactura);
+                entity.HasOne(e => e.Usuario)
+                    .WithMany(u => u.Deudas)
+                    .HasForeignKey(e => e.IdUsuario)
+                    .OnDelete(DeleteBehavior.SetNull);
+
 
                 entity.HasOne(d => d.IdDeudorNavigation)
                     .WithMany(p => p.Deuda)
@@ -424,6 +431,7 @@ namespace gestiones_backend.Context
             modelBuilder.Entity<Usuario>(entity =>
             {
                 entity.HasKey(e => e.IdUsuario);
+                entity.HasIndex(e => e.IdUsuario);
                 entity.Property(e => e.IdUsuario).HasMaxLength(13);
                 entity.Property(e => e.Email).HasMaxLength(100);
                 entity.Property(e => e.Telefono).HasMaxLength(50);

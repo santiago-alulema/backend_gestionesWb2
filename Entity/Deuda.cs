@@ -40,4 +40,7 @@ public partial class Deuda
     public virtual ICollection<Gestione> Gestiones { get; set; } = new List<Gestione>();
     public virtual Deudores? IdDeudorNavigation { get; set; }
     public virtual ICollection<Pago> Pagos { get; set; } = new List<Pago>();
+    public string? IdUsuario { get; set; }
+    public virtual Usuario Usuario { get; set; } = null!;
+
 }
