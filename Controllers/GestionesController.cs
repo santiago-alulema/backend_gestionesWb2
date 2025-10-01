@@ -119,6 +119,7 @@ namespace gestiones_backend.Controllers
 
             var pago = new Pago
             {
+                IdPago = Guid.NewGuid(),
                 IdDeuda = pagoDto.IdDeuda,
                 FechaPago = pagoDto.FechaPago,
                 MontoPagado = pagoDto.MontoPagado,
@@ -135,8 +136,20 @@ namespace gestiones_backend.Controllers
             
             _context.Pagos.Add(pago);
             await _context.SaveChangesAsync();
-
-            return Ok("Se grabo exitosamente");
+            var pagoOut = new
+            {
+                IdPago = pago.IdPago,
+                IdDeuda = pago.IdDeuda,
+                FechaPago = pago.FechaPago?.ToString("yyyy-MM-dd"),
+                FechaRegistro = pago.FechaRegistro,
+                MontoPagado = pago.MontoPagado,
+                MedioPago = pago.MedioPago,
+                Observaciones = pago.Observaciones,
+                BancoId = pago.IdBancosPago,
+                Telefono = pago.Telefono,
+                UsuarioId = pago.IdUsuario
+            };
+            return Ok(pagoOut);
         }
 
         [HttpGet("gestiones-reporte")]

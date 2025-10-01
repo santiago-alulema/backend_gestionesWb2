@@ -30,7 +30,6 @@ public partial class Pago
     public virtual TipoTransaccion TipoTransaccionNavigation { get; set; } = null!;
     public string? IdAbonoLiquidacion { get; set; }
     public virtual AbonoLiquidacion AbonoLiquidacionNavigation { get; set; } = null!;
-
-
+    public virtual ICollection<ImagenesCobros> ImagenesCobrosNavigation { get; set; } = new HashSet<ImagenesCobros>();
 
 }

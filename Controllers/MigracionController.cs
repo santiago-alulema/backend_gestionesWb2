@@ -32,6 +32,8 @@ namespace gestiones_backend.Controllers
                                                                  .ThenInclude(x => x.TiposRespuestaNavigation).ToList();
             List<Usuario> usuarios = _context.Usuarios.ToList();
             List<TipoTarea> tiposTareas = _context.TiposTareas.ToList();
+
+            int valor = 0;
             foreach (MigracionesInDTO mig in migraciones)
             {
                 Deuda deuda = deudas.FirstOrDefault(x => x.NumeroFactura == mig.OperacionCxc.Replace("'", ""));
@@ -44,6 +46,7 @@ namespace gestiones_backend.Controllers
                 if (deuda == null)
                 {
                     string ss = "";
+                    valor++;
                     continue;
                 }
 
@@ -96,7 +99,7 @@ namespace gestiones_backend.Controllers
             }
             _context.Gestiones.AddRange(gestiones);
             _context.CompromisosPagos.AddRange(compromisosPago);
-           // _context.SaveChanges();
+            _context.SaveChanges();
             return Ok("migraciones realizadas correctamente");
         }
 
@@ -158,26 +161,7 @@ namespace gestiones_backend.Controllers
         [NonAction]
         public Deuda GrabarDeudaMigrado(RegistroPagoInDto item, string idDeudor)
         {
-
-            var key = (item.Usuario ?? "").Replace(" ", "");
-
-            var usuario = _context.Usuarios
-                .FromSqlInterpolated($@"SELECT *
-                                        FROM ""Usuarios""
-                                        WHERE
-                                          upper(
-                                            split_part(regexp_replace(""NombreCompleto"", '\s+', ' ', 'g'), ' ', 1) ||
-                                            split_part(regexp_replace(""NombreCompleto"", '\s+', ' ', 'g'), ' ', 3)
-                                          ) = upper({key})
-                                        OR
-                                          upper(
-                                            split_part(regexp_replace(""NombreCompleto"", '\s+', ' ', 'g'), ' ', 2) ||
-                                            split_part(regexp_replace(""NombreCompleto"", '\s+', ' ', 'g'), ' ', 3)
-                                          ) = upper({key})
-                                        LIMIT 1")
-                .AsNoTracking()
-                .FirstOrDefault();
-
+            var usuario = ObtenerUsuario(item.Usuario);
             Guid idDeuda = Guid.NewGuid();
             Deuda deuda = new Deuda()
             {
@@ -197,13 +181,58 @@ namespace gestiones_backend.Controllers
             return deuda;
         }
 
+        [NonAction]
+        public Deuda GrabarDeudaMigradoCompromisos(MigracionesInDTO item, string idDeudor)
+        {
+            var usuario = ObtenerUsuario(item.Usuario);
+            Guid idDeuda = Guid.NewGuid();
+            Deuda deuda = new Deuda()
+            {
+                IdDeuda = idDeuda,
+                IdDeudor = idDeudor,
+                TipoDocumento = "[MIGRACION]" + DateTime.Now.ToString("dd-MM-yyyy hh:mm"),
+                Empresa = item.Cao,
+                Tramo = item.Tramo,
+                MontoCobrar = item.Monto,
+                NumeroFactura = item.OperacionCxc.Replace("'",""),
+                EsActivo = false,
+                IdUsuario = usuario.IdUsuario
+
+            };
+            _context.Deudas.Add(deuda);
+            _context.SaveChanges();
+            return deuda;
+        }
+
 
         [NonAction]
-        public string GrabarDeudor(RegistroPagoInDto item)
+        public string GrabarDeudorCompromisos(MigracionesInDTO item)
         {
-            var key = (item.Usuario ?? "").Replace(" ", "");
+            var usuario = ObtenerUsuario(item.Usuario);
+            var cedula = item.Cedula?.Trim();
+            var existe = _context.Deudores.AsNoTracking().Any(d => d.IdDeudor == cedula);
+            if (existe) return cedula;
 
-            var usuario =  _context.Usuarios
+            Deudores deudor = new Deudores()
+            {
+                IdDeudor = item.Cedula,
+                Nombre = item.Nombre,
+                IdUsuario = usuario.IdUsuario,
+                Descripcion = "[MIGRACION]" + DateTime.Now.ToString("dd-MM-yyyy hh:mm"),
+
+            };
+            _context.Deudores.Add(deudor);
+            _context.SaveChanges();
+            return item.Cedula;
+        }
+
+
+        [NonAction]
+        public Usuario ObtenerUsuario (string usuarioP)
+        {
+            var key = (usuarioP ?? "").Replace(" ", "");
+
+            var usuario = _context.Usuarios
                 .FromSqlInterpolated($@"SELECT *
                                         FROM ""Usuarios""
                                         WHERE
@@ -219,6 +248,13 @@ namespace gestiones_backend.Controllers
                                         LIMIT 1")
                 .AsNoTracking()
                 .FirstOrDefault();
+            return usuario;
+        }
+
+        [NonAction]
+        public string GrabarDeudor(RegistroPagoInDto item)
+        {
+            var usuario = ObtenerUsuario(item.Usuario);
             var cedula = item.CedulaDeudor?.Trim();
             var existe = _context.Deudores.AsNoTracking().Any(d => d.IdDeudor == cedula);
             if (existe) return cedula;

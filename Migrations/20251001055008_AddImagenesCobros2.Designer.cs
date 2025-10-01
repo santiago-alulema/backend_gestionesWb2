@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using gestiones_backend.Context;
@@ -11,9 +12,11 @@ using gestiones_backend.Context;
 namespace gestiones_backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251001055008_AddImagenesCobros2")]
+    partial class AddImagenesCobros2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -502,11 +505,6 @@ namespace gestiones_backend.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<DateTime?>("FechaRegistro")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
-
                     b.Property<string>("NombreArchivo")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -547,10 +545,6 @@ namespace gestiones_backend.Migrations
                         .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("MensajeCorreo")
-                        .IsRequired()
-                        .HasColumnType("varchar");
 
                     b.Property<string>("TipoMensaje")
                         .IsRequired()

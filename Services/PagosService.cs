@@ -39,6 +39,7 @@ namespace gestiones_backend.Services
                 .Include(x => x.TipoCuentaBancariaNavigation)
                 .Include(x => x.TipoTransaccionNavigation)
                 .Include(x => x.AbonoLiquidacionNavigation)
+                .Include(x => x.ImagenesCobrosNavigation)
                 .Include(x => x.IdDeudaNavigation)
                     .ThenInclude(x => x.IdDeudorNavigation);
 
@@ -66,7 +67,8 @@ namespace gestiones_backend.Services
                 TipoTransaccion = p.TipoTransaccionNavigation.Nombre,
                 IdAbonoLiquidacion = p.AbonoLiquidacionNavigation.Id,
                 AbonoLiquidacion = p.AbonoLiquidacionNavigation.Nombre,
-                Gestor = p.IdUsuarioNavigation.NombreCompleto
+                Gestor = p.IdUsuarioNavigation.NombreCompleto,
+                ImagenUrl = p.ImagenesCobrosNavigation.Count() > 0 ? p.ImagenesCobrosNavigation.FirstOrDefault().Url : ""
             }).ToList();
         }
         public PagoDto? UpdateAsync(string idPago, UpdatePagoDto dto)

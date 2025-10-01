@@ -29,8 +29,7 @@ namespace gestiones_backend.Context
         public virtual DbSet<Usuario> Usuarios { get; set; }
         public virtual DbSet<TipoTarea> TiposTareas { get; set; }
         public virtual DbSet<MensajeWhatsappUsuario> MensajesWhatsapp { get; set; }
-
-
+        public virtual DbSet<ImagenesCobros> ImagenesCobros { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -46,12 +45,29 @@ namespace gestiones_backend.Context
 
         private void ConfigureSimpleEntities(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<ImagenesCobros>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).HasMaxLength(50);
+                entity.Property(e => e.Url).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.NombreArchivo).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Tamanio).HasMaxLength(50);
+                entity.Property(e => e.UrlRelativo).HasMaxLength(500);
+                entity.Property(e => e.FechaRegistro).HasDefaultValueSql("NOW()"); ;
+                entity.HasOne(ic => ic.Pago)
+                    .WithMany(p => p.ImagenesCobrosNavigation)
+                    .HasForeignKey(ic => ic.PagoId)
+                    .HasPrincipalKey(p => p.IdPago)
+                    .OnDelete(DeleteBehavior.Cascade); 
+            });
 
             modelBuilder.Entity<MensajeWhatsappUsuario>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Id).HasMaxLength(50);
                 entity.Property(e => e.Mensaje).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.MensajeCorreo).HasColumnType("varchar");
                 entity.Property(e => e.TipoMensaje).IsRequired().HasMaxLength(50);
              
             });

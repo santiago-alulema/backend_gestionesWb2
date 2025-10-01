@@ -75,19 +75,19 @@ builder.Services.AddScoped<IPagosService, PagosService>();
 builder.Services.AddScoped<ITareasService, TareasService>();
 builder.Services.AddScoped<IGestionesService, GestionesService>();
 builder.Services.AddScoped<IMensajesWhatsapp, MensajesWhatsappServices>();
-builder.Services.AddScoped<IImageService, ImageService>();
-
+builder.Services.AddScoped<IGestionarImagenes, GestionarImagenesServices>();
+builder.Services.AddHttpClient();
 
 builder.Services.AddMapster();
 
 var app = builder.Build();
 
 // 🚀 Aplicar migraciones automáticamente al iniciar
-//using (var scope = app.Services.CreateScope())
-//{
-//    var db = scope.ServiceProvider.GetRequiredService<DataContext>();
-//    db.Database.Migrate();
-//}
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<DataContext>();
+    db.Database.Migrate();
+}
 
 //if (app.Environment.IsDevelopment())
 //{

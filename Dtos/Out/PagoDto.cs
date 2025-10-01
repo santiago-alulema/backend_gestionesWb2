@@ -18,6 +18,8 @@
         public string? IdCuenta { get; set; }
         public string? Cuenta { get; set; }
         public string? IdTipoTransaccion { get; set; }
+        public string? ImagenUrl { get; set; }
+
 
         public string? TipoTransaccion { get; set; }
         public string? IdAbonoLiquidacion { get; set; }

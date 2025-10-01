@@ -115,10 +115,10 @@ namespace gestiones_backend.Dtos.In
         public DateTime? FechaUltimoPago { get; set; }
 
         [JsonPropertyName("condonacion_castigada")]
-        public decimal? CondonacionCastigada { get; set; }
+        public string? CondonacionCastigada { get; set; }
 
         [JsonPropertyName("condonacion_vencida")]
-        public decimal? CondonacionVencida { get; set; }
+        public string? CondonacionVencida { get; set; }
 
         [JsonPropertyName("cao")]
         public string? Cao { get; set; }
