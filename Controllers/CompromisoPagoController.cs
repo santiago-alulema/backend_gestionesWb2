@@ -1,5 +1,6 @@
 ﻿using gestiones_backend.Context;
 using gestiones_backend.Entity;
+using gestiones_backend.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,10 +11,23 @@ namespace gestiones_backend.Controllers
     public class CompromisoPagoController : ControllerBase
     {
         private readonly DataContext _context;
-
-        public CompromisoPagoController(DataContext context)
+        private readonly CompromisosPagoService _serviceCompromisos;
+        public CompromisoPagoController(DataContext context,
+            CompromisosPagoService serviceCompromisos)
         {
             _context = context;
+            _serviceCompromisos = serviceCompromisos;
+        }
+
+        [HttpGet("marcar-incumplidos")]
+        public async Task<IActionResult> MarcarIncumplidos()
+        {
+            var afectados = await _serviceCompromisos.MarcarIncumplidosVencidosAsync();
+            return Ok(new
+            {
+                updated = afectados,
+                message = $"Se marcaron {afectados} compromisos como incumplidos y se desactivaron."
+            });
         }
 
         [HttpGet("uplodad-compromiso-pago/{compromisoPagoId}")]

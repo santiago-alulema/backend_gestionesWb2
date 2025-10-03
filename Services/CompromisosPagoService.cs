@@ -15,6 +15,29 @@ namespace gestiones_backend.Services
             _context = context;
         }
 
+        public async Task<int> MarcarIncumplidosVencidosAsync()
+        {
+
+            var hoy = DateOnly.FromDateTime(DateTime.Now);
+            var sello = $" [Incumplimiento automático al {hoy:yyyy-MM-dd}]";
+
+            var query = _context.Set<CompromisosPago>()
+                .Where(c =>
+                    c.Estado == true &&
+                    c.FechaCompromiso < hoy &&
+                    (c.IncumplioCompromisoPago == null || c.IncumplioCompromisoPago == false));
+
+            var filas = await query.ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(c => c.IncumplioCompromisoPago, c => true)
+                    .SetProperty(c => c.Estado, c => false)
+                    .SetProperty(c => c.Observaciones,
+                        c => (c.Observaciones ?? "") + sello)
+            );
+
+            return filas;
+        }
+
         public async Task<List<CompromisoPagoDto>> GetCompromisosByFiltersAsync(
             DateOnly? startDate = null,
             DateOnly? endDate = null,

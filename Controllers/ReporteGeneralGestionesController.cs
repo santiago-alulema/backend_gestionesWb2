@@ -174,6 +174,57 @@ namespace gestiones_backend.Controllers
         }
 
 
+
+        [HttpGet("bajar-reporte-deudas-subidas")]
+        public IActionResult BajarReporteDeudas([FromQuery] string fechaInicio, [FromQuery] string fechaFin)
+        {
+            string consulta = @$"SELECT
+                                    deu.""Nombre""                      AS ""Deudor"",
+                                    deu.""Direccion""                   AS ""Direccion"",
+                                    deu.""Telefono""                    AS ""Telefono"",
+                                    deu.""Correo""                      AS ""Correo"",
+                                    dz.""Empresa""                      AS ""Empresa"",
+                                    dz.""Agencia""                      AS ""Agencia"",
+                                    dz.""Ciudad""                       AS ""Ciudad"",
+                                    dz.""TipoDocumento""                AS ""Tipo Documento"",
+                                    dz.""NumeroFactura""                AS ""Nro Factura"",
+                                    dz.""ProductoDescripcion""          AS ""Producto"",
+                                    dz.""FechaVenta""                   AS ""Fecha Venta"",
+                                    dz.""FechaUltimoPago""              AS ""Fecha Último Pago"",
+                                    dz.""DeudaCapital""                 AS ""Deuda Capital"",
+                                    dz.""Interes""                      AS ""Interés"",
+                                    dz.""GastosCobranzas""              AS ""Gastos Cobranzas"",
+                                    dz.""MontoCobrar""                  AS ""Monto a Cobrar"",
+                                    COALESCE(dz.""SaldoDeuda"", dz.""SaldoDeulda"", 0) AS ""Saldo Pendiente"",
+                                    dz.""NumeroCuotas""                 AS ""Cuotas"",
+                                    dz.""ValorCuota""                   AS ""Valor Cuota"",
+                                    dz.""DiasMora""                     AS ""Días de Mora"",
+                                    dz.""UltimoPago""                   AS ""Último Pago (valor)"",
+                                    dz.""Clasificacion""                AS ""Clasificación"",
+                                    dz.""Tramo""                        AS ""Tramo"",
+                                    dz.""Estado""                       AS ""Estado Deuda"",
+                                    CASE WHEN dz.""EsActivo"" = TRUE
+                                         THEN 'ACTIVA'
+                                         ELSE 'INACTIVA'
+                                    END                                 AS ""Registro Activo""
+                                FROM public.""Deudas"" dz
+                                LEFT JOIN public.""Deudores"" deu
+                                  ON deu.""IdDeudor"" = dz.""IdDeudor""
+                                ORDER BY dz.""DiasMora"" DESC NULLS LAST, dz.""FechaVenta"" ASC;";
+
+            PgConn conn = new PgConn();
+            conn.cadenaConnect = Configuration.GetConnectionString("DefaultConnection");
+
+            DataTable dataTable = conn.ejecutarconsulta_dt(consulta);
+            ExcelPackage.License.SetNonCommercialPersonal("Santiago");
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet1");
+                worksheet.Cells.LoadFromDataTable(dataTable, true);
+                var stream = new MemoryStream(package.GetAsByteArray());
+                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"DEUDAS_SUBIDAS_{DateTime.Now}.xlsx");
+            }
+        }
         [HttpGet("reporte-general-gestiones/{fechaInicio}/{fechaFin}/{tipoReporte}/{cliente}")]
         public IActionResult GetReporteGeneral(string fechaInicio, string fechaFin, string tipoReporte, string cliente = null)
         {

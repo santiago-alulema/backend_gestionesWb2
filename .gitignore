@@ -13,6 +13,6 @@ obj/
 *.DS_Store
 *.vscode/
 *.http
-
+ArchivosExternos
 # Archivos de configuración local
 appsettings.Development.json

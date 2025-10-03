@@ -34,7 +34,10 @@ public partial class Deuda
     public string? Agencia { get; set; }
     public string? Ciudad { get; set; }
     public string? Empresa { get; set; }
+    public string? CodigoEmpresa { get; set; }
     public bool? EsActivo { get; set; }
+    public string? CodigoOperacion { get; set; }
+    public DateTime? FechaRegistro { get; set; }
     public virtual ICollection<AsignacionesCartera> AsignacionesCarteras { get; set; } = new List<AsignacionesCartera>();
     public virtual ICollection<CompromisosPago> CompromisosPagos { get; set; } = new List<CompromisosPago>();
     public virtual ICollection<Gestione> Gestiones { get; set; } = new List<Gestione>();

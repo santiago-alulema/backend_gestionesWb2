@@ -6,6 +6,7 @@
         public string Nombre { get; set; }
         public string Descripcion { get; set; }
         public Boolean Activo { get; set; }
+        public string? CodigoEmpresaExterna { get; set; }
         public List<TipoContactoResultado> TiposConstactosNavigation { get; set; }
 
     }

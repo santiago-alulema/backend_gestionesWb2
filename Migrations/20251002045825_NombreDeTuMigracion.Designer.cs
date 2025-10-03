@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using gestiones_backend.Context;
@@ -11,9 +12,11 @@ using gestiones_backend.Context;
 namespace gestiones_backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251002045825_NombreDeTuMigracion")]
+    partial class NombreDeTuMigracion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -246,12 +249,6 @@ namespace gestiones_backend.Migrations
                     b.Property<string>("Clasificacion")
                         .HasColumnType("text");
 
-                    b.Property<string>("CodigoEmpresa")
-                        .HasColumnType("text");
-
-                    b.Property<string>("CodigoOperacion")
-                        .HasColumnType("varchar");
-
                     b.Property<int?>("Creditos")
                         .HasColumnType("integer");
 
@@ -274,11 +271,6 @@ namespace gestiones_backend.Migrations
 
                     b.Property<string>("Estado")
                         .HasColumnType("text");
-
-                    b.Property<DateTime?>("FechaRegistro")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
 
                     b.Property<DateOnly?>("FechaUltimoPago")
                         .HasColumnType("date");
@@ -389,10 +381,6 @@ namespace gestiones_backend.Migrations
                         .HasMaxLength(36)
                         .HasColumnType("character varying(36)");
 
-                    b.Property<string>("CodigoDeudor")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.Property<string>("Correo")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -401,16 +389,8 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("varchar");
 
                     b.Property<string>("Direccion")
-                        .HasColumnType("varchar");
-
-                    b.Property<string>("Empresa")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
-
-                    b.Property<DateTime?>("FechaRegistro")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
 
                     b.Property<string>("IdUsuario")
                         .HasMaxLength(13)
@@ -742,10 +722,6 @@ namespace gestiones_backend.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("CodigoEmpresaExterna")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
                     b.Property<string>("Descripcion")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -773,10 +749,6 @@ namespace gestiones_backend.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<string>("CodigoEmpresaExterna")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
                     b.Property<string>("Descripcion")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -803,10 +775,6 @@ namespace gestiones_backend.Migrations
 
                     b.Property<bool>("Activo")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("CodigoEmpresaExterna")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("Descripcion")
                         .IsRequired()
@@ -857,10 +825,6 @@ namespace gestiones_backend.Migrations
 
                     b.Property<bool>("Activo")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("CodigoEmpresaExterna")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("Descripcion")
                         .IsRequired()
@@ -919,11 +883,6 @@ namespace gestiones_backend.Migrations
                     b.Property<string>("IdUsuario")
                         .HasMaxLength(13)
                         .HasColumnType("character varying(13)");
-
-                    b.Property<string>("CodigoUsuario")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Contrasena")
                         .IsRequired()

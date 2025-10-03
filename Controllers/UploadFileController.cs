@@ -73,7 +73,7 @@ namespace gestiones_backend.Controllers
             if (actualizarDeudor.Count > 0)
                 _context.Deudores.UpdateRange(actualizarDeudor);
 
-            //_context.SaveChanges();
+            _context.SaveChanges();
 
             return Ok($"Datos procesados exitosamente: {grabarDeudor.Count} insertados, {actualizarDeudor.Count} actualizados.");
         }
@@ -184,7 +184,7 @@ namespace gestiones_backend.Controllers
             if (actualizarDeuda.Count > 0)
                 _context.Deudas.UpdateRange(actualizarDeuda);
 
-           // _context.SaveChanges();
+            _context.SaveChanges();
 
             return Ok($"Procesadas {actualizarDeuda.Count} actualizaciones y {grabarDeuda.Count} inserciones");
         }

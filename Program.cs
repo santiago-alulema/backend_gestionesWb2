@@ -76,13 +76,18 @@ builder.Services.AddScoped<ITareasService, TareasService>();
 builder.Services.AddScoped<IGestionesService, GestionesService>();
 builder.Services.AddScoped<IMensajesWhatsapp, MensajesWhatsappServices>();
 builder.Services.AddScoped<IGestionarImagenes, GestionarImagenesServices>();
+builder.Services.AddScoped<IEmailSenderService, EmailSenderService>();
+builder.Services.AddHostedService<MarcarIncumplidosDailyWorker>();
+builder.Services.AddSingleton<SftpDownloadService>();
+builder.Services.AddSingleton<ZipExtractService>();
+builder.Services.AddSingleton<FolderCleanService>();
+builder.Services.AddScoped<DeudoresImportService>();
 builder.Services.AddHttpClient();
 
 builder.Services.AddMapster();
 
 var app = builder.Build();
 
-// 🚀 Aplicar migraciones automáticamente al iniciar
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<DataContext>();

@@ -30,6 +30,8 @@ namespace gestiones_backend.Context
         public virtual DbSet<TipoTarea> TiposTareas { get; set; }
         public virtual DbSet<MensajeWhatsappUsuario> MensajesWhatsapp { get; set; }
         public virtual DbSet<ImagenesCobros> ImagenesCobros { get; set; }
+        public virtual DbSet<EmailSmtpConfig> EmailSmtpConfigs { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -45,6 +47,45 @@ namespace gestiones_backend.Context
 
         private void ConfigureSimpleEntities(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<EmailSmtpConfig>(entity =>
+            {
+                entity.ToTable("EmailSmtpConfig"); // opcional: .ToTable("EmailSmtpConfig", "public")
+
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasDefaultValueSql("gen_random_uuid()");
+
+                entity.Property(e => e.Key)
+                    .IsRequired()
+                    .HasMaxLength(100);
+                entity.Property(e => e.SmtpHost)
+                    .IsRequired()
+                    .HasMaxLength(200);
+                entity.Property(e => e.SmtpPort)
+                    .IsRequired();
+                entity.Property(e => e.UseSsl)
+                    .IsRequired();
+                entity.Property(e => e.UseStartTls)
+                    .IsRequired();
+                entity.Property(e => e.Username)
+                    .IsRequired()
+                    .HasMaxLength(200);
+                entity.Property(e => e.Password)
+                    .IsRequired()
+                    .HasMaxLength(500);
+                entity.Property(e => e.IsActive)
+                    .HasDefaultValue(true);
+                entity.Property(e => e.TimeoutSeconds)
+                    .HasDefaultValue(30);
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt)
+                    .IsRequired(false);
+                entity.HasIndex(e => new { e.Key, e.IsActive })
+                    .HasDatabaseName("IX_EmailConfig_Key_IsActive");
+                entity.HasIndex(e => e.Key).IsUnique().HasFilter("\"IsActive\" = true").HasDatabaseName("UX_EmailConfig_Key_Active");
+
+            });
+
             modelBuilder.Entity<ImagenesCobros>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -129,6 +170,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Id).HasMaxLength(50);
                 entity.Property(e => e.Nombre).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Descripcion).HasMaxLength(255);
+                entity.Property(e => e.CodigoEmpresaExterna).HasMaxLength(255);
                 entity.Property(e => e.Activo).IsRequired();
             });
         }
@@ -141,6 +183,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Id).HasMaxLength(50);
                 entity.Property(e => e.Nombre).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Descripcion).HasMaxLength(255);
+                entity.Property(e => e.CodigoEmpresaExterna).HasMaxLength(255);
                 entity.Property(e => e.Estado).IsRequired();
             });
 
@@ -151,6 +194,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Nombre).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Descripcion).HasMaxLength(255);
                 entity.Property(e => e.Activo).IsRequired();
+                entity.Property(e => e.CodigoEmpresaExterna).HasMaxLength(255);
                 entity.Property(e => e.IdTipoContactoResultado).IsRequired();
             });
 
@@ -160,6 +204,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Id).HasMaxLength(50);
                 entity.Property(e => e.Nombre).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Descripcion).HasMaxLength(255);
+                entity.Property(e => e.CodigoEmpresaExterna).HasMaxLength(255);
                 entity.Property(e => e.Activo).IsRequired();
                 entity.Property(e => e.TipoResultadoId).IsRequired().HasMaxLength(50);
 
@@ -359,9 +404,17 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.GastosCobranzas).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.SaldoDeuda).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.Descuento);
+                entity.Property(e => e.CodigoOperacion).HasColumnType("varchar");
                 entity.Property(e => e.MontoCobrar).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.FechaVenta);
                 entity.Property(e => e.FechaUltimoPago);
+
+                entity.Property(e => e.FechaRegistro)
+                      .HasColumnType("timestamp with time zone")
+                      .HasDefaultValueSql("now()")
+                      .ValueGeneratedOnAdd();
+                entity.Property(e => e.CodigoEmpresa);
+
                 entity.Property(e => e.Estado);
                 entity.Property(e => e.ProductoDescripcion)
                       .HasColumnType("varchar")
@@ -431,8 +484,15 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.IdDeudor).HasMaxLength(36);
                 entity.Property(e => e.Nombre).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.Telefono).HasMaxLength(50);
-                entity.Property(e => e.Direccion).HasMaxLength(255);
+                entity.Property(e => e.Direccion).HasColumnType("varchar");
+                entity.Property(e => e.Empresa).HasMaxLength(255);
                 entity.Property(e => e.Correo).HasMaxLength(100);
+                entity.Property(e => e.CodigoDeudor).HasMaxLength(100);
+                entity.Property(e => e.FechaRegistro)
+                      .HasColumnType("timestamp with time zone")
+                      .HasDefaultValueSql("now()")     
+                      .ValueGeneratedOnAdd();
+
                 entity.Property(e => e.Descripcion).HasColumnType("varchar");
                 entity.Property(e => e.IdUsuario).HasMaxLength(13);
 
@@ -443,7 +503,6 @@ namespace gestiones_backend.Context
             });
 
           
-            // Configuración para Usuario
             modelBuilder.Entity<Usuario>(entity =>
             {
                 entity.HasKey(e => e.IdUsuario);
@@ -451,6 +510,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.IdUsuario).HasMaxLength(13);
                 entity.Property(e => e.Email).HasMaxLength(100);
                 entity.Property(e => e.Telefono).HasMaxLength(50);
+                entity.Property(e => e.CodigoUsuario).HasMaxLength(50);
                 entity.Property(e => e.NombreUsuario).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.Rol)
                         .HasMaxLength(20) 

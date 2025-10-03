@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using gestiones_backend.Context;
@@ -11,9 +12,11 @@ using gestiones_backend.Context;
 namespace gestiones_backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251003034043_camposNuevos")]
+    partial class camposNuevos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -249,9 +252,6 @@ namespace gestiones_backend.Migrations
                     b.Property<string>("CodigoEmpresa")
                         .HasColumnType("text");
 
-                    b.Property<string>("CodigoOperacion")
-                        .HasColumnType("varchar");
-
                     b.Property<int?>("Creditos")
                         .HasColumnType("integer");
 
@@ -401,7 +401,8 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("varchar");
 
                     b.Property<string>("Direccion")
-                        .HasColumnType("varchar");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("Empresa")
                         .HasMaxLength(255)
