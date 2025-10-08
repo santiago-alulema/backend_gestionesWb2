@@ -30,6 +30,7 @@ namespace gestiones_backend.Services
 
             if (string.IsNullOrEmpty(username))
             {
+                return null;
                 throw new UnauthorizedAccessException("Token no contiene el claim Name");
             }
 

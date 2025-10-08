@@ -3,10 +3,11 @@ using gestiones_backend.Context;
 using gestiones_backend.Dtos.In;
 using gestiones_backend.Dtos.Out;
 using gestiones_backend.Entity;
-using Mapster;
 using gestiones_backend.Interfaces;
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using System.Security.Claims;
 
 namespace gestiones_backend.Controllers
@@ -117,6 +118,10 @@ namespace gestiones_backend.Controllers
         public IActionResult GestionarCompromisos(bool esHoy)
         {
             Usuario usuario = _authService.GetCurrentUser();
+            if (usuario == null)
+            {
+                return Ok("no existe usuario");
+            }
             IQueryable<CompromisosPago> query = _context.CompromisosPagos
                 .Include(x => x.IdDeudaNavigation)
                 .ThenInclude(x => x.IdDeudorNavigation)
@@ -131,6 +136,8 @@ namespace gestiones_backend.Controllers
                 query = query.Where(c => c.FechaCompromiso == hoy);
             }
             query = query.Where(x => x.Estado == true);
+
+
 
             if (usuario.Rol == "user")
             {
@@ -223,49 +230,49 @@ namespace gestiones_backend.Controllers
         [HttpGet("listar-clientes")]
         public async Task<IActionResult> Allclients([FromQuery] string? empresa, [FromQuery] string tipoFiltro = "")
         {
+            // Usuario actual
             Usuario usuario = _authService.GetCurrentUser();
-            var empresaUpper = (empresa ?? "").Trim().ToUpper();
-
-            IQueryable<Deudores> clientesQuery = _context.Deudores.Include(x => x.Deuda)
-                                                                  .AsNoTracking();
-            if (usuario.Rol == "user")
-            {
-                clientesQuery = clientesQuery.Where(x => x.Deuda.Any(x => x.IdUsuario == usuario.IdUsuario));
-            }
-
-            if (!string.IsNullOrEmpty(empresa) && empresa != "TODOS")
-            {
-                clientesQuery = clientesQuery.Where(c =>
-                    c.Deuda.Any(d => d.Empresa != null && d.Empresa.ToUpper() == empresaUpper));
-            }
-
-            if (tipoFiltro == "SG")
-            {
-                clientesQuery = clientesQuery.Where(c =>
-                    c.Deuda.Any(d =>
-                        !d.CompromisosPagos.Any() &&
-                        !d.Gestiones.Any() && ( d.IdUsuario == usuario.IdUsuario) &&
-                        !d.Pagos.Any()));
-            }
-
-            if (tipoFiltro == "G")
-            {
-                clientesQuery = clientesQuery.Where(c =>
-                    c.Deuda.Any(d =>
-                        d.CompromisosPagos.Any()  ||
-                        d.Gestiones.Any() ||
-                        d.Pagos.Any()));
-            }
-
-            if (tipoFiltro == "IN")
-            {
-                clientesQuery = clientesQuery.Where(c => c.Deuda.Any(d => d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true)));
-            }
-
-            bool filtraEmpresa = !string.IsNullOrEmpty(empresaUpper) && empresaUpper != "TODOS";
             bool isAdmin = usuario.Rol == "admin";
 
-            var deudoresDTO = await clientesQuery.Where(x => x.Deuda.Any(x => x.EsActivo == true))
+            // Normalización de empresa
+            var empresaUpper = (empresa ?? "").Trim().ToUpper();
+            bool filtraEmpresa = !string.IsNullOrEmpty(empresaUpper) && empresaUpper != "TODOS";
+
+            // Flags de filtros por tipo
+            bool filtraSG = tipoFiltro == "SG"; // Sin gestión: sin compromisos, sin gestiones y sin pagos
+            bool filtraG = tipoFiltro == "G";  // Con gestión: alguno de los 3 existe
+            bool filtraIN = tipoFiltro == "IN"; // Incumplió compromiso
+
+            // Base query (incluye deudas y su usuario para poder mostrar gestor por deuda)
+            IQueryable<Deudores> clientesQuery = _context.Deudores
+                .Include(c => c.Deuda)
+                    .ThenInclude(d => d.Usuario)
+                .AsNoTracking();
+
+            // (Opcional) limitar por usuario a nivel de Deudor; ya está cubierto por el predicado de Deuda,
+            // pero mantener esto puede reducir el set inicial cuando el rol es "user"
+            if (!isAdmin)
+            {
+                clientesQuery = clientesQuery.Where(c => c.Deuda.Any(d => d.IdUsuario == usuario.IdUsuario));
+            }
+
+            // Predicado inline para EF (aplicado en todas partes por consistencia)
+            // IMPORTANTE: no extraer a Expression<Func<Deuda,bool>> y luego usarlo sobre ICollection,
+            // se escribe inline para que EF pueda traducirlo.
+            Expression<Func<Deudores, bool>> filtroDeudor = c => c.Deuda.Any(d =>
+                d.EsActivo == true &&
+                (isAdmin || d.IdUsuario == usuario.IdUsuario) &&
+                (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)) &&
+                (!filtraSG || (!d.CompromisosPagos.Any() && !d.Gestiones.Any() && !d.Pagos.Any())) &&
+                (!filtraG || (d.CompromisosPagos.Any() || d.Gestiones.Any() || d.Pagos.Any())) &&
+                (!filtraIN || d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true))
+            );
+
+            // 1) Restringe deudores a los que tengan alguna deuda que cumpla el filtro
+            clientesQuery = clientesQuery.Where(filtroDeudor);
+
+            // 2) Proyección consistente usando el mismo criterio (escrito inline)
+            var deudoresDTO = await clientesQuery
                 .Select(c => new
                 {
                     c.IdDeudor,
@@ -274,36 +281,63 @@ namespace gestiones_backend.Controllers
                     c.Direccion,
                     c.Descripcion,
                     c.Correo,
-                    UsuarioNombre = c.Usuario.NombreCompleto,
-                    Deudas = c.Deuda
-                    .Where(d => d.EsActivo == true
-                        && (isAdmin || d.IdUsuario == usuario.IdUsuario)
-                        && (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)))
-                    .Select(d => d.Tramo)
-                    .ToList(),
 
-                    NumeroDeudas = c.Deuda
-            .Count(d => d.EsActivo == true
-                && (isAdmin || d.IdUsuario == usuario.IdUsuario)
-                && (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)))
+                    // Detalle de deudas filtradas para mostrar tramo + gestor real
+                    DeudasDet = c.Deuda
+                        .Where(d =>
+                            d.EsActivo == true &&
+                            (isAdmin || d.IdUsuario == usuario.IdUsuario) &&
+                            (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)) &&
+                            (!filtraSG || (!d.CompromisosPagos.Any() && !d.Gestiones.Any() && !d.Pagos.Any())) &&
+                            (!filtraG || (d.CompromisosPagos.Any() || d.Gestiones.Any() || d.Pagos.Any())) &&
+                            (!filtraIN || d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true))
+                        )
+                        .Select(d => new
+                        {
+                            d.Tramo,
+                            GestorNombre = d.Usuario.NombreCompleto, // gestor real de la deuda
+                            d.IdUsuario
+                        })
+                        .ToList(),
 
+                    NumeroDeudas = c.Deuda.Count(d =>
+                        d.EsActivo == true &&
+                        (isAdmin || d.IdUsuario == usuario.IdUsuario) &&
+                        (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)) &&
+                        (!filtraSG || (!d.CompromisosPagos.Any() && !d.Gestiones.Any() && !d.Pagos.Any())) &&
+                        (!filtraG || (d.CompromisosPagos.Any() || d.Gestiones.Any() || d.Pagos.Any())) &&
+                        (!filtraIN || d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true))
+                    )
                 })
                 .ToListAsync();
 
-            var result = deudoresDTO.Select(c => new ClientesOutDTO()
-            {
-                cedula = c.IdDeudor,
-                nombre = c.Nombre,
-                telefono = c.Telefono,
-                direccion = c.Direccion,
-                descripcion = c.Descripcion,
-                correo = c.Correo,
-                numeroDeudas = c.NumeroDeudas.ToString(),
-                tramos = c.Deudas.Any() ?
-                        string.Join("", c.Deudas.Select((tramo, index) => $"<strong>{index + 1}</strong>: {tramo} <br>")) :
-                        string.Empty,
-                gestor = c.UsuarioNombre
-            }).Where(x => int.Parse(x.numeroDeudas) >0 ).ToList();
+            // 3) Mapeo final a tu DTO de salida
+            var result = deudoresDTO
+                .Select(c => new ClientesOutDTO
+                {
+                    cedula = c.IdDeudor,
+                    nombre = c.Nombre,
+                    telefono = c.Telefono,
+                    direccion = c.Direccion,
+                    descripcion = c.Descripcion,
+                    correo = c.Correo,
+                    numeroDeudas = c.NumeroDeudas.ToString(),
+
+                    // Muestra tramo + gestor por cada deuda filtrada
+                    tramos = c.DeudasDet.Any()
+                        ? string.Join("",
+                            c.DeudasDet.Select((d, i) =>
+                                $"<strong>{i + 1}</strong>: {d.Tramo} <br>")
+                          )
+                        : string.Empty,
+
+                    // “gestor” a nivel cliente = lista de gestores distintos de sus deudas filtradas
+                    gestor = string.Join(", ",
+                        c.DeudasDet.Select(d => d.GestorNombre).Distinct())
+                })
+                // por si acaso: ya garantizado por filtroDeudor, pero lo dejamos
+                .Where(x => int.Parse(x.numeroDeudas) > 0)
+                .ToList();
 
             return Ok(result);
         }
