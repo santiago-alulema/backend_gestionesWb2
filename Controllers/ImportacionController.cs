@@ -67,8 +67,7 @@ namespace gestiones_backend.Controllers
                                               ON dcc.""ICODIGOCLIENTE"" = ca.""CODIGOCLIENTE""
                                             LEFT JOIN temp_crecos.""OperacionesClientesCrecos"" occ 
                                               ON occ.""N_IDENTIFICACION"" = ca.""CNUMEROIDENTIFICACION""
-                                            LEFT JOIN temp_crecos.trifocuscrecospartes t 
-                                              ON t.codoperacion = occ.""ICODIGOOPERACION""
+                                           left join temp_crecos.trifocuscrecospartes t on t.codoperacion = ca.""CNUMEROIDENTIFICACION""  
                                             LEFT JOIN temp_crecos.""SaldoClienteCrecos"" scc 
                                               ON ca.""CODIGOCLIENTE"" = scc.""CODIGOCLIENTE"";";
 
@@ -109,19 +108,41 @@ namespace gestiones_backend.Controllers
                     i = (i + 1) % usuarios.Count;
                 }
             }
+            void Asignar(List<Deuda> lista)
+            {
+                if (lista.Count == 0) return;
+                // Opcional: agrupar por IdDeudor para no partir clientes
+                var grupos = lista
+                    .GroupBy(d => d.IdDeudor)
+                    .Select(g => new { Items = g.ToList(), Total = g.Sum(x => x.DeudaCapital ?? 0m) })
+                    .OrderByDescending(g => g.Total)
+                    .ThenByDescending(g => g.Items.Count)
+                    .ToList();
 
-            AsignarUsuario(rowsMenos180);
-            AsignarUsuario(rows181a360);
-            AsignarUsuario(rowsMas360);
+                // cargas por usuario
+                var cargas = usuarios.ToDictionary(u => u.IdUsuario, _ => 0m);
+
+                foreach (var g in grupos)
+                {
+                    // usuario menos cargado
+                    var target = cargas.OrderBy(kv => kv.Value).First().Key;
+                    foreach (var d in g.Items) d.IdUsuario = target;
+                    cargas[target] += g.Total;
+                }
+            }
+
+            Asignar(rowsMenos180);
+            Asignar(rows181a360);
+            Asignar(rowsMas360);
 
             // Unir todas las deudas
             var todas = rowsMenos180.Concat(rows181a360).Concat(rowsMas360).ToList();
 
             // ---- UPSET SIMPLE POR NumeroFactura ----
+            List<Deuda> deudas = _dataContext.Deudas.ToList();
             foreach (var deuda in todas)
             {
-                var existente = _dataContext.Deudas
-                    .FirstOrDefault(d => d.NumeroFactura == deuda.NumeroFactura);
+                var existente = deudas.FirstOrDefault(d => d.NumeroFactura == deuda.NumeroFactura);
 
                 if (existente != null)
                 {
@@ -169,11 +190,14 @@ namespace gestiones_backend.Controllers
         public async Task<IActionResult> ImportarDeudoresCompleto()
         {
             // var deudas = await svc.ImportarDeudasBasicoAsync();
-
+            await svc.ImportarDeudoresCompletoAsync();
+            await svc.ImportarTelefonosBasicoAsync();
             svc.GrabarTablas();
-            var telefonos = await svc.ImportarDeudoresCompletoAsync();
 
             return Ok(new { registrosAfectados = 2, telefonosAgregados = 2 });
         }
+
+
+
     }
 }

@@ -224,6 +224,7 @@ namespace gestiones_backend.Controllers
         public async Task<IActionResult> Allclients([FromQuery] string? empresa, [FromQuery] string tipoFiltro = "")
         {
             Usuario usuario = _authService.GetCurrentUser();
+            var empresaUpper = (empresa ?? "").Trim().ToUpper();
 
             IQueryable<Deudores> clientesQuery = _context.Deudores.Include(x => x.Deuda)
                                                                   .AsNoTracking();
@@ -234,7 +235,6 @@ namespace gestiones_backend.Controllers
 
             if (!string.IsNullOrEmpty(empresa) && empresa != "TODOS")
             {
-                var empresaUpper = empresa.ToUpper();
                 clientesQuery = clientesQuery.Where(c =>
                     c.Deuda.Any(d => d.Empresa != null && d.Empresa.ToUpper() == empresaUpper));
             }
@@ -244,7 +244,7 @@ namespace gestiones_backend.Controllers
                 clientesQuery = clientesQuery.Where(c =>
                     c.Deuda.Any(d =>
                         !d.CompromisosPagos.Any() &&
-                        !d.Gestiones.Any() &&
+                        !d.Gestiones.Any() && ( d.IdUsuario == usuario.IdUsuario) &&
                         !d.Pagos.Any()));
             }
 
@@ -262,6 +262,9 @@ namespace gestiones_backend.Controllers
                 clientesQuery = clientesQuery.Where(c => c.Deuda.Any(d => d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true)));
             }
 
+            bool filtraEmpresa = !string.IsNullOrEmpty(empresaUpper) && empresaUpper != "TODOS";
+            bool isAdmin = usuario.Rol == "admin";
+
             var deudoresDTO = await clientesQuery.Where(x => x.Deuda.Any(x => x.EsActivo == true))
                 .Select(c => new
                 {
@@ -271,13 +274,19 @@ namespace gestiones_backend.Controllers
                     c.Direccion,
                     c.Descripcion,
                     c.Correo,
-                    NumeroDeudas = c.Deuda.Count(),
                     UsuarioNombre = c.Usuario.NombreCompleto,
                     Deudas = c.Deuda
-                                .Where(d => d.EsActivo == true &&
-                                    (usuario.Rol == "admin" || d.IdUsuario == usuario.IdUsuario))
-                                .Select(d => d.Tramo)
-                                .ToList()
+                    .Where(d => d.EsActivo == true
+                        && (isAdmin || d.IdUsuario == usuario.IdUsuario)
+                        && (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)))
+                    .Select(d => d.Tramo)
+                    .ToList(),
+
+                    NumeroDeudas = c.Deuda
+            .Count(d => d.EsActivo == true
+                && (isAdmin || d.IdUsuario == usuario.IdUsuario)
+                && (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)))
+
                 })
                 .ToListAsync();
 
@@ -294,7 +303,7 @@ namespace gestiones_backend.Controllers
                         string.Join("", c.Deudas.Select((tramo, index) => $"<strong>{index + 1}</strong>: {tramo} <br>")) :
                         string.Empty,
                 gestor = c.UsuarioNombre
-            }).ToList();
+            }).Where(x => int.Parse(x.numeroDeudas) >0 ).ToList();
 
             return Ok(result);
         }
