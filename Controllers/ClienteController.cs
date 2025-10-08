@@ -30,8 +30,12 @@ namespace gestiones_backend.Controllers
             Usuario usuario = _authService.GetCurrentUser();
 
             IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking().Where(x => x.IdDeudor == cedulaCliente && 
-                                                                                      x.EsActivo == true && 
-                                                                                      x.IdUsuario == usuario.IdUsuario);
+                                                                                      x.EsActivo == true );
+
+            if (usuario.Rol == "user")
+            {
+                deudasQuery = deudasQuery.Where(x => x.IdUsuario == usuario.IdUsuario);
+            }
 
             if (!string.IsNullOrEmpty(empresa) && empresa != "TODOS")
             {
@@ -270,9 +274,10 @@ namespace gestiones_backend.Controllers
                     NumeroDeudas = c.Deuda.Count(),
                     UsuarioNombre = c.Usuario.NombreCompleto,
                     Deudas = c.Deuda
-                        .Where(d => d.EsActivo == true && d.IdUsuario == usuario.IdUsuario)
-                        .Select(d => d.Tramo)
-                        .ToList()
+                                .Where(d => d.EsActivo == true &&
+                                    (usuario.Rol == "admin" || d.IdUsuario == usuario.IdUsuario))
+                                .Select(d => d.Tramo)
+                                .ToList()
                 })
                 .ToListAsync();
 

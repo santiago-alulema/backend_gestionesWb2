@@ -1,4 +1,5 @@
 ﻿using gestiones_backend.Entity;
+using gestiones_backend.Entity.temp_crecos;
 using Microsoft.EntityFrameworkCore;
 
 namespace gestiones_backend.Context
@@ -32,6 +33,16 @@ namespace gestiones_backend.Context
         public virtual DbSet<ImagenesCobros> ImagenesCobros { get; set; }
         public virtual DbSet<EmailSmtpConfig> EmailSmtpConfigs { get; set; }
 
+        public DbSet<ArticuloOperacionCrecos> ArticuloOperacionCrecos => Set<ArticuloOperacionCrecos>();
+        public DbSet<CarteraAsignadaCrecos> CarteraAsignadaCrecos => Set<CarteraAsignadaCrecos>();
+        public DbSet<DatosClienteCrecos> DatosClienteCrecos => Set<DatosClienteCrecos>();
+        public DbSet<DireccionClienteCrecos> DireccionClienteCrecos => Set<DireccionClienteCrecos>();
+        public DbSet<OperacionesClientesCrecos> OperacionesClientesCrecos => Set<OperacionesClientesCrecos>();
+        public DbSet<ReferenciasPersonalesCrecos> ReferenciasPersonalesCrecos => Set<ReferenciasPersonalesCrecos>();
+        public DbSet<SaldoClienteCrecos> SaldoClienteCrecos => Set<SaldoClienteCrecos>();
+        public DbSet<TelefonosClienteCrecos> TelefonosClienteCrecos => Set<TelefonosClienteCrecos>();
+
+        public DbSet<TrifocusCrecos> TrifocusCrecos => Set<TrifocusCrecos>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -47,6 +58,417 @@ namespace gestiones_backend.Context
 
         private void ConfigureSimpleEntities(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<TrifocusCrecos>(e =>
+            {
+                e.ToTable("TrifocusCrecos", schema: "temp_crecos");
+                e.HasKey(x => x.Id);
+
+                e.HasIndex(x => x.CodigoCliente);
+                e.HasIndex(x => x.IdentificacionCliente);
+                e.HasIndex(x => new { x.Operacion, x.CodigoCliente }).HasDatabaseName("ix_operacion_cliente");
+
+                // Strings "largos"
+                e.Property(x => x.DireccionDomicilio).HasMaxLength(500);
+                e.Property(x => x.DireccionTrabajo).HasMaxLength(500);
+                e.Property(x => x.DireccionNegocio).HasMaxLength(500);
+                e.Property(x => x.Referencia1).HasMaxLength(300);
+                e.Property(x => x.Referencia2).HasMaxLength(300);
+
+                // Strings "cortos"
+                e.Property(x => x.UsuarioGenera).HasMaxLength(100);
+                e.Property(x => x.GestorAsignado).HasMaxLength(120);
+                e.Property(x => x.Ciudad).HasMaxLength(120);
+                e.Property(x => x.CodigoCliente).HasMaxLength(60);
+                e.Property(x => x.IdentificacionCliente).HasMaxLength(20);
+                e.Property(x => x.NombreCliente).HasMaxLength(200);
+                e.Property(x => x.EstadoCivil).HasMaxLength(40);
+                e.Property(x => x.TipoCredito).HasMaxLength(80);
+                e.Property(x => x.TramoActual).HasMaxLength(60);
+                e.Property(x => x.Formalidad).HasMaxLength(40);
+                e.Property(x => x.Calificacion).HasMaxLength(40);
+                e.Property(x => x.Semaforo).HasMaxLength(20);
+                e.Property(x => x.Operacion).HasMaxLength(60);
+                e.Property(x => x.TRAMO).HasMaxLength(60);
+                e.Property(x => x.Cargo).HasMaxLength(120);
+                e.Property(x => x.NombreTrabajo).HasMaxLength(200);
+
+                // Teléfonos
+                e.Property(x => x.TelefonoDomicilio).HasMaxLength(30);
+                e.Property(x => x.CelularDomicilio).HasMaxLength(30);
+                e.Property(x => x.TelefonoTrabajo).HasMaxLength(30);
+                e.Property(x => x.CelularTrabajo).HasMaxLength(30);
+                e.Property(x => x.TelefonoNegocio).HasMaxLength(30);
+                e.Property(x => x.CelularNegocio).HasMaxLength(30);
+                e.Property(x => x.TelefonoReferencia1).HasMaxLength(30);
+                e.Property(x => x.TelefonoReferencia2).HasMaxLength(30);
+
+                // Decimales
+                e.Property(x => x.DeudaTotal).HasPrecision(18, 2);
+                e.Property(x => x.PagoMinimo).HasPrecision(18, 2);
+                e.Property(x => x.SaldoVencido).HasPrecision(18, 2);
+                e.Property(x => x.MontoUltimoPagado).HasPrecision(18, 2);
+                e.Property(x => x.MontoCarteraAsignada).HasPrecision(18, 2);
+                e.Property(x => x.MontoCobrado).HasPrecision(18, 2);
+                e.Property(x => x.ValLiquidacion).HasPrecision(18, 2);
+                e.Property(x => x.ValLiquidacionPartes).HasPrecision(18, 2);
+
+                // Fechas
+                e.Property(x => x.FechaCompromisodePago).HasColumnType("date");
+                e.Property(x => x.FechaUltimoPago).HasColumnType("date");
+                e.Property(x => x.UltimaGestionTerrena).HasColumnType("date");
+                e.Property(x => x.GestionTerrenaAnterior).HasColumnType("date");
+                e.Property(x => x.UltimaGestionTelefonica).HasColumnType("date");
+                e.Property(x => x.GestionTelefonicaAnterior).HasColumnType("date");
+
+                // Mapeo opcional de nombres exactos de columnas (si tu tabla ya existe con estos nombres)
+                e.Property(x => x.UsuarioGenera).HasColumnName("UsuarioGenera");
+                e.Property(x => x.GestorAsignado).HasColumnName("GestorAsignado");
+                e.Property(x => x.Ciudad).HasColumnName("Ciudad");
+                e.Property(x => x.CodigoCliente).HasColumnName("CodigoCliente");
+                e.Property(x => x.IdentificacionCliente).HasColumnName("IdentificacionCliente");
+                e.Property(x => x.NombreCliente).HasColumnName("NombreCliente");
+                e.Property(x => x.EstadoCivil).HasColumnName("EstadoCivil");
+                e.Property(x => x.TipoCredito).HasColumnName("TipoCredito");
+                e.Property(x => x.TramoActual).HasColumnName("TramoActual");
+                e.Property(x => x.Formalidad).HasColumnName("Formalidad");
+                e.Property(x => x.Calificacion).HasColumnName("Calificacion");
+                e.Property(x => x.NoCorte).HasColumnName("NoCorte");
+                e.Property(x => x.Semaforo).HasColumnName("Semaforo");
+                e.Property(x => x.Operacion).HasColumnName("Operacion");
+                e.Property(x => x.DeudaRefinanciada).HasColumnName("DeudaRefinanciada");
+                e.Property(x => x.FechaCompromisodePago).HasColumnName("FechaCompromisodePago");
+                e.Property(x => x.DiasVencidosIniciodeMes).HasColumnName("DiasVencidosIniciodeMes");
+                e.Property(x => x.TRAMO).HasColumnName("TRAMO");
+                e.Property(x => x.DiasVencidosActuales).HasColumnName("DiasVencidosActuales");
+                e.Property(x => x.DeudaTotal).HasColumnName("DeudaTotal");
+                e.Property(x => x.PagoMinimo).HasColumnName("PagoMinimo");
+                e.Property(x => x.SaldoVencido).HasColumnName("SaldoVencido");
+                e.Property(x => x.FechaUltimoPago).HasColumnName("FechaUltimoPago");
+                e.Property(x => x.MontoUltimoPagado).HasColumnName("MontoUltimoPagado");
+                e.Property(x => x.TelefonoDomicilio).HasColumnName("TelefonoDomicilio");
+                e.Property(x => x.CelularDomicilio).HasColumnName("CelularDomicilio");
+                e.Property(x => x.DireccionDomicilio).HasColumnName("DireccionDomicilio");
+                e.Property(x => x.TelefonoTrabajo).HasColumnName("TelefonoTrabajo");
+                e.Property(x => x.CelularTrabajo).HasColumnName("CelularTrabajo");
+                e.Property(x => x.Cargo).HasColumnName("Cargo");
+                e.Property(x => x.NombreTrabajo).HasColumnName("NombreTrabajo");
+                e.Property(x => x.DireccionTrabajo).HasColumnName("DireccionTrabajo");
+                e.Property(x => x.TelefonoNegocio).HasColumnName("TelefonoNegocio");
+                e.Property(x => x.CelularNegocio).HasColumnName("CelularNegocio");
+                e.Property(x => x.DireccionNegocio).HasColumnName("DireccionNegocio");
+                e.Property(x => x.Referencia1).HasColumnName("Referencia1");
+                e.Property(x => x.TelefonoReferencia1).HasColumnName("TelefonoReferencia1");
+                e.Property(x => x.Referencia2).HasColumnName("Referencia2");
+                e.Property(x => x.TelefonoReferencia2).HasColumnName("TelefonoReferencia2");
+                e.Property(x => x.MontoCarteraAsignada).HasColumnName("MontoCarteraAsignada");
+                e.Property(x => x.MontoCobrado).HasColumnName("MontoCobrado");
+                e.Property(x => x.PoseeVehiculo).HasColumnName("PoseeVehiculo");
+                e.Property(x => x.UltimaGestionTerrena).HasColumnName("ultimaGestionTerrena");
+                e.Property(x => x.GestionTerrenaAnterior).HasColumnName("gestionTerrenaAnterior");
+                e.Property(x => x.UltimaGestionTelefonica).HasColumnName("ultimaGestionTelefonica");
+                e.Property(x => x.GestionTelefonicaAnterior).HasColumnName("gestionTelefonicaAnterior");
+                e.Property(x => x.NoGestiones).HasColumnName("NoGestiones");
+                e.Property(x => x.NoCuotasPagadas).HasColumnName("NoCuotasPagadas");
+                e.Property(x => x.ValLiquidacion).HasColumnName("Valliquidacion");
+                e.Property(x => x.ValLiquidacionPartes).HasColumnName("Valliquidacionpartes");
+            });
+
+
+
+
+            modelBuilder.Entity<ArticuloOperacionCrecos>(e =>
+            {
+                e.ToTable("ArticuloOperacionCrecos", schema: "temp_crecos");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.ISECUENCIAL);
+                e.Property(x => x.COD_PRODUCTO).HasMaxLength(50);
+                e.Property(x => x.COD_OPERACION).HasColumnType("varchar");             
+                e.Property(x => x.DESC_PRODUCTO).HasMaxLength(200);
+                e.Property(x => x.CANTIDAD);
+                e.Property(x => x.OBSERVACION).HasMaxLength(300);
+                e.HasIndex(x => x.COD_OPERACION);
+            });
+
+            // ======================= CarteraAsignadaCrecos ========================
+            modelBuilder.Entity<CarteraAsignadaCrecos>(e =>
+            {
+                e.ToTable("CarteraAsignadaCrecos", schema: "temp_crecos");
+                e.HasKey(x => x.Id);
+
+                e.Property(x => x.COD_EMPRESA).HasMaxLength(50);
+                e.Property(x => x.EMPRESA).HasMaxLength(200);
+
+                e.Property(x => x.COD_UNIDAD_NEGOCIO).HasMaxLength(50);
+                e.Property(x => x.UNIDAD_NEGOCIO).HasMaxLength(200);
+
+                e.Property(x => x.COD_TIPO_CARTERA).HasMaxLength(50);
+                e.Property(x => x.TIPO_CARTERA).HasMaxLength(200);
+
+                e.Property(x => x.IMES);
+                e.Property(x => x.IANO);
+
+                e.Property(x => x.CNUMEROIDENTIFICACION).HasMaxLength(50);
+                e.Property(x => x.CNOMBRECOMPLETO).HasMaxLength(200);
+
+                e.Property(x => x.COD_TIPO_GESTOR).HasMaxLength(50);
+                e.Property(x => x.CDESCRIPCION).HasMaxLength(200);
+
+                e.Property(x => x.BCUOTAIMPAGA).HasMaxLength(10);
+                e.Property(x => x.DIAS_MORA);
+
+                e.Property(x => x.DFECHAVENCIMIENTO);
+                e.Property(x => x.IVALORDEUDATOTAL).HasColumnType("numeric(18,2)");
+
+                e.Property(x => x.ICICLOCORTE);
+
+                e.Property(x => x.COD_PAIS).HasMaxLength(50);
+                e.Property(x => x.PAIS).HasMaxLength(150);
+
+                e.Property(x => x.COD_PROVINCIA).HasMaxLength(50);
+                e.Property(x => x.PROVINCIA).HasMaxLength(150);
+
+                e.Property(x => x.COD_CANTON).HasMaxLength(50);
+                e.Property(x => x.CANTON).HasMaxLength(150);
+
+                e.Property(x => x.COD_ZONA).HasMaxLength(50);
+                e.Property(x => x.ZONA).HasMaxLength(150);
+
+                e.Property(x => x.COD_BARRIO).HasMaxLength(50);
+                e.Property(x => x.BARRIO).HasMaxLength(150);
+
+                e.Property(x => x.COD_GESTOR).HasMaxLength(50);
+                e.Property(x => x.GESTOR).HasMaxLength(150);
+
+                e.Property(x => x.CODIGOCLIENTE).HasMaxLength(50);
+
+                e.HasIndex(x => x.CNUMEROIDENTIFICACION);
+                e.HasIndex(x => new { x.IMES, x.IANO });
+                e.HasIndex(x => x.CODIGOCLIENTE);
+            });
+
+            // ========================= DatosClienteCrecos ==========================
+            modelBuilder.Entity<DatosClienteCrecos>(e =>
+            {
+                e.ToTable("DatosClienteCrecos", schema: "temp_crecos");
+                e.HasKey(x => x.Id);
+                e.HasIndex(x => x.CNUMEROIDENTIFICACION);
+                e.Property(x => x.CCODIGOTIPOPERSONA).HasMaxLength(50);
+                e.Property(x => x.TIPO_PERSONA).HasMaxLength(100);
+                e.Property(x => x.COD_TIPO_IDENTIF).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_TIPO_IDENTIF).HasMaxLength(100);
+                e.Property(x => x.CNUMEROIDENTIFICACION).HasMaxLength(50);
+                e.Property(x => x.CNOMBRECOMPLETO).HasMaxLength(200);
+                e.Property(x => x.CEXENTOIMPUESTO).HasMaxLength(10);
+                e.Property(x => x.CPRIMERNOMBRE).HasMaxLength(100);
+                e.Property(x => x.CSEGUNDONOMBRE).HasMaxLength(100);
+                e.Property(x => x.CAPELLIDOPATERNO).HasMaxLength(100);
+                e.Property(x => x.CAPELLIDOMATERNO).HasMaxLength(100);
+                e.Property(x => x.CCODIGOESTADOCIVIL).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_ESTADO_CIVIL).HasMaxLength(100);
+                e.Property(x => x.CCODIGOSEXO).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_SEXO).HasMaxLength(100);
+                e.Property(x => x.CCODIGOPAIS).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_PAIS).HasMaxLength(100);
+                e.Property(x => x.CCODIGOCIUDADNACIMIENTO).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_CIUDAD_NACIMIENTO).HasMaxLength(150);
+                e.Property(x => x.CCODIGONACIONALIDAD).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_NACIONALIDAD).HasMaxLength(100);
+                e.Property(x => x.DFECHANACIMIENTO);
+                e.Property(x => x.INUMEROCARGA);
+                e.Property(x => x.CSEPARACIONBIEN).HasMaxLength(10);
+                e.Property(x => x.CCODIGONIVELEDUCACION).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_NIVEL_EDUC).HasMaxLength(150);
+                e.Property(x => x.CCODIGOTITULO).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_TITULO).HasMaxLength(150);
+                e.Property(x => x.CRAZONCOMERCIAL).HasMaxLength(200);
+                e.Property(x => x.CNOMBREEMPRESA).HasMaxLength(200);
+                e.Property(x => x.CCODIGOCARGO).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_CARGO).HasMaxLength(150);
+                e.Property(x => x.DFECHAINGRESOLAB);
+                e.Property(x => x.IINGRESO).HasColumnType("numeric(18,2)");
+                e.Property(x => x.IEGRESO).HasColumnType("numeric(18,2)");
+                e.Property(x => x.ICODIGOCLIENTE).HasMaxLength(50);
+                e.Property(x => x.ISCORE);
+            });
+
+            // ======================= DireccionClienteCrecos ========================
+            modelBuilder.Entity<DireccionClienteCrecos>(e =>
+            {
+                e.ToTable("DireccionClienteCrecos", schema: "temp_crecos");
+                e.HasKey(x => x.Id); // si hay varias por cliente, crea un Id
+                e.Property(x => x.CNUMEROIDENTIFICACION).HasMaxLength(50);
+                e.Property(x => x.CODIGO_UBICACION).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_UBICACION).HasMaxLength(150);
+                e.Property(x => x.COD_PAIS).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_PAIS).HasMaxLength(150);
+                e.Property(x => x.COD_PROVINCIA).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_PROVINCIA).HasMaxLength(150);
+                e.Property(x => x.COD_CANTON).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_CANTON).HasMaxLength(150);
+                e.Property(x => x.COD_PARROQUIA).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_PARROQUIA).HasMaxLength(150);
+                e.Property(x => x.COD_BARRIO).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_BARRIO).HasMaxLength(150);
+                e.Property(x => x.CDIRECCIONCARGA).HasMaxLength(250);
+                e.Property(x => x.COBSERVACION).HasMaxLength(250);
+                e.Property(x => x.CDIRECCIONCOMPLETA).HasMaxLength(300);
+                e.Property(x => x.CCASILLA).HasMaxLength(50);
+                e.Property(x => x.CCORREOELECTRONICO).HasMaxLength(150);
+                e.Property(x => x.COD_TIPO_ESPACIO).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_TIPO_ESPACIO).HasMaxLength(150);
+                e.Property(x => x.INUMEROESPACIO);
+                e.Property(x => x.INUMEROSOLAR);
+                e.Property(x => x.CCALLEPRINCIPAL).HasMaxLength(200);
+                e.Property(x => x.CNUMEROCALLE).HasMaxLength(50);
+                e.Property(x => x.CALLE_SECUND).HasMaxLength(200);
+                e.Property(x => x.CALLE_SECUND_2).HasMaxLength(200);
+                e.Property(x => x.CNUMERO_SOLAR).HasMaxLength(50);
+                e.Property(x => x.COD_TIPO_NUMERACION).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_TIPO_NUMERACION).HasMaxLength(150);
+                e.Property(x => x.COD_INDICADOR_POSICION).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_IND_POSICION).HasMaxLength(150);
+                e.Property(x => x.NOMBRE_EDIFICIO).HasMaxLength(150);
+                e.Property(x => x.CNUMEROPISO).HasMaxLength(20);
+                e.Property(x => x.PISO_BLOQUE).HasMaxLength(50);
+                e.Property(x => x.COFICINA_DEPARTAMENTO).HasMaxLength(100);
+                e.Property(x => x.INDICADOR_PRINCIPAL).HasMaxLength(10);
+                e.Property(x => x.COD_T_PROPIEDAD).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_TIPO_PROPIEDAD).HasMaxLength(150);
+                e.Property(x => x.AÑO_ANTIGUEDAD);
+                e.Property(x => x.MES_ANTIGUEDAD);
+                e.Property(x => x.DIAS_ANTIGUEDAD);
+            });
+
+            // ======================= OperacionesClientesCrecos =====================
+            modelBuilder.Entity<OperacionesClientesCrecos>(e =>
+            {
+
+                e.ToTable("OperacionesClientesCrecos", schema: "temp_crecos");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.ICODIGOOPERACION).HasMaxLength(50);
+                e.Property(x => x.COD_OFICINA).HasMaxLength(50);
+                e.Property(x => x.DESC_OFICINA).HasMaxLength(150);
+                e.Property(x => x.N_IDENTIFICACION).HasMaxLength(50);
+                e.Property(x => x.NUM_FACTURA).HasMaxLength(50);
+                e.Property(x => x.COD_MONEDA).HasMaxLength(10);
+                e.Property(x => x.DESC_MONEDA).HasMaxLength(50);
+                e.Property(x => x.COD_PROD_FINANCIERO).HasMaxLength(50);
+                e.Property(x => x.DES_PROD_FINANCIERO).HasMaxLength(150);
+                e.Property(x => x.ICODIGO_OPERACION_NEGOCIACION).HasMaxLength(50);
+                e.Property(x => x.NUM_CUOTAS);
+                e.Property(x => x.TASA_INTERES).HasPrecision(18, 2);
+                e.Property(x => x.FECHA_FACTURA);
+                e.Property(x => x.FECHA_ULTIMO_VENCIMIENTO);
+                e.Property(x => x.FECHA_ULTMO_PAGO);
+                e.Property(x => x.MONTO_CREDITO).HasPrecision(18, 2);
+                e.Property(x => x.VALOR_FINANCIAR).HasPrecision(18, 2);
+                e.Property(x => x.NUMERO_SOLICITUD).HasMaxLength(50);
+                e.Property(x => x.COD_T_OPERACION).HasMaxLength(50);
+                e.Property(x => x.DESC_T_OPERACION).HasMaxLength(150);
+                e.Property(x => x.COD_T_CREDITO).HasMaxLength(50);
+                e.Property(x => x.DESC_T_CREDITO).HasMaxLength(150);
+                e.Property(x => x.COD_ESTADO_OPERACION).HasMaxLength(50);
+                e.Property(x => x.DESC_ESTADO_OPERACION).HasMaxLength(150);
+                e.Property(x => x.SECUENC_CUPO);
+                e.Property(x => x.ESTADO_REGISTRO).HasMaxLength(20);
+                e.Property(x => x.DES_ESTADO_REGISTRO).HasMaxLength(100);
+                e.Property(x => x.COD_VENDEDOR).HasMaxLength(50);
+                e.Property(x => x.DESC_VENDEDOR).HasMaxLength(150);
+                e.HasIndex(x => x.N_IDENTIFICACION);
+            });
+
+            // ====================== ReferenciasPersonalesCrecos ====================
+            modelBuilder.Entity<ReferenciasPersonalesCrecos>(e =>
+            {
+                e.ToTable("ReferenciasPersonalesCrecos", schema: "temp_crecos");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.NumIdentificacion).HasMaxLength(50).HasColumnName("NUM_IDENTIFICACION");
+                e.Property(x => x.NombreCompleto).HasMaxLength(200).HasColumnName("CNOMBRECOMPLETO");
+                e.Property(x => x.CodTipoIdentRef).HasMaxLength(50).HasColumnName("COD_TIPO_IDENT_REF");
+                e.Property(x => x.DescripTipoIdentific).HasMaxLength(150).HasColumnName("DESCRIPC_TIPO_IDENTIFIC");
+                e.Property(x => x.NumIdentificRef).HasMaxLength(50).HasColumnName("NUM_IDENTIFIC_REF");
+                e.Property(x => x.NombreReferencia).HasMaxLength(200).HasColumnName("NOMBRE_REFERENCIA");
+                e.Property(x => x.CodPaisRef).HasMaxLength(50).HasColumnName("COD_PAIS_REF");
+                e.Property(x => x.DescripPais).HasMaxLength(150).HasColumnName("DESCRIP_PAIS");
+                e.Property(x => x.CodProvinciaRef).HasMaxLength(50).HasColumnName("COD_PROVINCIA_REF");
+                e.Property(x => x.DescripProvincia).HasMaxLength(150).HasColumnName("DESCRIP_PROVINCIA");
+                e.Property(x => x.CodCantonRef).HasMaxLength(50).HasColumnName("COD_CANTON_REF");
+                e.Property(x => x.DescripCanton).HasMaxLength(150).HasColumnName("DESCRIP_CANTON");
+                e.Property(x => x.CodTipoVinculoRef).HasMaxLength(50).HasColumnName("COD_TIPO_VINCULO_REF");
+                e.Property(x => x.DescripVinculo).HasMaxLength(150).HasColumnName("DESCRIP_VINCULO");
+                e.Property(x => x.DireccionRef).HasMaxLength(300).HasColumnName("DIRECCION_REF");
+                e.Property(x => x.NumeroReferencia).HasMaxLength(50).HasColumnName("NUMERO_REFERENCIA");
+            });
+
+            // ========================= SaldoClienteCrecos ==========================
+            modelBuilder.Entity<SaldoClienteCrecos>(e =>
+            {
+                e.ToTable("SaldoClienteCrecos", schema: "temp_crecos");
+                // Clave compuesta sugerida (ajústala si el origen define otra):
+                e.HasKey(x => x.Id);
+
+                e.Property(x => x.COD_EMPRESA).HasMaxLength(50);
+                e.Property(x => x.DESCP_EMPRESA).HasMaxLength(200);
+                e.Property(x => x.COD_U_NEGOCIO).HasMaxLength(50);
+                e.Property(x => x.DESC_U_NEGOCIO).HasMaxLength(200);
+                e.Property(x => x.COD_CARTERA).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_CARTERA).HasMaxLength(200);
+                e.Property(x => x.COD_GESTOR).HasMaxLength(50);
+                e.Property(x => x.DESC_GESTOR).HasMaxLength(200);
+                e.Property(x => x.IMES);
+                e.Property(x => x.IANO);
+                e.Property(x => x.COD_OFICINA).HasMaxLength(50);
+                e.Property(x => x.CDESCRIPCION_OFICINA).HasMaxLength(200);
+                e.Property(x => x.COD_TCREDITO).HasMaxLength(50);
+                e.Property(x => x.DESCRIP_TCREDITO).HasMaxLength(200);
+                e.Property(x => x.CNUMEROIDENTIFICACION).HasMaxLength(50);
+                e.Property(x => x.COD_OPERACION).HasMaxLength(50);
+                e.Property(x => x.CNUMEROTARJETA).HasMaxLength(50);
+                e.Property(x => x.CICLO_CORTE).HasMaxLength(50);
+                e.Property(x => x.DESC_CICLOCORTE).HasMaxLength(150);
+                e.Property(x => x.DIAS_VENCIDOS);
+                e.Property(x => x.ITRAMO);
+                e.Property(x => x.CDESCRIPCIONTRAMO).HasMaxLength(200);
+                e.Property(x => x.FECHA_MAX_PAGO);
+                e.Property(x => x.VALOR_DEUDA).HasColumnType("numeric(18,2)");
+                e.Property(x => x.VALOR_PAGO_MINIMO).HasColumnType("numeric(18,2)");
+                e.Property(x => x.VALOR_CORRIENTE).HasColumnType("numeric(18,2)");
+                e.Property(x => x.VALOR_VENCIDO).HasColumnType("numeric(18,2)");
+                e.Property(x => x.VALOR_POR_VENCER).HasColumnType("numeric(18,2)");
+                e.Property(x => x.VALOR_MORA).HasColumnType("numeric(18,2)");
+                e.Property(x => x.VALOR_GESTION).HasColumnType("numeric(18,2)");
+                e.Property(x => x.VALOR_VENCIDO_CORTEANTERIOR).HasColumnType("numeric(18,2)");
+                e.Property(x => x.PRIMERA_CUOTA_VENCIDA);
+                e.Property(x => x.NEGOCIACION_ACTIVA).HasMaxLength(10);
+                e.Property(x => x.DFECHAEJECUCION);
+                e.Property(x => x.FECHA_INGRESO);
+                e.Property(x => x.CALIFICACION_CLIENTE).HasMaxLength(50);
+                e.Property(x => x.F_ULTIMO_CORTE);
+                e.Property(x => x.FECHA_ULT_PAGO);
+                e.Property(x => x.VAL_ULT_PAGO).HasColumnType("numeric(18,2)");
+                e.Property(x => x.VALOR_PAGO_MINIMO_ACTUALIZADO).HasColumnType("numeric(18,2)");
+                e.Property(x => x.CODIGOCLIENTE).HasMaxLength(50);
+                e.HasIndex(x => x.CNUMEROIDENTIFICACION);
+            });
+
+            // ======================== TelefonosClienteCrecos =======================
+            modelBuilder.Entity<TelefonosClienteCrecos>(e =>
+            {
+                e.ToTable("TelefonosClienteCrecos", schema: "temp_crecos");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.ISECUENCIA).HasColumnName("ISECUENCIA");
+                e.Property(x => x.CNumeroIdentificacion).HasMaxLength(50).HasColumnName("CNUMEROIDENTIFICACION");
+                e.Property(x => x.CodUbicacion).HasMaxLength(50).HasColumnName("COD_UBICACION");
+                e.Property(x => x.DescripUbicacion).HasMaxLength(150).HasColumnName("DESCRIP_UBICACION");
+                e.Property(x => x.CodTipoTelefono).HasMaxLength(50).HasColumnName("COD_TIPO_TELEFONO");
+                e.Property(x => x.TipoTelefono).HasMaxLength(100).HasColumnName("TIPO_TELEFONO");
+                e.Property(x => x.CNumero).HasMaxLength(50).HasColumnName("CNUMERO");
+                e.Property(x => x.CPrefijo).HasMaxLength(10).HasColumnName("CPREFIJO");
+
+                e.HasIndex(x => x.CNumeroIdentificacion);
+            });
+
+
             modelBuilder.Entity<EmailSmtpConfig>(entity =>
             {
                 entity.ToTable("EmailSmtpConfig"); // opcional: .ToTable("EmailSmtpConfig", "public")
@@ -406,6 +828,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Descuento);
                 entity.Property(e => e.CodigoOperacion).HasColumnType("varchar");
                 entity.Property(e => e.MontoCobrar).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.MontoCobrarPartes).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.FechaVenta);
                 entity.Property(e => e.FechaUltimoPago);
 
@@ -436,7 +859,6 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.NumeroFactura);
                 entity.Property(e => e.Clasificacion);
                 entity.Property(e => e.Creditos);
-                entity.Property(e => e.SaldoDeulda).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.NumeroCuotas);
                 entity.Property(e => e.TipoDocumento);
                 entity.Property(e => e.ValorCuota).HasColumnType("decimal(18,2)");

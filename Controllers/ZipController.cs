@@ -14,11 +14,18 @@ namespace gestiones_backend.Controllers
         {
             _zipService = zipService;
         }
-
+        
         [HttpGet("descomprimir")]
         public IActionResult Descomprimir()
         {
             _zipService.DescomprimirZips();
+            return Ok("Todos los .zip fueron descomprimidos en ArchivosExternos.");
+        }
+
+        [HttpGet("descomprimir-ultimo")]
+        public IActionResult DescomprimirUltimo()
+        {
+            _zipService.DescomprimirZipsUltimo();
             return Ok("Todos los .zip fueron descomprimidos en ArchivosExternos.");
         }
     }

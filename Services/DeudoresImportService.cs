@@ -6,6 +6,7 @@ using System.Text;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.EntityFrameworkCore;
+using gestiones_backend.Entity.temp_crecos;
 
 namespace gestiones_backend.Services
 {
@@ -373,7 +374,6 @@ namespace gestiones_backend.Services
                     NumeroFactura = numeroFactura,
                     Clasificacion = GetAny(s, "CLASIFICACION"),
                     Creditos = ToInt(GetAny(s, "CREDITOS")),
-                    SaldoDeulda = ToDecimal(GetAny(s, "SALDO_DEULDA")), // si existe esa columna
                     NumeroCuotas = ToInt(GetAny(s, "NUM_CUOTAS", "CUOTAS")),
                     TipoDocumento = GetAny(s, "TIPO_DOCUMENTO", "TIPODOC") ?? GetAny(opRow, "TIPO_DOCUMENTO", "TIPODOC"),
                     ValorCuota = ToDecimal(GetAny(s, "VALOR_CUOTA", "CUOTA")),
@@ -439,6 +439,375 @@ namespace gestiones_backend.Services
             }
         }
 
+        public void GrabarTablas()
+        {
+            List<ArticuloOperacionCrecos> listaGrabar = new List<ArticuloOperacionCrecos>();
+            List<CarteraAsignadaCrecos> carteraGrabar = new List<CarteraAsignadaCrecos>();
+            List<DatosClienteCrecos> clientesGrabar = new List<DatosClienteCrecos>();
+            List<DireccionClienteCrecos> direccionClientesGrabar = new List<DireccionClienteCrecos>();
+            List<OperacionesClientesCrecos> operacionesClienteGrabar = new List<OperacionesClientesCrecos>();
+            List<ReferenciasPersonalesCrecos> referenciaClienteGrabar = new List<ReferenciasPersonalesCrecos>();
+            List<SaldoClienteCrecos> saldoClienteCrecos = new List<SaldoClienteCrecos>();
+            List<TelefonosClienteCrecos> telefonoClienteCrecos = new List<TelefonosClienteCrecos>();
+
+            int? ToInt(string? s) => int.TryParse(s, out var v) ? v : null;
+
+            decimal? ToDec(string? s)
+            {
+                if (string.IsNullOrWhiteSpace(s)) return null;
+
+                s = s.Trim();
+
+                // Si contiene coma pero no punto, asumimos formato latino (1.234,56)
+                if (s.Contains(',') && !s.Contains('.'))
+                {
+                    // Cambia el separador decimal
+                    s = s.Replace(".", "").Replace(",", ".");
+                }
+                else if (s.Contains('.') && s.IndexOf('.') != s.LastIndexOf('.'))
+                {
+                    // Si hay más de un punto (por miles y decimales)
+                    int lastDot = s.LastIndexOf('.');
+                    s = s.Remove(lastDot).Replace(".", "") + "." + s.Substring(lastDot + 1);
+                }
+
+                return decimal.TryParse(s, System.Globalization.NumberStyles.Any,
+                                        System.Globalization.CultureInfo.InvariantCulture, out var v)
+                       ? Math.Round(v, 2)
+                       : null;
+            }
+
+            if (!Directory.Exists(_root))
+                throw new DirectoryNotFoundException($"No existe la carpeta: {_root}");
+
+            var files = Directory.EnumerateFiles(_root, "*.*", SearchOption.AllDirectories)
+                                .Where(f =>
+                                    f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) ||
+                                    f.EndsWith(".csv", StringComparison.OrdinalIgnoreCase));
+
+            foreach (var file in files)
+            {
+                var upperName = Path.GetFileNameWithoutExtension(file).ToUpperInvariant();
+
+                if (upperName.Contains("ARTICULOOPERACION"))
+                {
+                    foreach (var row in ReadDelimited(file))
+                    {
+                        listaGrabar.Add(new ArticuloOperacionCrecos()
+                        {
+                            CANTIDAD = int.Parse(row.GetValueOrDefault("CANTIDAD")),
+                            ISECUENCIAL = int.Parse(row.GetValueOrDefault("ISECUENCIAL")),
+                            COD_PRODUCTO = row.GetValueOrDefault("COD_PRODUCTO"),
+                            COD_OPERACION =row.GetValueOrDefault("COD_OPERACION"),
+                            DESC_PRODUCTO = row.GetValueOrDefault("DESC_PRODUCTO"),
+                            OBSERVACION = ""
+                        });
+                    }
+                }
+
+
+                if (upperName.Contains("CARTERAASIGNADA"))
+                {
+                    foreach (var row in ReadDelimited(file))
+                    {
+                        carteraGrabar.Add(new CarteraAsignadaCrecos()
+                        {
+                            COD_EMPRESA = row.GetValueOrDefault("COD_EMPRESA"),
+                            EMPRESA = row.GetValueOrDefault("EMPRESA"),
+                            COD_UNIDAD_NEGOCIO = row.GetValueOrDefault("COD_UNIDAD_NEGOCIO"),
+                            UNIDAD_NEGOCIO = row.GetValueOrDefault("UNIDAD_NEGOCIO"),
+                            COD_TIPO_CARTERA = row.GetValueOrDefault("COD_TIPO_CARTERA"),
+                            TIPO_CARTERA = row.GetValueOrDefault("TIPO_CARTERA"),
+                            IMES = ToInt(row.GetValueOrDefault("IMES")),
+                            IANO = ToInt(row.GetValueOrDefault("IANO")),
+                            CNUMEROIDENTIFICACION = row.GetValueOrDefault("CNUMEROIDENTIFICACION"),
+                            CNOMBRECOMPLETO = row.GetValueOrDefault("CNOMBRECOMPLETO"),
+                            COD_TIPO_GESTOR = row.GetValueOrDefault("COD_TIPO_GESTOR"),
+                            CDESCRIPCION = row.GetValueOrDefault("CDESCRIPCION"),
+                            BCUOTAIMPAGA = row.GetValueOrDefault("BCUOTAIMPAGA"),
+                            DIAS_MORA = ToInt(row.GetValueOrDefault("DIAS_MORA")),
+                            DFECHAVENCIMIENTO = (row.GetValueOrDefault("DFECHAVENCIMIENTO")),
+                            IVALORDEUDATOTAL = ToDec(row.GetValueOrDefault("IVALORDEUDATOTAL")),
+                            ICICLOCORTE = ToInt(row.GetValueOrDefault("ICICLOCORTE")),
+                            COD_PAIS = row.GetValueOrDefault("COD_PAIS"),
+                            PAIS = row.GetValueOrDefault("PAIS"),
+                            COD_PROVINCIA = row.GetValueOrDefault("COD_PROVINCIA"),
+                            PROVINCIA = row.GetValueOrDefault("PROVINCIA"),
+                            COD_CANTON = row.GetValueOrDefault("COD_CANTON"),
+                            CANTON = row.GetValueOrDefault("CANTON"),
+                            COD_ZONA = row.GetValueOrDefault("COD_ZONA"),
+                            ZONA = row.GetValueOrDefault("ZONA"),
+                            COD_BARRIO = row.GetValueOrDefault("COD_BARRIO"),
+                            BARRIO = row.GetValueOrDefault("BARRIO"),
+                            COD_GESTOR = row.GetValueOrDefault("COD_GESTOR"),
+                            GESTOR = row.GetValueOrDefault("GESTOR"),
+                            CODIGOCLIENTE = row.GetValueOrDefault("CODIGOCLIENTE")
+                        });
+                    }
+                }
+
+                if (upperName.Contains("DATOSCLIENTE"))
+                {
+                    foreach (var row in ReadDelimited(file))
+                    {
+                        clientesGrabar.Add(new DatosClienteCrecos()
+                        {
+                            CCODIGOTIPOPERSONA = row.GetValueOrDefault("CCODIGOTIPOPERSONA"),
+                            TIPO_PERSONA = row.GetValueOrDefault("TIPO_PERSONA"),
+                            COD_TIPO_IDENTIF = row.GetValueOrDefault("COD_TIPO_IDENTIF"),
+                            DESCRIP_TIPO_IDENTIF = row.GetValueOrDefault("DESCRIP_TIPO_IDENTIFIC") ?? row.GetValueOrDefault("DESCRIP_TIPO_IDENTIF"),
+                            CNUMEROIDENTIFICACION = row.GetValueOrDefault("CNUMEROIDENTIFICACION"),
+                            CNOMBRECOMPLETO = row.GetValueOrDefault("CNOMBRECOMPLETO"),
+                            CEXENTOIMPUESTO = row.GetValueOrDefault("CEXENTOIMPUESTO"),
+                            CPRIMERNOMBRE = row.GetValueOrDefault("CPRIMERNOMBRE"),
+                            CSEGUNDONOMBRE = row.GetValueOrDefault("CSEGUNDONOMBRE"),
+                            CAPELLIDOPATERNO = row.GetValueOrDefault("CAPELLIDOPATERNO"),
+                            CAPELLIDOMATERNO = row.GetValueOrDefault("CAPELLIDOMATERNO"),
+                            CCODIGOESTADOCIVIL = row.GetValueOrDefault("CCODIGOESTADOCIVIL"),
+                            DESCRIP_ESTADO_CIVIL = row.GetValueOrDefault("DESCRIP_ESTADO_CIVIL"),
+                            CCODIGOSEXO = row.GetValueOrDefault("CCODIGOSEXO"),
+                            DESCRIP_SEXO = row.GetValueOrDefault("DESCRIP_SEXO"),
+                            CCODIGOPAIS = row.GetValueOrDefault("CCODIGOPAIS"),
+                            DESCRIP_PAIS = row.GetValueOrDefault("DESCRIP_PAIS"),
+                            CCODIGOCIUDADNACIMIENTO = row.GetValueOrDefault("CCODIGOCIUDADNACIMIENTO"),
+                            DESCRIP_CIUDAD_NACIMIENTO = row.GetValueOrDefault("DESCRIP_CIUDAD_NACIMIENTO"),
+                            CCODIGONACIONALIDAD = row.GetValueOrDefault("CCODIGONACIONALIDAD"),
+                            DESCRIP_NACIONALIDAD = row.GetValueOrDefault("DESCRIP_NACIONALIDAD"),
+                            DFECHANACIMIENTO = row.GetValueOrDefault("DFECHANACIMIENTO"),
+                            INUMEROCARGA = ToInt(row.GetValueOrDefault("INUMEROCARGA")),
+                            CSEPARACIONBIEN = row.GetValueOrDefault("CSEPARACIONBIEN"),
+                            CCODIGONIVELEDUCACION = row.GetValueOrDefault("CCODIGONIVELEDUCACION"),
+                            DESCRIP_NIVEL_EDUC = row.GetValueOrDefault("DESCRIP_NIVEL_EDUC"),
+                            CCODIGOTITULO = row.GetValueOrDefault("CCODIGOTITULO"),
+                            DESCRIP_TITULO = row.GetValueOrDefault("DESCRIP_TITULO"),
+                            CRAZONCOMERCIAL = row.GetValueOrDefault("CRAZONCOMERCIAL"),
+                            CNOMBREEMPRESA = row.GetValueOrDefault("CNOMBREEMPRESA"),
+                            CCODIGOCARGO = row.GetValueOrDefault("CCODIGOCARGO"),
+                            DESCRIP_CARGO = row.GetValueOrDefault("DESCRIP_CARGO"),
+                            DFECHAINGRESOLAB = row.GetValueOrDefault("DFECHAINGRESOLAB"),
+                            IINGRESO = ToDec(row.GetValueOrDefault("IINGRESO")),
+                            IEGRESO = ToDec(row.GetValueOrDefault("IEGRESO")),
+                            ICODIGOCLIENTE = row.GetValueOrDefault("ICODIGOCLIENTE"),
+                            ISCORE = ToInt(row.GetValueOrDefault("ISCORE")),
+                        });
+                    }
+
+
+                   
+                }
+
+                if (upperName.Contains("DIRECCIONCLIENTE"))
+                {
+                    foreach (var row in ReadDelimited(file))
+                    {
+                        direccionClientesGrabar.Add(new DireccionClienteCrecos()
+                        {
+                            CNUMEROIDENTIFICACION = row.GetValueOrDefault("CNUMEROIDENTIFICACION"),
+                            CODIGO_UBICACION = row.GetValueOrDefault("CODIGO_UBICACION"),
+                            DESCRIP_UBICACION = row.GetValueOrDefault("DESCRIP_UBICACION"),
+                            COD_PAIS = row.GetValueOrDefault("COD_PAIS"),
+                            DESCRIP_PAIS = row.GetValueOrDefault("DESCRIP_PAIS"),
+                            COD_PROVINCIA = row.GetValueOrDefault("COD_PROVINCIA"),
+                            DESCRIP_PROVINCIA = row.GetValueOrDefault("DESCRIP_PROVINCIA"),
+                            COD_CANTON = row.GetValueOrDefault("COD_CANTON"),
+                            DESCRIP_CANTON = row.GetValueOrDefault("DESCRIP_CANTON"),
+                            COD_PARROQUIA = row.GetValueOrDefault("COD_PARROQUIA"),
+                            DESCRIP_PARROQUIA = row.GetValueOrDefault("DESCRIP_PARROQUIA"),
+                            COD_BARRIO = row.GetValueOrDefault("COD_BARRIO"),
+                            DESCRIP_BARRIO = row.GetValueOrDefault("DESCRIP_BARRIO"),
+                            CDIRECCIONCARGA = row.GetValueOrDefault("CDIRECCIONCARGA"),
+                            COBSERVACION = row.GetValueOrDefault("COBSERVACION"),
+                            CDIRECCIONCOMPLETA = row.GetValueOrDefault("CDIRECCIONCOMPLETA"),
+                            CCASILLA = row.GetValueOrDefault("CCASILLA"),
+                            CCORREOELECTRONICO = row.GetValueOrDefault("CCORREOELECTRONICO"),
+                            COD_TIPO_ESPACIO = row.GetValueOrDefault("COD_TIPO_ESPACIO"),
+                            DESCRIP_TIPO_ESPACIO = row.GetValueOrDefault("DESCRIP_TIPO_ESPACIO"),
+                            INUMEROESPACIO = ToInt(row.GetValueOrDefault("INUMEROESPACIO")),
+                            INUMEROSOLAR = ToInt(row.GetValueOrDefault("INUMEROSOLAR")),
+                            CCALLEPRINCIPAL = row.GetValueOrDefault("CCALLEPRINCIPAL"),
+                            CNUMEROCALLE = row.GetValueOrDefault("CNUMEROCALLE"),
+                            CALLE_SECUND = row.GetValueOrDefault("CALLE_SECUND"),
+                            CALLE_SECUND_2 = row.GetValueOrDefault("CALLE_SECUND_2"),
+                            CNUMERO_SOLAR = row.GetValueOrDefault("CNUMERO_SOLAR"),
+                            COD_TIPO_NUMERACION = row.GetValueOrDefault("COD_TIPO_NUMERACION"),
+                            DESCRIP_TIPO_NUMERACION = row.GetValueOrDefault("DESCRIP_TIPO_NUMERACION"),
+                            COD_INDICADOR_POSICION = row.GetValueOrDefault("COD_INDICADOR_POSICION"),
+                            DESCRIP_IND_POSICION = row.GetValueOrDefault("DESCRIP_IND_POSICION"),
+                            NOMBRE_EDIFICIO = row.GetValueOrDefault("NOMBRE_EDIFICIO"),
+                            CNUMEROPISO = row.GetValueOrDefault("CNUMEROPISO"),
+                            PISO_BLOQUE = row.GetValueOrDefault("PISO_BLOQUE"),
+                            COFICINA_DEPARTAMENTO = row.GetValueOrDefault("COFICINA_DEPARTAMENTO"),
+                            INDICADOR_PRINCIPAL = row.GetValueOrDefault("INDICADOR_PRINCIPAL"),
+                            COD_T_PROPIEDAD = row.GetValueOrDefault("COD_T_PROPIEDAD"),
+                            DESCRIP_TIPO_PROPIEDAD = row.GetValueOrDefault("DESCRIP_TIPO_PROPIEDAD"),
+                            AÑO_ANTIGUEDAD = ToInt(row.GetValueOrDefault("AÑO_ANTIGUEDAD")),
+                            MES_ANTIGUEDAD = ToInt(row.GetValueOrDefault("MES_ANTIGUEDAD")),
+                            DIAS_ANTIGUEDAD = ToInt(row.GetValueOrDefault("DIAS_ANTIGUEDAD")),
+                        });
+                    }
+                }
+
+                if (upperName.Contains("OPERACIONESCLIENTE"))
+                {
+                    foreach (var row in ReadDelimited(file))
+                    {
+                        operacionesClienteGrabar.Add(new OperacionesClientesCrecos()
+                        {
+                            ICODIGOOPERACION = row.GetValueOrDefault("ICODIGOOPERACION"),
+                            COD_OFICINA = row.GetValueOrDefault("COD_OFICINA"),
+                            DESC_OFICINA = row.GetValueOrDefault("DESC_OFICINA"),
+                            N_IDENTIFICACION = row.GetValueOrDefault("N_IDENTIFICACION"),
+                            NUM_FACTURA = row.GetValueOrDefault("NUM_FACTURA"),
+                            COD_MONEDA = row.GetValueOrDefault("COD_MONEDA"),
+                            DESC_MONEDA = row.GetValueOrDefault("DESC_MONEDA"),
+                            COD_PROD_FINANCIERO = row.GetValueOrDefault("COD_PROD_FINANCIERO"),
+                            DES_PROD_FINANCIERO = row.GetValueOrDefault("DES_PROD_FINANCIERO"),
+                            ICODIGO_OPERACION_NEGOCIACION = row.GetValueOrDefault("ICODIGO_OPERACION_NEGOCIACION"),
+                            NUM_CUOTAS = ToInt(row.GetValueOrDefault("NUM_CUOTAS")),
+                            TASA_INTERES = ToDec(row.GetValueOrDefault("TASA_INTERES")),
+                            FECHA_FACTURA = (row.GetValueOrDefault("FECHA_FACTURA")),
+                            FECHA_ULTIMO_VENCIMIENTO = (row.GetValueOrDefault("FECHA_ULTIMO_VENCIMIENTO")),
+                            FECHA_ULTMO_PAGO = (row.GetValueOrDefault("FECHA_ULTMO_PAGO")),
+                            MONTO_CREDITO = ToDec(row.GetValueOrDefault("MONTO_CREDITO")),
+                            VALOR_FINANCIAR = ToDec(row.GetValueOrDefault("VALOR_FINANCIAR")),
+                            NUMERO_SOLICITUD = row.GetValueOrDefault("NUMERO_SOLICITUD"),
+                            COD_T_OPERACION = row.GetValueOrDefault("COD_T_OPERACION"),
+                            DESC_T_OPERACION = row.GetValueOrDefault("DESC_T_OPERACION"),
+                            COD_T_CREDITO = row.GetValueOrDefault("COD_T_CREDITO"),
+                            DESC_T_CREDITO = row.GetValueOrDefault("DESC_T_CREDITO"),
+                            COD_ESTADO_OPERACION = row.GetValueOrDefault("COD_ESTADO_OPERACION"),
+                            DESC_ESTADO_OPERACION = row.GetValueOrDefault("DESC_ESTADO_OPERACION"),
+                            SECUENC_CUPO = ToInt(row.GetValueOrDefault("SECUENC_CUPO")),
+                            ESTADO_REGISTRO = row.GetValueOrDefault("ESTADO_REGISTRO"),
+                            DES_ESTADO_REGISTRO = row.GetValueOrDefault("DES_ESTADO_REGISTRO"),
+                            COD_VENDEDOR = row.GetValueOrDefault("COD_VENDEDOR"),
+                            DESC_VENDEDOR = row.GetValueOrDefault("DESC_VENDEDOR"),
+                        });
+                    }
+                }
+
+
+                if (upperName.Contains("REFERENCIASPERSONALES"))
+                {
+                    foreach (var row in ReadDelimited(file))
+                    {
+                        referenciaClienteGrabar.Add(new ReferenciasPersonalesCrecos()
+                        {
+                            NumIdentificacion = row.GetValueOrDefault("NUM_IDENTIFICACION"),
+                            NombreCompleto = row.GetValueOrDefault("CNOMBRECOMPLETO"),
+                            CodTipoIdentRef = row.GetValueOrDefault("COD_TIPO_IDENT_REF"),
+                            DescripTipoIdentific = row.GetValueOrDefault("DESCRIPC_TIPO_IDENTIFIC"),
+                            NumIdentificRef = row.GetValueOrDefault("NUM_IDENTIFIC_REF"),
+                            NombreReferencia = row.GetValueOrDefault("NOMBRE_REFERENCIA"),
+                            CodPaisRef = row.GetValueOrDefault("COD_PAIS_REF"),
+                            DescripPais = row.GetValueOrDefault("DESCRIP_PAIS"),
+                            CodProvinciaRef = row.GetValueOrDefault("COD_PROVINCIA_REF"),
+                            DescripProvincia = row.GetValueOrDefault("DESCRIP_PROVINCIA"),
+                            CodCantonRef = row.GetValueOrDefault("COD_CANTON_REF"),
+                            DescripCanton = row.GetValueOrDefault("DESCRIP_CANTON"),
+                            CodTipoVinculoRef = row.GetValueOrDefault("COD_TIPO_VINCULO_REF"),
+                            DescripVinculo = row.GetValueOrDefault("DESCRIP_VINCULO"),
+                            DireccionRef = row.GetValueOrDefault("DIRECCION_REF"),
+                            NumeroReferencia = row.GetValueOrDefault("NUMERO_REFERENCIA"),
+                        });
+                    }
+                }
+
+                if (upperName.Contains("SALDOCLIENTE"))
+                {
+                    foreach (var row in ReadDelimited(file))
+                    {
+                        saldoClienteCrecos.Add(new SaldoClienteCrecos()
+                        {
+                            COD_EMPRESA = row.GetValueOrDefault("COD_EMPRESA"),
+                            DESCP_EMPRESA = row.GetValueOrDefault("DESCP_EMPRESA"),
+                            COD_U_NEGOCIO = row.GetValueOrDefault("COD_U_NEGOCIO"),
+                            DESC_U_NEGOCIO = row.GetValueOrDefault("DESC_U_NEGOCIO"),
+                            COD_CARTERA = row.GetValueOrDefault("COD_CARTERA"),
+                            DESCRIP_CARTERA = row.GetValueOrDefault("DESCRIP_CARTERA"),
+                            COD_GESTOR = row.GetValueOrDefault("COD_GESTOR"),
+                            DESC_GESTOR = row.GetValueOrDefault("DESC_GESTOR"),
+                            IMES = ToInt(row.GetValueOrDefault("IMES")),
+                            IANO = ToInt(row.GetValueOrDefault("IANO")),
+                            COD_OFICINA = row.GetValueOrDefault("COD_OFICINA"),
+                            CDESCRIPCION_OFICINA = row.GetValueOrDefault("CDESCRIPCION_OFICINA"),
+                            COD_TCREDITO = row.GetValueOrDefault("COD_TCREDITO"),
+                            DESCRIP_TCREDITO = row.GetValueOrDefault("DESCRIP_TCREDITO"),
+                            CNUMEROIDENTIFICACION = row.GetValueOrDefault("CNUMEROIDENTIFICACION"),
+                            COD_OPERACION = row.GetValueOrDefault("COD_OPERACION"),
+                            CNUMEROTARJETA = row.GetValueOrDefault("CNUMEROTARJETA"),
+                            CICLO_CORTE = row.GetValueOrDefault("CICLO_CORTE"),
+                            DESC_CICLOCORTE = row.GetValueOrDefault("DESC_CICLOCORTE"),
+                            DIAS_VENCIDOS = ToInt(row.GetValueOrDefault("DIAS_VENCIDOS")),
+                            ITRAMO = ToInt(row.GetValueOrDefault("ITRAMO")),
+                            CDESCRIPCIONTRAMO = row.GetValueOrDefault("CDESCRIPCIONTRAMO"),
+                            FECHA_MAX_PAGO = row.GetValueOrDefault("FECHA_MAX_PAGO"),
+                            VALOR_DEUDA = ToDec(row.GetValueOrDefault("VALOR_DEUDA")),
+                            VALOR_PAGO_MINIMO = ToDec(row.GetValueOrDefault("VALOR_PAGO_MINIMO")),
+                            VALOR_CORRIENTE = ToDec(row.GetValueOrDefault("VALOR_CORRIENTE")),
+                            VALOR_VENCIDO = ToDec(row.GetValueOrDefault("VALOR_VENCIDO")),
+                            VALOR_POR_VENCER = ToDec(row.GetValueOrDefault("VALOR_POR_VENCER")),
+                            VALOR_MORA = ToDec(row.GetValueOrDefault("VALOR_MORA")),
+                            VALOR_GESTION = ToDec(row.GetValueOrDefault("VALOR_GESTION")),
+                            VALOR_VENCIDO_CORTEANTERIOR = ToDec(row.GetValueOrDefault("VALOR_VENCIDO_CORTEANTERIOR")),
+                            PRIMERA_CUOTA_VENCIDA = row.GetValueOrDefault("PRIMERA_CUOTA_VENCIDA"),
+                            NEGOCIACION_ACTIVA = row.GetValueOrDefault("NEGOCIACION_ACTIVA"),
+                            DFECHAEJECUCION = row.GetValueOrDefault("DFECHAEJECUCION"),
+                            FECHA_INGRESO = row.GetValueOrDefault("FECHA_INGRESO"),
+                            CALIFICACION_CLIENTE = row.GetValueOrDefault("CALIFICACION_CLIENTE"),
+                            F_ULTIMO_CORTE = row.GetValueOrDefault("F_ULTIMO_CORTE"),
+                            FECHA_ULT_PAGO = row.GetValueOrDefault("FECHA_ULT_PAGO"),
+                            VAL_ULT_PAGO = ToDec(row.GetValueOrDefault("VAL_ULT_PAGO")),
+                            VALOR_PAGO_MINIMO_ACTUALIZADO = ToDec(row.GetValueOrDefault("VALOR_PAGO_MINIMO_ACTUALIZADO")),
+                            CODIGOCLIENTE = row.GetValueOrDefault("CODIGOCLIENTE"),
+                        });
+                    }
+                }
+
+                if (upperName.Contains("TELEFONOCLIENTE"))
+                {
+                    foreach (var row in ReadDelimited(file))
+                    {
+                        telefonoClienteCrecos.Add(new TelefonosClienteCrecos()
+                        {
+                            ISECUENCIA = ToInt(row.GetValueOrDefault("ISECUENCIA")) ?? 0, // si es PK autoincrement, quítalo
+                            CNumeroIdentificacion = row.GetValueOrDefault("CNUMEROIDENTIFICACION"),
+                            CodUbicacion = row.GetValueOrDefault("COD_UBICACION"),
+                            DescripUbicacion = row.GetValueOrDefault("DESCRIP_UBICACION"),
+                            CodTipoTelefono = row.GetValueOrDefault("COD_TIPO_TELEFONO"),
+                            TipoTelefono = row.GetValueOrDefault("TIPO_TELEFONO"),
+                            CNumero = row.GetValueOrDefault("CNUMERO"),
+                            CPrefijo = row.GetValueOrDefault("CPREFIJO"),
+                        });
+                    }
+                }
+               
+            }
+
+            _db.Database.ExecuteSqlRaw(@"
+                TRUNCATE TABLE
+                  temp_crecos.""ArticuloOperacionCrecos"",
+                  temp_crecos.""CarteraAsignadaCrecos"",
+                  temp_crecos.""DatosClienteCrecos"",
+                  temp_crecos.""DireccionClienteCrecos"",
+                  temp_crecos.""OperacionesClientesCrecos"",
+                  temp_crecos.""ReferenciasPersonalesCrecos"",
+                  temp_crecos.""SaldoClienteCrecos"",
+                  temp_crecos.""TelefonosClienteCrecos""
+                RESTART IDENTITY CASCADE;");
+
+            _db.ArticuloOperacionCrecos.AddRange(listaGrabar);
+            _db.CarteraAsignadaCrecos.AddRange(carteraGrabar);
+            _db.DatosClienteCrecos.AddRange(clientesGrabar);
+            _db.DireccionClienteCrecos.AddRange(direccionClientesGrabar);
+            _db.OperacionesClientesCrecos.AddRange(operacionesClienteGrabar);
+            _db.ReferenciasPersonalesCrecos.AddRange(referenciaClienteGrabar);
+            _db.SaldoClienteCrecos.AddRange(saldoClienteCrecos);
+            _db.TelefonosClienteCrecos.AddRange(telefonoClienteCrecos);
+            _db.SaveChanges();
+            string ss = "";
+
+        }
 
 
         // =================== LECTOR TXT/CSV ROBUSTO ===================
