@@ -171,7 +171,7 @@ namespace gestiones_backend.Controllers
                     existente.Clasificacion = deuda.Clasificacion;
                     existente.Creditos = deuda.Creditos;
                     existente.ValorCuota = deuda.ValorCuota;
-
+                    existente.EsActivo = true;
                     existente.Empresa = deuda.Empresa;
                     existente.Tramo = deuda.Tramo;
                     existente.UltimoPago = deuda.UltimoPago;
@@ -186,6 +186,7 @@ namespace gestiones_backend.Controllers
                     if (deuda.IdDeuda == Guid.Empty)
                         deuda.IdDeuda = Guid.NewGuid();
                     deuda.FechaRegistro = ToUtc(deuda.FechaRegistro);
+                    deuda.EsActivo = true;
                     _dataContext.Deudas.Add(deuda);
                 }
             }
