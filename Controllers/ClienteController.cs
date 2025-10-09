@@ -268,11 +268,9 @@ namespace gestiones_backend.Controllers
                 (!filtraIN || d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true))
             );
 
-            // 1) Restringe deudores a los que tengan alguna deuda que cumpla el filtro
             clientesQuery = clientesQuery.Where(filtroDeudor);
 
-            // 2) Proyección consistente usando el mismo criterio (escrito inline)
-            var deudoresDTO = await clientesQuery
+            var deudoresDTO = await clientesQuery.OrderByDescending(x => x.FechaRegistro)
                 .Select(c => new
                 {
                     c.IdDeudor,
@@ -282,7 +280,6 @@ namespace gestiones_backend.Controllers
                     c.Descripcion,
                     c.Correo,
 
-                    // Detalle de deudas filtradas para mostrar tramo + gestor real
                     DeudasDet = c.Deuda
                         .Where(d =>
                             d.EsActivo == true &&
@@ -311,7 +308,6 @@ namespace gestiones_backend.Controllers
                 })
                 .ToListAsync();
 
-            // 3) Mapeo final a tu DTO de salida
             var result = deudoresDTO
                 .Select(c => new ClientesOutDTO
                 {
@@ -323,7 +319,6 @@ namespace gestiones_backend.Controllers
                     correo = c.Correo,
                     numeroDeudas = c.NumeroDeudas.ToString(),
 
-                    // Muestra tramo + gestor por cada deuda filtrada
                     tramos = c.DeudasDet.Any()
                         ? string.Join("",
                             c.DeudasDet.Select((d, i) =>
@@ -331,11 +326,10 @@ namespace gestiones_backend.Controllers
                           )
                         : string.Empty,
 
-                    // “gestor” a nivel cliente = lista de gestores distintos de sus deudas filtradas
                     gestor = string.Join(", ",
                         c.DeudasDet.Select(d => d.GestorNombre).Distinct())
                 })
-                // por si acaso: ya garantizado por filtroDeudor, pero lo dejamos
+
                 .Where(x => int.Parse(x.numeroDeudas) > 0)
                 .ToList();
 

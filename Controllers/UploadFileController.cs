@@ -141,6 +141,8 @@ namespace gestiones_backend.Controllers
                     deudaExistente.Ciudad = deudaExcel.Ciudad;
                     deudaExistente.EsActivo = true;
                     deudaExistente.IdUsuario = deudaExcel.Usuario;
+                    deudaExistente.FechaRegistro = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
+
                     actualizarDeuda.Add(deudaExistente);
                 }
                 else
@@ -171,7 +173,8 @@ namespace gestiones_backend.Controllers
                         Agencia = deudaExcel.Agencia,
                         Ciudad = deudaExcel.Ciudad,
                         EsActivo = true,
-                        IdUsuario = deudaExcel.Usuario
+                        IdUsuario = deudaExcel.Usuario,
+                        FechaRegistro = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc)
 
                     };
                     grabarDeuda.Add(nuevaDeuda);

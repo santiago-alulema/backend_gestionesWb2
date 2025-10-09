@@ -85,6 +85,11 @@ builder.Services.AddScoped<DeudoresImportService>();
 builder.Services.AddHttpClient();
 
 builder.Services.AddMapster();
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 200 * 1024 * 1024; // 200 MB
+});
+
 
 var app = builder.Build();
 
