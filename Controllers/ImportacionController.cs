@@ -27,55 +27,69 @@ namespace gestiones_backend.Controllers
             _dataContext.Database.ExecuteSqlRaw(@"CREATE EXTENSION IF NOT EXISTS ""uuid-ossp"";");
 
             const string SqlDeudasCrecos = @"
-                                            SELECT 
-                                             gen_random_uuid()  AS ""IdDeuda"",
-'NA'                                         AS ""Estado"",
-                                              ca.""CNUMEROIDENTIFICACION""                               AS ""IdDeudor"",
-                                              CAST(occ.""FECHA_FACTURA"" AS date)                        AS ""FechaVenta"",
-                                              occ.""NUM_FACTURA""                                        AS ""NumeroFactura"",
-                                              ROUND(scc.""VALOR_MORA"" + scc.""VALOR_GESTION"" + scc.""VALOR_DEUDA"" , 2) AS ""SaldoDeuda"",
-                                              occ.""NUM_CUOTAS""                                         AS ""NumeroCuotas"",
-                                              scc.""DIAS_VENCIDOS""                                      AS ""DiasMora"",
-                                              0                                                          AS ""ValorCuota"",
-                                              scc.""CDESCRIPCIONTRAMO""                                  AS ""Tramo"",
-                                              NULL                                                       AS ""UltimoPago"",
-                                              'CRECOS'                                                   AS ""Empresa"",
-                                              NULL                                                       AS ""Clasificacion"",
-                                              1                                                          AS ""Creditos"",
-                                              ROUND((t.valorliquidacion / NULLIF(scc.""VALOR_DEUDA"",0))*100, 0) AS ""Descuento"",
-                                              ROUND(scc.""VALOR_DEUDA"" , 2)                             As DeudaCapital,
-                                              CAST(scc.""FECHA_ULT_PAGO"" AS date) AS ""FechaUltimoPago"",
-                                              ROUND(scc.""VALOR_GESTION"", 2)                            AS ""GastosCobranzas"",
-                                              ROUND(scc.""VALOR_MORA"", 2)                               AS ""Interes"",
-                                              ROUND(t.valorliquidacion, 2)                               AS ""MontoCobrar"",
-                                              dcc.""DESCRIP_TIPO_IDENTIF""                               AS ""TipoDocumento"",
-                                              'Creditos Economicos'                                      AS ""Agencia"",
-                                              ca.""CANTON""                                              AS ""Ciudad"",
-                                              (
-                                                SELECT string_agg(aoc.""DESC_PRODUCTO"", ' || ')
-                                                FROM temp_crecos.""ArticuloOperacionCrecos"" aoc
-                                                WHERE aoc.""COD_OPERACION"" = occ.""ICODIGOOPERACION""
-                                              )                                                          AS ""ProductoDescripcion"",
-                                              TRUE                                                       AS ""EsActivo"",
-                                              NULL                                                       AS ""IdUsuario"",
-                                              ca.""COD_EMPRESA""                                         AS ""CodigoEmpresa"",
-                                              now()                                                      AS ""FechaRegistro"",
-                                             ROUND(t.valorliquidacionparte, 2)                           AS ""MontoCobrarPartes"",
-                                              occ.""ICODIGOOPERACION""                                   AS ""CodigoOperacion""
-                                            FROM temp_crecos.""CarteraAsignadaCrecos"" ca
-                                            LEFT JOIN temp_crecos.""DatosClienteCrecos"" dcc 
-                                              ON dcc.""ICODIGOCLIENTE"" = ca.""CODIGOCLIENTE""
-                                            LEFT JOIN temp_crecos.""OperacionesClientesCrecos"" occ 
-                                              ON occ.""N_IDENTIFICACION"" = ca.""CNUMEROIDENTIFICACION""
-                                           left join temp_crecos.trifocuscrecospartes t on t.codoperacion = ca.""CNUMEROIDENTIFICACION""  
-                                            LEFT JOIN temp_crecos.""SaldoClienteCrecos"" scc 
-                                              ON ca.""CODIGOCLIENTE"" = scc.""CODIGOCLIENTE"";";
+                            SELECT 
+                                gen_random_uuid()                                                              AS ""IdDeuda"",
+                                MAX(occ.""DESC_T_CREDITO"")                                                    AS ""Estado"",
+                                ca.""CNUMEROIDENTIFICACION""                                                   AS ""IdDeudor"",
+                                string_agg(DISTINCT ('Fact:' || occ.""NUM_FACTURA""), ' - ')                   AS ""NumeroFactura"",
+                                CAST(MAX(occ.""FECHA_FACTURA"") AS date)                                       AS ""FechaVenta"",
+                                ROUND(MAX(scc.""VALOR_DEUDA""), 2)::numeric(18,2)                              AS ""SaldoDeuda"",
+                                COALESCE(MAX(occ.""NUM_CUOTAS""), 0)::int                                      AS ""NumeroCuotas"",
+                                COALESCE(MAX(scc.""DIAS_VENCIDOS""), 0)::int                                   AS ""DiasMora"",
+                                0::numeric(18,2)                                                               AS ""ValorCuota"",
+                                MAX(scc.""CDESCRIPCIONTRAMO"")::text                                           AS ""Tramo"",
+                                NULL::numeric(18,2)                                                            AS ""UltimoPago"",
+                                'CRECOSCORP'                                                                   AS ""Empresa"",
+                                NULL::text                                                                     AS ""Clasificacion"",
+                                1::int                                                                         AS ""Creditos"",
+                                COALESCE(ROUND((MAX(t.valorliquidacion) / NULLIF(MAX(scc.""VALOR_DEUDA""),0)) * 100, 0), 0)::int
+                                                                                                               AS ""Descuento"",
+                                ROUND(MAX(scc.""VALOR_DEUDA""), 2)::numeric(18,2)                              AS ""DeudaCapital"",
+                                CAST(MAX(scc.""FECHA_ULT_PAGO"") AS date)                                      AS ""FechaUltimoPago"",
+                                ROUND(MAX(scc.""VALOR_GESTION""), 2)::numeric(18,2)                            AS ""GastosCobranzas"",
+                                ROUND(MAX(scc.""VALOR_MORA""), 2)::numeric(18,2)                               AS ""Interes"",
+                                ROUND(MAX(t.valorliquidacion), 2)::numeric(18,2)                               AS ""MontoCobrar"",
+                                ROUND(MAX(t.valorliquidacionparte), 2)::numeric(18,2)                          AS ""MontoCobrarPartes"",
+                                MAX(dcc.""DESCRIP_TIPO_IDENTIF"")::text                                        AS ""TipoDocumento"",
+                                'Creditos Economicos'                                                          AS ""Agencia"",
+                                MAX(ca.""CANTON"")::text                                                       AS ""Ciudad"",
+                                (
+                                    SELECT string_agg(
+                                        '<strong>' || occ2.""NUM_FACTURA"" || '</strong>: ' || aoc.""DESC_PRODUCTO"", 
+                                        ' || '
+                                    )
+                                    FROM temp_crecos.""ArticuloOperacionCrecos"" aoc
+                                    INNER JOIN temp_crecos.""OperacionesClientesCrecos"" occ2
+                                        ON occ2.""ICODIGOOPERACION"" = aoc.""COD_OPERACION""
+                                    WHERE occ2.""N_IDENTIFICACION"" = ca.""CNUMEROIDENTIFICACION""
+                                )                                                                               AS ""ProductoDescripcion"",
+                                TRUE                                                                            AS ""EsActivo"",
+                                NULL::varchar                                                                   AS ""IdUsuario"",
+                                MAX(ca.""COD_EMPRESA"")::varchar                                                AS ""CodigoEmpresa"",
+                                NOW()::timestamp                                                                AS ""FechaRegistro"",
+                                MAX(occ.""ICODIGOOPERACION"")::varchar                                          AS ""CodigoOperacion""
+                            FROM temp_crecos.""CarteraAsignadaCrecos"" ca
+                            LEFT JOIN temp_crecos.""DatosClienteCrecos"" dcc 
+                                ON dcc.""ICODIGOCLIENTE"" = ca.""CODIGOCLIENTE""
+                            LEFT JOIN temp_crecos.""OperacionesClientesCrecos"" occ 
+                                ON occ.""N_IDENTIFICACION"" = ca.""CNUMEROIDENTIFICACION""
+                            LEFT JOIN temp_crecos.trifocuscrecospartes t 
+                                ON t.codoperacion = ca.""CNUMEROIDENTIFICACION""
+                            LEFT JOIN temp_crecos.""SaldoClienteCrecos"" scc 
+                                ON ca.""CODIGOCLIENTE"" = scc.""CODIGOCLIENTE""
+                            GROUP BY ca.""CNUMEROIDENTIFICACION"";";
+
 
 
             List<Deuda> rows = _dataContext.Deudas
                                         .FromSqlRaw(SqlDeudasCrecos)
                                         .AsNoTracking()
                                         .ToList();
+
+            await _dataContext.Deudas
+                              .Where(d => d.Empresa == "CRECOSCORP")
+                              .ExecuteUpdateAsync(setters => setters
+                              .SetProperty(d => d.EsActivo, false));
 
             List<Deudores> deudores = _dataContext.Deudores.ToList();
             var idsValidos = deudores
@@ -87,17 +101,14 @@ namespace gestiones_backend.Controllers
                 .Where(x => x.Rol == "user")
                 .ToList();
 
-            // Filtrar solo los que existen en Deudores
             rows = rows
                 .Where(r => r.IdDeudor != null && idsValidos.Contains(r.IdDeudor!))
                 .ToList();
 
-            // Clasificación por días de mora
             List<Deuda> rowsMenos180 = rows.Where(x => x.DiasMora < 180).ToList();
             List<Deuda> rows181a360 = rows.Where(x => x.DiasMora >= 180 && x.DiasMora <= 360).ToList();
             List<Deuda> rowsMas360 = rows.Where(x => x.DiasMora > 360).ToList();
 
-            // Asignar usuario por round-robin
             void AsignarUsuario(List<Deuda> lista)
             {
                 if (usuarios.Count == 0) return;
@@ -111,7 +122,6 @@ namespace gestiones_backend.Controllers
             void Asignar(List<Deuda> lista)
             {
                 if (lista.Count == 0) return;
-                // Opcional: agrupar por IdDeudor para no partir clientes
                 var grupos = lista
                     .GroupBy(d => d.IdDeudor)
                     .Select(g => new { Items = g.ToList(), Total = g.Sum(x => x.DeudaCapital ?? 0m) })
@@ -119,12 +129,10 @@ namespace gestiones_backend.Controllers
                     .ThenByDescending(g => g.Items.Count)
                     .ToList();
 
-                // cargas por usuario
                 var cargas = usuarios.ToDictionary(u => u.IdUsuario, _ => 0m);
 
                 foreach (var g in grupos)
                 {
-                    // usuario menos cargado
                     var target = cargas.OrderBy(kv => kv.Value).First().Key;
                     foreach (var d in g.Items) d.IdUsuario = target;
                     cargas[target] += g.Total;
@@ -135,18 +143,20 @@ namespace gestiones_backend.Controllers
             Asignar(rows181a360);
             Asignar(rowsMas360);
 
-            // Unir todas las deudas
             var todas = rowsMenos180.Concat(rows181a360).Concat(rowsMas360).ToList();
 
-            // ---- UPSET SIMPLE POR NumeroFactura ----
             List<Deuda> deudas = _dataContext.Deudas.ToList();
+
+            static DateTime? ToUtc(DateTime? dt)
+    => dt.HasValue ? DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc) : (DateTime?)null;
+
+
             foreach (var deuda in todas)
             {
                 var existente = deudas.FirstOrDefault(d => d.NumeroFactura == deuda.NumeroFactura);
 
                 if (existente != null)
                 {
-                    // Actualizar campos existentes
                     existente.DeudaCapital = deuda.DeudaCapital;
                     existente.Interes = deuda.Interes;
                     existente.GastosCobranzas = deuda.GastosCobranzas;
@@ -166,17 +176,16 @@ namespace gestiones_backend.Controllers
                     existente.Tramo = deuda.Tramo;
                     existente.UltimoPago = deuda.UltimoPago;
                     existente.MontoCobrarPartes = deuda.MontoCobrarPartes;
-
+                    existente.FechaRegistro = ToUtc(existente.FechaRegistro);
                     existente.IdUsuario = deuda.IdUsuario;
 
                     _dataContext.Deudas.Update(existente);
                 }
                 else
                 {
-                    // Insertar nuevo
                     if (deuda.IdDeuda == Guid.Empty)
                         deuda.IdDeuda = Guid.NewGuid();
-
+                    deuda.FechaRegistro = ToUtc(deuda.FechaRegistro);
                     _dataContext.Deudas.Add(deuda);
                 }
             }

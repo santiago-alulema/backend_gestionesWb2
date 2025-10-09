@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using gestiones_backend.Context;
@@ -11,9 +12,11 @@ using gestiones_backend.Context;
 namespace gestiones_backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251009125920_CrecosCuotaOperacion9")]
+    partial class CrecosCuotaOperacion9
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1129,7 +1132,7 @@ namespace gestiones_backend.Migrations
 
             modelBuilder.Entity("gestiones_backend.Entity.temp_crecos.CuotaOperacionCrecos", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<string>("id")
                         .HasColumnType("varchar")
                         .HasColumnName("id");
 
@@ -1151,8 +1154,7 @@ namespace gestiones_backend.Migrations
 
                     b.Property<string>("CodOperacion")
                         .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)")
+                        .HasColumnType("text")
                         .HasColumnName("COD_OPERACION");
 
                     b.Property<DateTime?>("DFechaPostergacion")
@@ -1181,10 +1183,6 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("date")
                         .HasColumnName("FECHA_VENCIMIENTO");
 
-                    b.Property<decimal?>("IValorCuota")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("IVALORCUOTA");
-
                     b.Property<decimal?>("IValorTotalCuota")
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("IVALORTOTALCUOTA");
@@ -1197,19 +1195,7 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("numeric(18,4)")
                         .HasColumnName("TASA_MORA");
 
-                    b.Property<decimal?>("ValorCapitalInteres")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("VALOR_CAPITAL_INTERES");
-
-                    b.Property<decimal?>("ValorCargos")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("VALOR_CARGOS");
-
-                    b.Property<decimal?>("ValorOtrosCargos")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("VALOR_OTROS_CARGOS");
-
-                    b.HasKey("Id");
+                    b.HasKey("id");
 
                     b.HasIndex("CodOperacion")
                         .HasDatabaseName("IX_CuotasOperacion_CodOperacion");

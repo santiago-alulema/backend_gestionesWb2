@@ -1,6 +1,7 @@
 ﻿using gestiones_backend.Entity;
 using gestiones_backend.Entity.temp_crecos;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace gestiones_backend.Context
 {
@@ -43,12 +44,12 @@ namespace gestiones_backend.Context
         public DbSet<TelefonosClienteCrecos> TelefonosClienteCrecos => Set<TelefonosClienteCrecos>();
 
         public DbSet<TrifocusCrecos> TrifocusCrecos => Set<TrifocusCrecos>();
+        public DbSet<CuotaOperacionCrecos> CuotasOperacionCrecos => Set<CuotaOperacionCrecos>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configuración para entidades simples
             ConfigureSimpleEntities(modelBuilder);
 
             ConfigureComplexEntities(modelBuilder);
@@ -58,120 +59,207 @@ namespace gestiones_backend.Context
 
         private void ConfigureSimpleEntities(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<TrifocusCrecos>(e =>
+            modelBuilder.Entity<CuotaOperacionCrecos>(entity =>
             {
-                e.ToTable("TrifocusCrecos", schema: "temp_crecos");
-                e.HasKey(x => x.Id);
+                entity.ToTable("CuotasOperacionCrecos", schema: "temp_crecos");
 
-                e.HasIndex(x => x.CodigoCliente);
-                e.HasIndex(x => x.IdentificacionCliente);
-                e.HasIndex(x => new { x.Operacion, x.CodigoCliente }).HasDatabaseName("ix_operacion_cliente");
+                entity.HasKey(e => e.Id);
 
-                // Strings "largos"
-                e.Property(x => x.DireccionDomicilio).HasMaxLength(500);
-                e.Property(x => x.DireccionTrabajo).HasMaxLength(500);
-                e.Property(x => x.DireccionNegocio).HasMaxLength(500);
-                e.Property(x => x.Referencia1).HasMaxLength(300);
-                e.Property(x => x.Referencia2).HasMaxLength(300);
+                entity.Property(e => e.Id)
+                      .HasColumnName("id")
+                      .HasColumnType("varchar");
 
-                // Strings "cortos"
-                e.Property(x => x.UsuarioGenera).HasMaxLength(100);
-                e.Property(x => x.GestorAsignado).HasMaxLength(120);
-                e.Property(x => x.Ciudad).HasMaxLength(120);
-                e.Property(x => x.CodigoCliente).HasMaxLength(60);
-                e.Property(x => x.IdentificacionCliente).HasMaxLength(20);
-                e.Property(x => x.NombreCliente).HasMaxLength(200);
-                e.Property(x => x.EstadoCivil).HasMaxLength(40);
-                e.Property(x => x.TipoCredito).HasMaxLength(80);
-                e.Property(x => x.TramoActual).HasMaxLength(60);
-                e.Property(x => x.Formalidad).HasMaxLength(40);
-                e.Property(x => x.Calificacion).HasMaxLength(40);
-                e.Property(x => x.Semaforo).HasMaxLength(20);
-                e.Property(x => x.Operacion).HasMaxLength(60);
-                e.Property(x => x.TRAMO).HasMaxLength(60);
-                e.Property(x => x.Cargo).HasMaxLength(120);
-                e.Property(x => x.NombreTrabajo).HasMaxLength(200);
+                entity.Property(e => e.CodOperacion)
+                      .HasColumnName("COD_OPERACION")
+                      .HasMaxLength(60);
 
-                // Teléfonos
-                e.Property(x => x.TelefonoDomicilio).HasMaxLength(30);
-                e.Property(x => x.CelularDomicilio).HasMaxLength(30);
-                e.Property(x => x.TelefonoTrabajo).HasMaxLength(30);
-                e.Property(x => x.CelularTrabajo).HasMaxLength(30);
-                e.Property(x => x.TelefonoNegocio).HasMaxLength(30);
-                e.Property(x => x.CelularNegocio).HasMaxLength(30);
-                e.Property(x => x.TelefonoReferencia1).HasMaxLength(30);
-                e.Property(x => x.TelefonoReferencia2).HasMaxLength(30);
+                entity.Property(e => e.CodCuota)
+                      .HasColumnName("COD_CUOTA")
+                      .HasMaxLength(60);
 
-                // Decimales
-                e.Property(x => x.DeudaTotal).HasPrecision(18, 2);
-                e.Property(x => x.PagoMinimo).HasPrecision(18, 2);
-                e.Property(x => x.SaldoVencido).HasPrecision(18, 2);
-                e.Property(x => x.MontoUltimoPagado).HasPrecision(18, 2);
-                e.Property(x => x.MontoCarteraAsignada).HasPrecision(18, 2);
-                e.Property(x => x.MontoCobrado).HasPrecision(18, 2);
-                e.Property(x => x.ValLiquidacion).HasPrecision(18, 2);
-                e.Property(x => x.ValLiquidacionPartes).HasPrecision(18, 2);
+                entity.Property(e => e.NumeroCuota)
+                      .HasColumnName("NUMERO_CUOTA");
 
-                // Fechas
-                e.Property(x => x.FechaCompromisodePago).HasColumnType("date");
-                e.Property(x => x.FechaUltimoPago).HasColumnType("date");
-                e.Property(x => x.UltimaGestionTerrena).HasColumnType("date");
-                e.Property(x => x.GestionTerrenaAnterior).HasColumnType("date");
-                e.Property(x => x.UltimaGestionTelefonica).HasColumnType("date");
-                e.Property(x => x.GestionTelefonicaAnterior).HasColumnType("date");
+                entity.Property(e => e.FechaVencimiento)
+                      .HasColumnName("FECHA_VENCIMIENTO")
+                      .HasColumnType("date");
 
-                // Mapeo opcional de nombres exactos de columnas (si tu tabla ya existe con estos nombres)
-                e.Property(x => x.UsuarioGenera).HasColumnName("UsuarioGenera");
-                e.Property(x => x.GestorAsignado).HasColumnName("GestorAsignado");
-                e.Property(x => x.Ciudad).HasColumnName("Ciudad");
-                e.Property(x => x.CodigoCliente).HasColumnName("CodigoCliente");
-                e.Property(x => x.IdentificacionCliente).HasColumnName("IdentificacionCliente");
-                e.Property(x => x.NombreCliente).HasColumnName("NombreCliente");
-                e.Property(x => x.EstadoCivil).HasColumnName("EstadoCivil");
-                e.Property(x => x.TipoCredito).HasColumnName("TipoCredito");
-                e.Property(x => x.TramoActual).HasColumnName("TramoActual");
-                e.Property(x => x.Formalidad).HasColumnName("Formalidad");
-                e.Property(x => x.Calificacion).HasColumnName("Calificacion");
-                e.Property(x => x.NoCorte).HasColumnName("NoCorte");
-                e.Property(x => x.Semaforo).HasColumnName("Semaforo");
-                e.Property(x => x.Operacion).HasColumnName("Operacion");
-                e.Property(x => x.DeudaRefinanciada).HasColumnName("DeudaRefinanciada");
-                e.Property(x => x.FechaCompromisodePago).HasColumnName("FechaCompromisodePago");
-                e.Property(x => x.DiasVencidosIniciodeMes).HasColumnName("DiasVencidosIniciodeMes");
-                e.Property(x => x.TRAMO).HasColumnName("TRAMO");
-                e.Property(x => x.DiasVencidosActuales).HasColumnName("DiasVencidosActuales");
-                e.Property(x => x.DeudaTotal).HasColumnName("DeudaTotal");
-                e.Property(x => x.PagoMinimo).HasColumnName("PagoMinimo");
-                e.Property(x => x.SaldoVencido).HasColumnName("SaldoVencido");
-                e.Property(x => x.FechaUltimoPago).HasColumnName("FechaUltimoPago");
-                e.Property(x => x.MontoUltimoPagado).HasColumnName("MontoUltimoPagado");
-                e.Property(x => x.TelefonoDomicilio).HasColumnName("TelefonoDomicilio");
-                e.Property(x => x.CelularDomicilio).HasColumnName("CelularDomicilio");
-                e.Property(x => x.DireccionDomicilio).HasColumnName("DireccionDomicilio");
-                e.Property(x => x.TelefonoTrabajo).HasColumnName("TelefonoTrabajo");
-                e.Property(x => x.CelularTrabajo).HasColumnName("CelularTrabajo");
-                e.Property(x => x.Cargo).HasColumnName("Cargo");
-                e.Property(x => x.NombreTrabajo).HasColumnName("NombreTrabajo");
-                e.Property(x => x.DireccionTrabajo).HasColumnName("DireccionTrabajo");
-                e.Property(x => x.TelefonoNegocio).HasColumnName("TelefonoNegocio");
-                e.Property(x => x.CelularNegocio).HasColumnName("CelularNegocio");
-                e.Property(x => x.DireccionNegocio).HasColumnName("DireccionNegocio");
-                e.Property(x => x.Referencia1).HasColumnName("Referencia1");
-                e.Property(x => x.TelefonoReferencia1).HasColumnName("TelefonoReferencia1");
-                e.Property(x => x.Referencia2).HasColumnName("Referencia2");
-                e.Property(x => x.TelefonoReferencia2).HasColumnName("TelefonoReferencia2");
-                e.Property(x => x.MontoCarteraAsignada).HasColumnName("MontoCarteraAsignada");
-                e.Property(x => x.MontoCobrado).HasColumnName("MontoCobrado");
-                e.Property(x => x.PoseeVehiculo).HasColumnName("PoseeVehiculo");
-                e.Property(x => x.UltimaGestionTerrena).HasColumnName("ultimaGestionTerrena");
-                e.Property(x => x.GestionTerrenaAnterior).HasColumnName("gestionTerrenaAnterior");
-                e.Property(x => x.UltimaGestionTelefonica).HasColumnName("ultimaGestionTelefonica");
-                e.Property(x => x.GestionTelefonicaAnterior).HasColumnName("gestionTelefonicaAnterior");
-                e.Property(x => x.NoGestiones).HasColumnName("NoGestiones");
-                e.Property(x => x.NoCuotasPagadas).HasColumnName("NoCuotasPagadas");
-                e.Property(x => x.ValLiquidacion).HasColumnName("Valliquidacion");
-                e.Property(x => x.ValLiquidacionPartes).HasColumnName("Valliquidacionpartes");
+                entity.Property(e => e.FechaCorte)
+                      .HasColumnName("FECHA_CORTE")
+                      .HasColumnType("date");
+
+                entity.Property(e => e.FechaUltimoPago)
+                      .HasColumnName("FECHA_ULTIMO_PAGO")
+                      .HasColumnType("date");
+
+                entity.Property(e => e.DFechaPostergacion)
+                      .HasColumnName("DFECHAPOSTERGACION")
+                      .HasColumnType("date");
+
+                entity.Property(e => e.CodEstadoCuota)
+                      .HasColumnName("COD_ESTADO_CUOTA")
+                      .HasMaxLength(20);
+
+                entity.Property(e => e.DescEstadoOperacion)
+                      .HasColumnName("DESC_ESTADO_OPERACION")
+                      .HasMaxLength(120);
+
+                entity.Property(e => e.TasaMora)
+                      .HasColumnName("TASA_MORA")
+                      .HasColumnType("numeric(18,4)");
+
+                entity.Property(e => e.CodEstadoRegistro)
+                      .HasColumnName("COD_ESTADO_REGISTRO")
+                      .HasMaxLength(20);
+
+                entity.Property(e => e.DesEstadoRegistro)
+                      .HasColumnName("DES_ESTADO_REGISTRO")
+                      .HasMaxLength(120);
+
+                entity.Property(e => e.IValorTotalCuota)
+                      .HasColumnName("IVALORTOTALCUOTA")
+                      .HasColumnType("numeric(18,2)");
+
+                entity.Property(e => e.IValorCuota)
+                      .HasColumnName("IVALORCUOTA")
+                      .HasColumnType("numeric(18,2)");
+
+                entity.Property(e => e.ValorCapitalInteres)
+                      .HasColumnName("VALOR_CAPITAL_INTERES")
+                      .HasColumnType("numeric(18,2)");
+
+                entity.Property(e => e.ValorCargos)
+                      .HasColumnName("VALOR_CARGOS")
+                      .HasColumnType("numeric(18,2)");
+
+                entity.Property(e => e.ValorOtrosCargos)
+                      .HasColumnName("VALOR_OTROS_CARGOS")
+                      .HasColumnType("numeric(18,2)");
+
+                entity.HasIndex(e => e.CodOperacion)
+                      .HasDatabaseName("IX_CuotasOperacion_CodOperacion");
             });
+
+
+
+            modelBuilder.Entity<TrifocusCrecos>(e =>
+                {
+                    e.ToTable("TrifocusCrecos", schema: "temp_crecos");
+                    e.HasKey(x => x.Id);
+
+                    e.HasIndex(x => x.CodigoCliente);
+                    e.HasIndex(x => x.IdentificacionCliente);
+                    e.HasIndex(x => new
+                    {
+                        x.Operacion,
+                        x.CodigoCliente
+                    }).HasDatabaseName("ix_operacion_cliente");
+
+                    // Strings "largos"
+                    e.Property(x => x.DireccionDomicilio).HasMaxLength(500);
+                    e.Property(x => x.DireccionTrabajo).HasMaxLength(500);
+                    e.Property(x => x.DireccionNegocio).HasMaxLength(500);
+                    e.Property(x => x.Referencia1).HasMaxLength(300);
+                    e.Property(x => x.Referencia2).HasMaxLength(300);
+
+                    // Strings "cortos"
+                    e.Property(x => x.UsuarioGenera).HasMaxLength(100);
+                    e.Property(x => x.GestorAsignado).HasMaxLength(120);
+                    e.Property(x => x.Ciudad).HasMaxLength(120);
+                    e.Property(x => x.CodigoCliente).HasMaxLength(60);
+                    e.Property(x => x.IdentificacionCliente).HasMaxLength(20);
+                    e.Property(x => x.NombreCliente).HasMaxLength(200);
+                    e.Property(x => x.EstadoCivil).HasMaxLength(40);
+                    e.Property(x => x.TipoCredito).HasMaxLength(80);
+                    e.Property(x => x.TramoActual).HasMaxLength(60);
+                    e.Property(x => x.Formalidad).HasMaxLength(40);
+                    e.Property(x => x.Calificacion).HasMaxLength(40);
+                    e.Property(x => x.Semaforo).HasMaxLength(20);
+                    e.Property(x => x.Operacion).HasMaxLength(60);
+                    e.Property(x => x.TRAMO).HasMaxLength(60);
+                    e.Property(x => x.Cargo).HasMaxLength(120);
+                    e.Property(x => x.NombreTrabajo).HasMaxLength(200);
+
+                    // Teléfonos
+                    e.Property(x => x.TelefonoDomicilio).HasMaxLength(30);
+                    e.Property(x => x.CelularDomicilio).HasMaxLength(30);
+                    e.Property(x => x.TelefonoTrabajo).HasMaxLength(30);
+                    e.Property(x => x.CelularTrabajo).HasMaxLength(30);
+                    e.Property(x => x.TelefonoNegocio).HasMaxLength(30);
+                    e.Property(x => x.CelularNegocio).HasMaxLength(30);
+                    e.Property(x => x.TelefonoReferencia1).HasMaxLength(30);
+                    e.Property(x => x.TelefonoReferencia2).HasMaxLength(30);
+
+                    // Decimales
+                    e.Property(x => x.DeudaTotal).HasPrecision(18, 2);
+                    e.Property(x => x.PagoMinimo).HasPrecision(18, 2);
+                    e.Property(x => x.SaldoVencido).HasPrecision(18, 2);
+                    e.Property(x => x.MontoUltimoPagado).HasPrecision(18, 2);
+                    e.Property(x => x.MontoCarteraAsignada).HasPrecision(18, 2);
+                    e.Property(x => x.MontoCobrado).HasPrecision(18, 2);
+                    e.Property(x => x.ValLiquidacion).HasPrecision(18, 2);
+                    e.Property(x => x.ValLiquidacionPartes).HasPrecision(18, 2);
+
+                    // Fechas
+                    e.Property(x => x.FechaCompromisodePago).HasColumnType("date");
+                    e.Property(x => x.FechaUltimoPago).HasColumnType("date");
+                    e.Property(x => x.UltimaGestionTerrena).HasColumnType("date");
+                    e.Property(x => x.GestionTerrenaAnterior).HasColumnType("date");
+                    e.Property(x => x.UltimaGestionTelefonica).HasColumnType("date");
+                    e.Property(x => x.GestionTelefonicaAnterior).HasColumnType("date");
+
+                    // Mapeo opcional de nombres exactos de columnas (si tu tabla ya existe con estos nombres)
+                    e.Property(x => x.UsuarioGenera).HasColumnName("UsuarioGenera");
+                    e.Property(x => x.GestorAsignado).HasColumnName("GestorAsignado");
+                    e.Property(x => x.Ciudad).HasColumnName("Ciudad");
+                    e.Property(x => x.CodigoCliente).HasColumnName("CodigoCliente");
+                    e.Property(x => x.IdentificacionCliente).HasColumnName("IdentificacionCliente");
+                    e.Property(x => x.NombreCliente).HasColumnName("NombreCliente");
+                    e.Property(x => x.EstadoCivil).HasColumnName("EstadoCivil");
+                    e.Property(x => x.TipoCredito).HasColumnName("TipoCredito");
+                    e.Property(x => x.TramoActual).HasColumnName("TramoActual");
+                    e.Property(x => x.Formalidad).HasColumnName("Formalidad");
+                    e.Property(x => x.Calificacion).HasColumnName("Calificacion");
+                    e.Property(x => x.NoCorte).HasColumnName("NoCorte");
+                    e.Property(x => x.Semaforo).HasColumnName("Semaforo");
+                    e.Property(x => x.Operacion).HasColumnName("Operacion");
+                    e.Property(x => x.DeudaRefinanciada).HasColumnName("DeudaRefinanciada");
+                    e.Property(x => x.FechaCompromisodePago).HasColumnName("FechaCompromisodePago");
+                    e.Property(x => x.DiasVencidosIniciodeMes).HasColumnName("DiasVencidosIniciodeMes");
+                    e.Property(x => x.TRAMO).HasColumnName("TRAMO");
+                    e.Property(x => x.DiasVencidosActuales).HasColumnName("DiasVencidosActuales");
+                    e.Property(x => x.DeudaTotal).HasColumnName("DeudaTotal");
+                    e.Property(x => x.PagoMinimo).HasColumnName("PagoMinimo");
+                    e.Property(x => x.SaldoVencido).HasColumnName("SaldoVencido");
+                    e.Property(x => x.FechaUltimoPago).HasColumnName("FechaUltimoPago");
+                    e.Property(x => x.MontoUltimoPagado).HasColumnName("MontoUltimoPagado");
+                    e.Property(x => x.TelefonoDomicilio).HasColumnName("TelefonoDomicilio");
+                    e.Property(x => x.CelularDomicilio).HasColumnName("CelularDomicilio");
+                    e.Property(x => x.DireccionDomicilio).HasColumnName("DireccionDomicilio");
+                    e.Property(x => x.TelefonoTrabajo).HasColumnName("TelefonoTrabajo");
+                    e.Property(x => x.CelularTrabajo).HasColumnName("CelularTrabajo");
+                    e.Property(x => x.Cargo).HasColumnName("Cargo");
+                    e.Property(x => x.NombreTrabajo).HasColumnName("NombreTrabajo");
+                    e.Property(x => x.DireccionTrabajo).HasColumnName("DireccionTrabajo");
+                    e.Property(x => x.TelefonoNegocio).HasColumnName("TelefonoNegocio");
+                    e.Property(x => x.CelularNegocio).HasColumnName("CelularNegocio");
+                    e.Property(x => x.DireccionNegocio).HasColumnName("DireccionNegocio");
+                    e.Property(x => x.Referencia1).HasColumnName("Referencia1");
+                    e.Property(x => x.TelefonoReferencia1).HasColumnName("TelefonoReferencia1");
+                    e.Property(x => x.Referencia2).HasColumnName("Referencia2");
+                    e.Property(x => x.TelefonoReferencia2).HasColumnName("TelefonoReferencia2");
+                    e.Property(x => x.MontoCarteraAsignada).HasColumnName("MontoCarteraAsignada");
+                    e.Property(x => x.MontoCobrado).HasColumnName("MontoCobrado");
+                    e.Property(x => x.PoseeVehiculo).HasColumnName("PoseeVehiculo");
+                    e.Property(x => x.UltimaGestionTerrena).HasColumnName("ultimaGestionTerrena");
+                    e.Property(x => x.GestionTerrenaAnterior).HasColumnName("gestionTerrenaAnterior");
+                    e.Property(x => x.UltimaGestionTelefonica).HasColumnName("ultimaGestionTelefonica");
+                    e.Property(x => x.GestionTelefonicaAnterior).HasColumnName("gestionTelefonicaAnterior");
+                    e.Property(x => x.NoGestiones).HasColumnName("NoGestiones");
+                    e.Property(x => x.NoCuotasPagadas).HasColumnName("NoCuotasPagadas");
+                    e.Property(x => x.ValLiquidacion).HasColumnName("Valliquidacion");
+                    e.Property(x => x.ValLiquidacionPartes).HasColumnName("Valliquidacionpartes");
+                });
 
 
 
@@ -182,7 +270,7 @@ namespace gestiones_backend.Context
                 e.HasKey(x => x.Id);
                 e.Property(x => x.ISECUENCIAL);
                 e.Property(x => x.COD_PRODUCTO).HasMaxLength(50);
-                e.Property(x => x.COD_OPERACION).HasColumnType("varchar");             
+                e.Property(x => x.COD_OPERACION).HasColumnType("varchar");
                 e.Property(x => x.DESC_PRODUCTO).HasMaxLength(200);
                 e.Property(x => x.CANTIDAD);
                 e.Property(x => x.OBSERVACION).HasMaxLength(300);
@@ -522,7 +610,7 @@ namespace gestiones_backend.Context
                     .WithMany(p => p.ImagenesCobrosNavigation)
                     .HasForeignKey(ic => ic.PagoId)
                     .HasPrincipalKey(p => p.IdPago)
-                    .OnDelete(DeleteBehavior.Cascade); 
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<MensajeWhatsappUsuario>(entity =>
@@ -532,7 +620,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Mensaje).IsRequired().HasMaxLength(2000);
                 entity.Property(e => e.MensajeCorreo).HasColumnType("varchar");
                 entity.Property(e => e.TipoMensaje).IsRequired().HasMaxLength(50);
-             
+
             });
 
             modelBuilder.Entity<AbonoLiquidacion>(entity =>
@@ -631,11 +719,11 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.TipoResultadoId).IsRequired().HasMaxLength(50);
 
                 entity.HasOne(e => e.TipoResultadoNavigation)
-                        .WithMany() 
+                        .WithMany()
                         .HasForeignKey(e => e.TipoResultadoId)
                         .OnDelete(DeleteBehavior.Restrict);
 
-              
+
                 entity.HasMany(e => e.TiposRespuestaNavigation)
                     .WithOne(e => e.TipoContactoNavigatorNavigation)
                     .HasForeignKey(e => e.IdTipoContactoResultado)
@@ -842,11 +930,11 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.ProductoDescripcion)
                       .HasColumnType("varchar")
                       .HasDefaultValue("")
-                      .IsRequired(false); 
+                      .IsRequired(false);
                 entity.Property(e => e.Agencia)
                       .HasColumnType("varchar")
                       .HasDefaultValue("")
-                      .IsRequired(false); 
+                      .IsRequired(false);
                 entity.Property(e => e.Ciudad)
                       .HasColumnType("varchar")
                       .HasDefaultValue("")
@@ -866,7 +954,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.UltimoPago).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.Empresa);
                 entity.Property(e => e.IdUsuario)
-                    .HasMaxLength(13)  
+                    .HasMaxLength(13)
                     .IsRequired(false);
                 entity.HasIndex(e => e.IdUsuario);
                 entity.HasIndex(e => e.NumeroFactura);
@@ -912,7 +1000,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.CodigoDeudor).HasMaxLength(100);
                 entity.Property(e => e.FechaRegistro)
                       .HasColumnType("timestamp with time zone")
-                      .HasDefaultValueSql("now()")     
+                      .HasDefaultValueSql("now()")
                       .ValueGeneratedOnAdd();
 
                 entity.Property(e => e.Descripcion).HasColumnType("varchar");
@@ -924,7 +1012,7 @@ namespace gestiones_backend.Context
                     .OnDelete(DeleteBehavior.SetNull);
             });
 
-          
+
             modelBuilder.Entity<Usuario>(entity =>
             {
                 entity.HasKey(e => e.IdUsuario);
@@ -935,7 +1023,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.CodigoUsuario).HasMaxLength(50);
                 entity.Property(e => e.NombreUsuario).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.Rol)
-                        .HasMaxLength(20) 
+                        .HasMaxLength(20)
                         .HasColumnName("rol");
                 entity.Property(e => e.Contrasena).IsRequired().HasMaxLength(255);
             });

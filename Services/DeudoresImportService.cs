@@ -439,6 +439,19 @@ namespace gestiones_backend.Services
             }
         }
 
+        
+        static DateTime? ToDate(string? s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return null;
+            string[] formats = { "yyyy-MM-dd", "dd/MM/yyyy", "MM/dd/yyyy", "yyyyMMdd" };
+            return DateTime.TryParseExact(s.Trim(), formats,
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var dt)
+                ? dt
+                : (DateTime?)null;
+        }
+
+
         public void GrabarTablas()
         {
             List<ArticuloOperacionCrecos> listaGrabar = new List<ArticuloOperacionCrecos>();
@@ -449,6 +462,8 @@ namespace gestiones_backend.Services
             List<ReferenciasPersonalesCrecos> referenciaClienteGrabar = new List<ReferenciasPersonalesCrecos>();
             List<SaldoClienteCrecos> saldoClienteCrecos = new List<SaldoClienteCrecos>();
             List<TelefonosClienteCrecos> telefonoClienteCrecos = new List<TelefonosClienteCrecos>();
+            List<CuotaOperacionCrecos> CuotasOperacionCrecos = new List<CuotaOperacionCrecos>();
+
 
             int? ToInt(string? s) => int.TryParse(s, out var v) ? v : null;
 
@@ -477,6 +492,8 @@ namespace gestiones_backend.Services
                        : null;
             }
 
+          
+
             if (!Directory.Exists(_root))
                 throw new DirectoryNotFoundException($"No existe la carpeta: {_root}");
 
@@ -488,6 +505,35 @@ namespace gestiones_backend.Services
             foreach (var file in files)
             {
                 var upperName = Path.GetFileNameWithoutExtension(file).ToUpperInvariant();
+
+
+                if (upperName.Contains("CUOTAOPERACION"))
+                {
+                    foreach (var row in ReadDelimited(file))
+                    {
+                        CuotasOperacionCrecos.Add(new CuotaOperacionCrecos()
+                        {
+                            CodOperacion = row.GetValueOrDefault("COD_OPERACION") ?? "",
+                            CodCuota = row.GetValueOrDefault("COD_CUOTA") ?? "",
+                            NumeroCuota = (int)ToInt(row.GetValueOrDefault("NUMERO_CUOTA") ?? "0"),
+                            FechaVencimiento = ToDate(row.GetValueOrDefault("FECHA_VENCIMIENTO")),
+                            FechaCorte = ToDate(row.GetValueOrDefault("FECHA_CORTE")),
+                            FechaUltimoPago = row.GetValueOrDefault("FECHA_ULTIMO_PAGO") == "" ? DateTime.Now : DateTime.Parse(row.GetValueOrDefault("FECHA_ULTIMO_PAGO")),
+                            DFechaPostergacion = ToDate(row.GetValueOrDefault("DFECHAPOSTERGACION")),
+                            CodEstadoCuota = row.GetValueOrDefault("COD_ESTADO_CUOTA"),
+                            DescEstadoOperacion = row.GetValueOrDefault("DESC_ESTADO_OPERACION"),
+                            TasaMora = ToDec(row.GetValueOrDefault("TASA_MORA")),
+                            CodEstadoRegistro = row.GetValueOrDefault("COD_ESTADO_REGISTRO"),
+                            DesEstadoRegistro = row.GetValueOrDefault("DES_ESTADO_REGISTRO"),
+                            IValorTotalCuota = ToDec(row.GetValueOrDefault("IVALORTOTALCUOTA")),
+                            IValorCuota = ToDec(row.GetValueOrDefault("IVALORCUOTA")),
+                            ValorCapitalInteres = ToDec(row.GetValueOrDefault("VALOR_CAPITAL_INTERES")),
+                            ValorCargos = ToDec(row.GetValueOrDefault("VALOR_CARGOS")),
+                            ValorOtrosCargos = ToDec(row.GetValueOrDefault("VALOR_OTROS_CARGOS")),
+                        });
+                    }
+                }
+
 
                 if (upperName.Contains("ARTICULOOPERACION"))
                 {
@@ -793,6 +839,7 @@ namespace gestiones_backend.Services
                   temp_crecos.""OperacionesClientesCrecos"",
                   temp_crecos.""ReferenciasPersonalesCrecos"",
                   temp_crecos.""SaldoClienteCrecos"",
+                  temp_crecos.""CuotasOperacionCrecos"",
                   temp_crecos.""TelefonosClienteCrecos""
                 RESTART IDENTITY CASCADE;");
 
@@ -804,6 +851,8 @@ namespace gestiones_backend.Services
             _db.ReferenciasPersonalesCrecos.AddRange(referenciaClienteGrabar);
             _db.SaldoClienteCrecos.AddRange(saldoClienteCrecos);
             _db.TelefonosClienteCrecos.AddRange(telefonoClienteCrecos);
+            _db.CuotasOperacionCrecos.AddRange(CuotasOperacionCrecos);
+
             _db.SaveChanges();
             string ss = "";
 
