@@ -124,7 +124,9 @@ namespace gestiones_backend.Controllers
             }
             IQueryable<CompromisosPago> query = _context.CompromisosPagos
                 .Include(x => x.IdDeudaNavigation)
-                .ThenInclude(x => x.IdDeudorNavigation)
+                    .ThenInclude(x => x.IdDeudorNavigation)
+                .Include(x => x.IdDeudaNavigation)
+                    .ThenInclude(x => x.Usuario)
                 .Include(x => x.IdTipoTareaNavigation)
                 ;
 
@@ -174,7 +176,8 @@ namespace gestiones_backend.Controllers
                     TipoTarea = c.IdTipoTareaNavigation.Nombre,
                     ValorCompromisoPago = c.MontoComprometido.ToString() ?? "0",
                     MontoCobrar = c.IdDeudaNavigation.MontoCobrar.ToString(),
-                    Tramo = c.IdDeudaNavigation.Tramo
+                    Tramo = c.IdDeudaNavigation.Tramo,
+                    Gestor = c.IdUsuarioNavigation.NombreCompleto
                 }).ToList();
 
             return Ok(compromisos);

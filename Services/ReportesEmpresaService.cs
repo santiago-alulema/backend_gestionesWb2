@@ -26,16 +26,14 @@ namespace gestiones_backend.Services
             {
                 Usuario usuario = _authService.GetCurrentUser();
 
-                // Rango base en UTC (inicio de día y fin de día)
                 DateTime fechaInicio = !string.IsNullOrWhiteSpace(FechaInicio)
-                    ? DateTime.SpecifyKind(DateTime.Parse(FechaInicio).Date, DateTimeKind.Utc)                              // 00:00
+                    ? DateTime.SpecifyKind(DateTime.Parse(FechaInicio).Date, DateTimeKind.Utc)                          
                     : DateTime.UtcNow.Date.AddDays(-30);
 
                 DateTime fechaFin = !string.IsNullOrWhiteSpace(FechaFin)
-                    ? DateTime.SpecifyKind(DateTime.Parse(FechaFin).Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc)         // 23:59:59.9999999
+                    ? DateTime.SpecifyKind(DateTime.Parse(FechaFin).Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc)         
                     : DateTime.UtcNow.Date.AddDays(1).AddTicks(-1);
 
-                // Derivados para columnas DateOnly (como FechaPago)
                 var fechaInicioOnly = DateOnly.FromDateTime(fechaInicio);
                 var fechaFinOnly = DateOnly.FromDateTime(fechaFin);
 
@@ -48,7 +46,7 @@ namespace gestiones_backend.Services
 
                 if (!string.Equals(usuario.Rol, "admin", StringComparison.OrdinalIgnoreCase))
                 {
-                    query = query.Where(d => d.IdDeudorNavigation.IdUsuario == usuario.IdUsuario);
+                    query = query.Where(d => d.IdUsuario == usuario.IdUsuario);
                 }
 
                 var reporte = await query
@@ -58,24 +56,19 @@ namespace gestiones_backend.Services
                     {
                         Empresa = g.Key,
 
-                        // DateTime vs DateTime
                         CantidadGestiones = g.SelectMany(d => d.Gestiones)
                             .Count(ges => ges.FechaGestion >= fechaInicio && ges.FechaGestion <= fechaFin),
 
-                        // DateTime vs DateTime
                         CantidadCompromisosPago = g.SelectMany(d => d.CompromisosPagos)
                             .Count(c => c.FechaRegistro >= fechaInicio && c.FechaRegistro <= fechaFin),
 
-                        // DateOnly vs DateOnly (NO uses Parse/ToString)
                         CantidadPagos = g.SelectMany(d => d.Pagos)
                             .Count(p => p.FechaPago >= fechaInicioOnly && p.FechaPago <= fechaFinOnly),
 
-                        // Usa tam-bién FechaPago para coherencia con CantidadPagos
                         ValorTotalPagos = g.SelectMany(d => d.Pagos)
                             .Where(p => p.FechaPago >= fechaInicioOnly && p.FechaPago <= fechaFinOnly)
                             .Sum(p => (decimal?)p.MontoPagado) ?? 0m,
 
-                        // DateTime vs DateTime
                         ValorTotalCompromisos = g.SelectMany(d => d.CompromisosPagos)
                             .Where(c => c.FechaCompromiso >= fechaInicioOnly && c.FechaCompromiso <= fechaFinOnly)
                             .Sum(c => (decimal?)c.MontoComprometido) ?? 0m

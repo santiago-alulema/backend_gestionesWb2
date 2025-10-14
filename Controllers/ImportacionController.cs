@@ -21,7 +21,7 @@ namespace gestiones_backend.Controllers
         }
 
 
-        [HttpPost("deudores/insertar-deudores")]
+        [HttpPost("deudores/insertar-deudas-crecos")]
         public async Task<IActionResult> ImportarDeudas()
         {
             _dataContext.Database.ExecuteSqlRaw(@"CREATE EXTENSION IF NOT EXISTS ""uuid-ossp"";");
@@ -42,8 +42,12 @@ namespace gestiones_backend.Controllers
                                 'CRECOSCORP'                                                                   AS ""Empresa"",
                                 NULL::text                                                                     AS ""Clasificacion"",
                                 1::int                                                                         AS ""Creditos"",
-                                COALESCE(ROUND((MAX(t.valorliquidacion) / NULLIF(MAX(scc.""VALOR_DEUDA""),0)) * 100, 0), 0)::int
-                                                                                                               AS ""Descuento"",
+                                ROUND(
+                                    (
+                                    ROUND(MAX(scc.""VALOR_DEUDA""), 2)
+                                    - COALESCE(ROUND(MAX(t.valorliquidacion), 2), 0)
+                                    )
+                                    / NULLIF(ROUND(MAX(scc.""VALOR_DEUDA""), 2), 0) * 100 , 0)                 AS ""Descuento"",
                                 ROUND(MAX(scc.""VALOR_DEUDA""), 2)::numeric(18,2)                              AS ""DeudaCapital"",
                                 CAST(MAX(scc.""FECHA_ULT_PAGO"") AS date)                                      AS ""FechaUltimoPago"",
                                 ROUND(MAX(scc.""VALOR_GESTION""), 2)::numeric(18,2)                            AS ""GastosCobranzas"",
