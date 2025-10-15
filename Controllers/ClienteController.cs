@@ -30,7 +30,8 @@ namespace gestiones_backend.Controllers
         {
             Usuario usuario = _authService.GetCurrentUser();
 
-            IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking().Where(x => x.IdDeudor == cedulaCliente && 
+            IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking().Include(x => x.IdDeudorNavigation)
+                                                            .Include(x => x.Usuario).Where(x => x.IdDeudor == cedulaCliente && 
                                                                                       x.EsActivo == true );
 
             if (usuario.Rol == "user")
