@@ -12,15 +12,194 @@ namespace gestiones_backend.Services
 {
     public class DeudoresImportService
     {
-        private readonly DataContext _db;
+        private readonly DataContext _dataContext;
+
         private readonly string _root;
 
         public DeudoresImportService(DataContext db, IWebHostEnvironment env)
         {
-            _db = db;
+            _dataContext = db;
             _root = Path.Combine(env.ContentRootPath, "ArchivosExternos");
         }
 
+
+        public string ImportarDeudas()
+        {
+            _dataContext.Database.ExecuteSqlRaw(@"CREATE EXTENSION IF NOT EXISTS ""uuid-ossp"";");
+
+            const string SqlDeudasCrecos = @"
+                            SELECT 
+                                gen_random_uuid()                                                              AS ""IdDeuda"",
+                                MAX(occ.""DESC_T_CREDITO"")                                                    AS ""Estado"",
+                                ca.""CNUMEROIDENTIFICACION""                                                   AS ""IdDeudor"",
+                                string_agg(DISTINCT ('Fact:' || occ.""NUM_FACTURA""), ' - ')                   AS ""NumeroFactura"",
+                                CAST(MAX(occ.""FECHA_FACTURA"") AS date)                                       AS ""FechaVenta"",
+                                ROUND(MAX(scc.""VALOR_DEUDA""), 2)::numeric(18,2)                              AS ""SaldoDeuda"",
+                                COALESCE(MAX(occ.""NUM_CUOTAS""), 0)::int                                      AS ""NumeroCuotas"",
+                                COALESCE(MAX(scc.""DIAS_VENCIDOS""), 0)::int                                   AS ""DiasMora"",
+                                0::numeric(18,2)                                                               AS ""ValorCuota"",
+                                MAX(scc.""CDESCRIPCIONTRAMO"")::text                                           AS ""Tramo"",
+                                NULL::numeric(18,2)                                                            AS ""UltimoPago"",
+                                'CRECOSCORP'                                                                   AS ""Empresa"",
+                                NULL::text                                                                     AS ""Clasificacion"",
+                                1::int                                                                         AS ""Creditos"",
+                                ROUND(
+                                    (
+                                    ROUND(MAX(scc.""VALOR_DEUDA""), 2)
+                                    - COALESCE(ROUND(MAX(t.valorliquidacion), 2), 0)
+                                    )
+                                    / NULLIF(ROUND(MAX(scc.""VALOR_DEUDA""), 2), 0) * 100 , 0)                 AS ""Descuento"",
+                                ROUND(MAX(scc.""VALOR_DEUDA""), 2)::numeric(18,2)                              AS ""DeudaCapital"",
+                                CAST(MAX(scc.""FECHA_ULT_PAGO"") AS date)                                      AS ""FechaUltimoPago"",
+                                ROUND(MAX(scc.""VALOR_GESTION""), 2)::numeric(18,2)                            AS ""GastosCobranzas"",
+                                ROUND(MAX(scc.""VALOR_MORA""), 2)::numeric(18,2)                               AS ""Interes"",
+                                ROUND(MAX(t.valorliquidacion), 2)::numeric(18,2)                               AS ""MontoCobrar"",
+                                ROUND(MAX(t.valorliquidacionparte), 2)::numeric(18,2)                          AS ""MontoCobrarPartes"",
+                                MAX(dcc.""DESCRIP_TIPO_IDENTIF"")::text                                        AS ""TipoDocumento"",
+                                'Creditos Economicos'                                                          AS ""Agencia"",
+                                MAX(ca.""CANTON"")::text                                                       AS ""Ciudad"",
+                                (
+                                    SELECT string_agg(
+                                        '<strong>' || occ2.""NUM_FACTURA"" || '</strong>: ' || aoc.""DESC_PRODUCTO"", 
+                                        ' || '
+                                    )
+                                    FROM temp_crecos.""ArticuloOperacionCrecos"" aoc
+                                    INNER JOIN temp_crecos.""OperacionesClientesCrecos"" occ2
+                                        ON occ2.""ICODIGOOPERACION"" = aoc.""COD_OPERACION""
+                                    WHERE occ2.""N_IDENTIFICACION"" = ca.""CNUMEROIDENTIFICACION""
+                                )                                                                               AS ""ProductoDescripcion"",
+                                TRUE                                                                            AS ""EsActivo"",
+                                NULL::varchar                                                                   AS ""IdUsuario"",
+                                MAX(ca.""COD_EMPRESA"")::varchar                                                AS ""CodigoEmpresa"",
+                                NOW()::timestamp                                                                AS ""FechaRegistro"",
+                                MAX(occ.""ICODIGOOPERACION"")::varchar                                          AS ""CodigoOperacion""
+                            FROM temp_crecos.""CarteraAsignadaCrecos"" ca
+                            LEFT JOIN temp_crecos.""DatosClienteCrecos"" dcc 
+                                ON dcc.""ICODIGOCLIENTE"" = ca.""CODIGOCLIENTE""
+                            LEFT JOIN temp_crecos.""OperacionesClientesCrecos"" occ 
+                                ON occ.""N_IDENTIFICACION"" = ca.""CNUMEROIDENTIFICACION""
+                            LEFT JOIN temp_crecos.trifocuscrecospartes t 
+                                ON t.codoperacion = ca.""CNUMEROIDENTIFICACION""
+                            LEFT JOIN temp_crecos.""SaldoClienteCrecos"" scc 
+                                ON ca.""CODIGOCLIENTE"" = scc.""CODIGOCLIENTE""
+                            GROUP BY ca.""CNUMEROIDENTIFICACION"";";
+
+
+
+            List<Deuda> rows = _dataContext.Deudas
+                                        .FromSqlRaw(SqlDeudasCrecos)
+                                        .AsNoTracking()
+                                        .ToList();
+
+             _dataContext.Deudas
+                              .Where(d => d.Empresa == "CRECOSCORP")
+                              .ExecuteUpdate(setters => setters
+                              .SetProperty(d => d.EsActivo, false));
+
+            List<Deudores> deudores = _dataContext.Deudores.ToList();
+            var idsValidos = deudores
+                .Where(d => d.IdDeudor != null)
+                .Select(d => d.IdDeudor!)
+                .ToHashSet();
+
+            List<Usuario> usuarios = _dataContext.Usuarios
+                .Where(x => x.Rol == "user")
+                .ToList();
+
+            rows = rows
+                .Where(r => r.IdDeudor != null && idsValidos.Contains(r.IdDeudor!))
+                .ToList();
+
+            List<Deuda> rowsMenos180 = rows.Where(x => x.DiasMora < 180).ToList();
+            List<Deuda> rows181a360 = rows.Where(x => x.DiasMora >= 180 && x.DiasMora <= 360).ToList();
+            List<Deuda> rowsMas360 = rows.Where(x => x.DiasMora > 360).ToList();
+
+            void AsignarUsuario(List<Deuda> lista)
+            {
+                if (usuarios.Count == 0) return;
+                int i = 0;
+                foreach (var d in lista)
+                {
+                    d.IdUsuario = usuarios[i].IdUsuario;
+                    i = (i + 1) % usuarios.Count;
+                }
+            }
+            void Asignar(List<Deuda> lista)
+            {
+                if (lista.Count == 0) return;
+                var grupos = lista
+                    .GroupBy(d => d.IdDeudor)
+                    .Select(g => new { Items = g.ToList(), Total = g.Sum(x => x.DeudaCapital ?? 0m) })
+                    .OrderByDescending(g => g.Total)
+                    .ThenByDescending(g => g.Items.Count)
+                    .ToList();
+
+                var cargas = usuarios.ToDictionary(u => u.IdUsuario, _ => 0m);
+
+                foreach (var g in grupos)
+                {
+                    var target = cargas.OrderBy(kv => kv.Value).First().Key;
+                    foreach (var d in g.Items) d.IdUsuario = target;
+                    cargas[target] += g.Total;
+                }
+            }
+
+            Asignar(rowsMenos180);
+            Asignar(rows181a360);
+            Asignar(rowsMas360);
+
+            var todas = rowsMenos180.Concat(rows181a360).Concat(rowsMas360).ToList();
+
+            List<Deuda> deudas = _dataContext.Deudas.ToList();
+
+            static DateTime? ToUtc(DateTime? dt)
+    => dt.HasValue ? DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc) : (DateTime?)null;
+
+
+            foreach (var deuda in todas)
+            {
+                var existente = deudas.FirstOrDefault(d => d.NumeroFactura == deuda.NumeroFactura);
+
+                if (existente != null)
+                {
+                    existente.DeudaCapital = deuda.DeudaCapital;
+                    existente.Interes = deuda.Interes;
+                    existente.GastosCobranzas = deuda.GastosCobranzas;
+                    existente.SaldoDeuda = deuda.SaldoDeuda;
+                    existente.Descuento = deuda.Descuento;
+                    existente.MontoCobrar = deuda.MontoCobrar;
+                    existente.FechaVenta = deuda.FechaVenta;
+                    existente.FechaUltimoPago = deuda.FechaUltimoPago;
+                    existente.Estado = deuda.Estado;
+                    existente.DiasMora = deuda.DiasMora;
+                    existente.NumeroFactura = deuda.NumeroFactura;
+                    existente.Clasificacion = deuda.Clasificacion;
+                    existente.Creditos = deuda.Creditos;
+                    existente.ValorCuota = deuda.ValorCuota;
+                    existente.EsActivo = true;
+                    existente.Empresa = deuda.Empresa;
+                    existente.Tramo = deuda.Tramo;
+                    existente.UltimoPago = deuda.UltimoPago;
+                    existente.MontoCobrarPartes = deuda.MontoCobrarPartes;
+                    existente.FechaRegistro = ToUtc(existente.FechaRegistro);
+                    existente.IdUsuario = deuda.IdUsuario;
+
+                    _dataContext.Deudas.Update(existente);
+                }
+                else
+                {
+                    if (deuda.IdDeuda == Guid.Empty)
+                        deuda.IdDeuda = Guid.NewGuid();
+                    deuda.FechaRegistro = ToUtc(deuda.FechaRegistro);
+                    deuda.EsActivo = true;
+                    _dataContext.Deudas.Add(deuda);
+                }
+            }
+
+            _dataContext.SaveChanges();
+
+            return ("Se insertó y actualizó correctamente");
+        }
         public async Task<int> ImportarDeudoresCompletoAsync()
         {
             if (!Directory.Exists(_root))
@@ -111,7 +290,7 @@ namespace gestiones_backend.Services
             if (candidatos.Count == 0) return 0;
 
             var ids = candidatos.Select(c => c.IdDeudor).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var existentes = await _db.Set<Deudores>()
+            var existentes = await _dataContext.Set<Deudores>()
                                       .Where(d => ids.Contains(d.IdDeudor))
                                       .ToDictionaryAsync(d => d.IdDeudor, StringComparer.OrdinalIgnoreCase);
 
@@ -140,9 +319,9 @@ namespace gestiones_backend.Services
             }
 
             if (nuevos.Count > 0)
-                await _db.Set<Deudores>().AddRangeAsync(nuevos);
+                await _dataContext.Set<Deudores>().AddRangeAsync(nuevos);
 
-            return await _db.SaveChangesAsync();
+            return await _dataContext.SaveChangesAsync();
         }
 
 
@@ -190,7 +369,7 @@ namespace gestiones_backend.Services
                                          .Distinct(StringComparer.OrdinalIgnoreCase)
                                          .ToList();
 
-            var deudoresExistentes = await _db.Set<Deudores>()
+            var deudoresExistentes = await _dataContext.Set<Deudores>()
                 .Where(d => idsDeArchivo.Contains(d.IdDeudor))
                 .Select(d => d.IdDeudor)
                 .ToListAsync();
@@ -198,7 +377,7 @@ namespace gestiones_backend.Services
             var setDeudores = new HashSet<string>(deudoresExistentes, StringComparer.OrdinalIgnoreCase);
 
             // 3) Cargar teléfonos existentes para esos deudores (para evitar duplicados contra BD)
-            var existentes = await _db.Set<DeudorTelefono>()
+            var existentes = await _dataContext.Set<DeudorTelefono>()
                 .Where(t => t.IdDeudor != null &&
                             idsDeArchivo.Contains(t.IdDeudor))
                 .Select(t => new { t.IdDeudor, t.Telefono })
@@ -243,8 +422,8 @@ namespace gestiones_backend.Services
 
             if (nuevos.Count == 0) return 0;
 
-            await _db.Set<DeudorTelefono>().AddRangeAsync(nuevos);
-            return await _db.SaveChangesAsync();
+            await _dataContext.Set<DeudorTelefono>().AddRangeAsync(nuevos);
+            return await _dataContext.SaveChangesAsync();
         }
 
 
@@ -402,8 +581,8 @@ namespace gestiones_backend.Services
 
             if (nuevos.Count == 0) return 0;
 
-            await _db.Set<Deuda>().AddRangeAsync(nuevos);
-            return await _db.SaveChangesAsync();
+            await _dataContext.Set<Deuda>().AddRangeAsync(nuevos);
+            return await _dataContext.SaveChangesAsync();
 
             // --------- Helpers locales mínimos ----------
             static string? GetAny(Dictionary<string, string>? row, params string[] cols)
@@ -830,7 +1009,7 @@ namespace gestiones_backend.Services
                
             }
 
-            _db.Database.ExecuteSqlRaw(@"
+            _dataContext.Database.ExecuteSqlRaw(@"
                 TRUNCATE TABLE
                   temp_crecos.""ArticuloOperacionCrecos"",
                   temp_crecos.""CarteraAsignadaCrecos"",
@@ -843,17 +1022,17 @@ namespace gestiones_backend.Services
                   temp_crecos.""TelefonosClienteCrecos""
                 RESTART IDENTITY CASCADE;");
 
-            _db.ArticuloOperacionCrecos.AddRange(listaGrabar);
-            _db.CarteraAsignadaCrecos.AddRange(carteraGrabar);
-            _db.DatosClienteCrecos.AddRange(clientesGrabar);
-            _db.DireccionClienteCrecos.AddRange(direccionClientesGrabar);
-            _db.OperacionesClientesCrecos.AddRange(operacionesClienteGrabar);
-            _db.ReferenciasPersonalesCrecos.AddRange(referenciaClienteGrabar);
-            _db.SaldoClienteCrecos.AddRange(saldoClienteCrecos);
-            _db.TelefonosClienteCrecos.AddRange(telefonoClienteCrecos);
-            _db.CuotasOperacionCrecos.AddRange(CuotasOperacionCrecos);
+            _dataContext.ArticuloOperacionCrecos.AddRange(listaGrabar);
+            _dataContext.CarteraAsignadaCrecos.AddRange(carteraGrabar);
+            _dataContext.DatosClienteCrecos.AddRange(clientesGrabar);
+            _dataContext.DireccionClienteCrecos.AddRange(direccionClientesGrabar);
+            _dataContext.OperacionesClientesCrecos.AddRange(operacionesClienteGrabar);
+            _dataContext.ReferenciasPersonalesCrecos.AddRange(referenciaClienteGrabar);
+            _dataContext.SaldoClienteCrecos.AddRange(saldoClienteCrecos);
+            _dataContext.TelefonosClienteCrecos.AddRange(telefonoClienteCrecos);
+            _dataContext.CuotasOperacionCrecos.AddRange(CuotasOperacionCrecos);
 
-            _db.SaveChanges();
+            _dataContext.SaveChanges();
             string ss = "";
 
         }

@@ -1,6 +1,8 @@
 ﻿using gestiones_backend.Context;
 using gestiones_backend.Dtos.In;
+using gestiones_backend.Entity;
 using gestiones_backend.helpers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +22,17 @@ namespace gestiones_backend.Controllers
             _jwtService = jwtService;
         }
 
+
+        [HttpGet("obtener-lista-usuarios")]
+        [Authorize]
+        public async Task<IActionResult> ObtenerUsuarios()
+        {
+            List<Usuario> usuarios =  _context.Usuarios.Where(x => x.Rol == "user" || x.Rol == "admin").ToList();
+            if (usuarios.Count() == 0)
+                return BadRequest("No existen usuarios para listar");
+            return Ok(usuarios.Select(x => new { id = x.IdUsuario, nombre = x.NombreCompleto }).ToList());
+        }
+        
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel oLoginCLS)
         {

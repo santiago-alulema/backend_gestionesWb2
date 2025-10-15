@@ -73,6 +73,27 @@ namespace gestiones_backend.Controllers
             return Ok(deudoresDTO);
         }
 
+
+        [HttpGet("deudas-por-cliente-global/{cedulaCliente}")]
+        public IActionResult DeudasPorClienteGlobal(string cedulaCliente, [FromQuery] string? empresa)
+        {
+            Usuario usuario = _authService.GetCurrentUser();
+
+            IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking()
+                                                            .Include(x => x.IdDeudorNavigation)
+                                                            .Include(x => x.Usuario)
+
+                                                            .Where(x => (x.IdDeudor == cedulaCliente ||
+                                                                                      x.IdDeudorNavigation.Nombre.ToUpper().Contains(cedulaCliente.ToUpper())) &&
+                                                                                      x.Empresa == empresa && x.EsActivo == true);
+
+
+            List<Deuda> deudas = deudasQuery.ToList();
+            List<DeudasClienteOutDTO> deudoresDTO = deudas.Adapt<List<DeudasClienteOutDTO>>();
+            return Ok(deudoresDTO);
+        }
+
+
         [HttpGet("buscar-deuda-por-id/{idDeuda}")]
         public IActionResult DeudasPorId(string idDeuda)
         {
@@ -199,6 +220,20 @@ namespace gestiones_backend.Controllers
             return Ok("Se grabo los telefonos exitosamente");
         }
 
+        [HttpPut("cambiar-gestor-deuda/{idDeuda}")]
+        public IActionResult GrabarTelefonoNuevo(string idDeuda, [FromQuery] string? nuevoGestor)
+        {
+            Deuda deuda = _context.Deudas.AsNoTracking().Where(x => x.IdDeuda.ToString() == idDeuda).FirstOrDefault();
+
+            if (idDeuda == null)
+                return BadRequest("No existe deuda");
+            deuda.IdUsuario = nuevoGestor;
+
+            _context.Deudas.Update(deuda);
+            _context.SaveChanges();
+            return Ok("Se grabo los telefonos exitosamente");
+        }
+
         [HttpPost("grabar-telefonos-cliente")]
         public IActionResult SavePhonesClients([FromBody] List<TelefonosDeudorInDTO> telefonosDeudores)
         {
@@ -237,11 +272,9 @@ namespace gestiones_backend.Controllers
             Usuario usuario = _authService.GetCurrentUser();
             bool isAdmin = usuario.Rol == "admin";
 
-            // Normalización de empresa
             var empresaUpper = (empresa ?? "").Trim().ToUpper();
             bool filtraEmpresa = !string.IsNullOrEmpty(empresaUpper) && empresaUpper != "TODOS";
 
-            // Flags de filtros por tipo
             bool filtraSG = tipoFiltro == "SG"; // Sin gestión: sin compromisos, sin gestiones y sin pagos
             bool filtraG = tipoFiltro == "G";  // Con gestión: alguno de los 3 existe
             bool filtraIN = tipoFiltro == "IN"; // Incumplió compromiso
@@ -252,16 +285,11 @@ namespace gestiones_backend.Controllers
                     .ThenInclude(d => d.Usuario)
                 .AsNoTracking();
 
-            // (Opcional) limitar por usuario a nivel de Deudor; ya está cubierto por el predicado de Deuda,
-            // pero mantener esto puede reducir el set inicial cuando el rol es "user"
             if (!isAdmin)
             {
                 clientesQuery = clientesQuery.Where(c => c.Deuda.Any(d => d.IdUsuario == usuario.IdUsuario));
             }
 
-            // Predicado inline para EF (aplicado en todas partes por consistencia)
-            // IMPORTANTE: no extraer a Expression<Func<Deuda,bool>> y luego usarlo sobre ICollection,
-            // se escribe inline para que EF pueda traducirlo.
             Expression<Func<Deudores, bool>> filtroDeudor = c => c.Deuda.Any(d =>
                 d.EsActivo == true &&
                 (isAdmin || d.IdUsuario == usuario.IdUsuario) &&

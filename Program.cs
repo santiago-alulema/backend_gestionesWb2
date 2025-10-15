@@ -1,4 +1,5 @@
 ﻿using gestiones_backend.Class;
+using gestiones_backend.ConfigurationsMapper;
 using gestiones_backend.Context;
 using gestiones_backend.helpers;
 using gestiones_backend.Interfaces;
@@ -85,6 +86,13 @@ builder.Services.AddScoped<DeudoresImportService>();
 builder.Services.AddHttpClient();
 
 builder.Services.AddMapster();
+
+var mapsterConfig = TypeAdapterConfig.GlobalSettings;
+
+ConfigTelefonoDeudor.Register(mapsterConfig);
+ConfigDeudasCliente.Register(mapsterConfig);
+
+
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.Limits.MaxRequestBodySize = 200 * 1024 * 1024; // 200 MB

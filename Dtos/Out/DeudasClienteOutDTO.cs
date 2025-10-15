@@ -17,6 +17,7 @@
         public string? NumeroFactura { get; set; }
         public string? Clasificacion { get; set; }
         public int? Creditos { get; set; }
+        public Decimal? MontoCobrarPartes { get; set; } = 0m;
         public Decimal? SaldoDeulda { get; set; }
         public int? NumeroCuotas { get; set; }
         public string? TipoDocumento { get; set; }
@@ -27,5 +28,9 @@
         public string? ProductoDescripcion { get; set; }
         public string? Agencia { get; set; }
         public string? Ciudad { get; set; }
+        public string? Nombre { get; set; }
+        public string? NombreCompleto { get; set; }
+
+
     }
 }
