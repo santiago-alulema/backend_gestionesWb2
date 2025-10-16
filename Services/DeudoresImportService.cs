@@ -117,16 +117,20 @@ namespace gestiones_backend.Services
             void AsignarUsuario(List<Deuda> lista)
             {
                 if (usuarios.Count == 0) return;
+
                 int i = 0;
                 foreach (var d in lista)
                 {
+                    if (d.IdUsuario != null ) continue; // ya asignada
                     d.IdUsuario = usuarios[i].IdUsuario;
                     i = (i + 1) % usuarios.Count;
                 }
             }
+
             void Asignar(List<Deuda> lista)
             {
                 if (lista.Count == 0) return;
+
                 var grupos = lista
                     .GroupBy(d => d.IdDeudor)
                     .Select(g => new { Items = g.ToList(), Total = g.Sum(x => x.DeudaCapital ?? 0m) })
@@ -138,8 +142,18 @@ namespace gestiones_backend.Services
 
                 foreach (var g in grupos)
                 {
+                    // solo asignar si las deudas del grupo no tienen usuario
+                    if (g.Items.All(d => d.IdUsuario != null ))
+                        continue;
+
                     var target = cargas.OrderBy(kv => kv.Value).First().Key;
-                    foreach (var d in g.Items) d.IdUsuario = target;
+
+                    foreach (var d in g.Items)
+                    {
+                        if (d.IdUsuario == null)
+                            d.IdUsuario = target;
+                    }
+
                     cargas[target] += g.Total;
                 }
             }
@@ -916,7 +930,7 @@ namespace gestiones_backend.Services
                 {
                     foreach (var row in ReadDelimited(file))
                     {
-                        referenciaClienteGrabar.Add(new ReferenciasPersonalesCrecos()
+                        var nueva = new ReferenciasPersonalesCrecos()
                         {
                             NumIdentificacion = row.GetValueOrDefault("NUM_IDENTIFICACION"),
                             NombreCompleto = row.GetValueOrDefault("CNOMBRECOMPLETO"),
@@ -934,7 +948,31 @@ namespace gestiones_backend.Services
                             DescripVinculo = row.GetValueOrDefault("DESCRIP_VINCULO"),
                             DireccionRef = row.GetValueOrDefault("DIRECCION_REF"),
                             NumeroReferencia = row.GetValueOrDefault("NUMERO_REFERENCIA"),
-                        });
+                        };
+
+                        bool existe = referenciaClienteGrabar.Any(r =>
+                            r.NumIdentificacion == nueva.NumIdentificacion &&
+                            r.NombreCompleto == nueva.NombreCompleto &&
+                            r.CodTipoIdentRef == nueva.CodTipoIdentRef &&
+                            r.DescripTipoIdentific == nueva.DescripTipoIdentific &&
+                            r.NumIdentificRef == nueva.NumIdentificRef &&
+                            r.NombreReferencia == nueva.NombreReferencia &&
+                            r.CodPaisRef == nueva.CodPaisRef &&
+                            r.DescripPais == nueva.DescripPais &&
+                            r.CodProvinciaRef == nueva.CodProvinciaRef &&
+                            r.DescripProvincia == nueva.DescripProvincia &&
+                            r.CodCantonRef == nueva.CodCantonRef &&
+                            r.DescripCanton == nueva.DescripCanton &&
+                            r.CodTipoVinculoRef == nueva.CodTipoVinculoRef &&
+                            r.DescripVinculo == nueva.DescripVinculo &&
+                            r.DireccionRef == nueva.DireccionRef &&
+                            r.NumeroReferencia == nueva.NumeroReferencia
+                        );
+
+                        if (!existe)
+                        {
+                            referenciaClienteGrabar.Add(nueva);
+                        }
                     }
                 }
 
@@ -1016,7 +1054,6 @@ namespace gestiones_backend.Services
                   temp_crecos.""DatosClienteCrecos"",
                   temp_crecos.""DireccionClienteCrecos"",
                   temp_crecos.""OperacionesClientesCrecos"",
-                  temp_crecos.""ReferenciasPersonalesCrecos"",
                   temp_crecos.""SaldoClienteCrecos"",
                   temp_crecos.""CuotasOperacionCrecos"",
                   temp_crecos.""TelefonosClienteCrecos""
