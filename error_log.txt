@@ -1,0 +1,4 @@
+martes, 21 de octubre de 2025 - - - - - - - Cannot access a disposed object.
+Object name: 'NpgsqlConnection'.
+martes, 21 de octubre de 2025 - - - - - - - Cannot access a disposed object.
+Object name: 'NpgsqlConnection'.

@@ -85,6 +85,17 @@ builder.Services.AddSingleton<FolderCleanService>();
 builder.Services.AddScoped<DeudoresImportService>();
 builder.Services.AddHttpClient();
 
+// Options
+builder.Services.Configure<SftpOptions>(builder.Configuration.GetSection("Sftp"));
+builder.Services.Configure<TrifocusExportOptions>(builder.Configuration.GetSection("TrifocusExport"));
+
+// PgConn (TRANSIENT por seguridad: no compartir conexión entre hilos)
+//builder.Services.AddTransient<gestiones_backend.DbConn.PgConn>();
+
+// Servicio principal
+builder.Services.AddSingleton<ITrifocusExcelUploader, TrifocusExcelUploader>();
+builder.Services.AddHostedService<TrifocusDailyWorker>();
+
 builder.Services.AddMapster();
 
 var mapsterConfig = TypeAdapterConfig.GlobalSettings;

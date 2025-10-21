@@ -103,7 +103,7 @@ namespace gestiones_backend.Services
                 .ToHashSet();
 
             List<Usuario> usuarios = _dataContext.Usuarios
-                .Where(x => x.Rol == "user")
+                .Where(x => x.Rol == "user" || x.IdUsuario.Contains("0152659447"))
                 .ToList();
 
             rows = rows
@@ -142,7 +142,6 @@ namespace gestiones_backend.Services
 
                 foreach (var g in grupos)
                 {
-                    // solo asignar si las deudas del grupo no tienen usuario
                     if (g.Items.All(d => d.IdUsuario != null ))
                         continue;
 

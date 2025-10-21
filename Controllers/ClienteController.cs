@@ -1,5 +1,6 @@
 ﻿using gestiones_backend.ConfigurationsMapper;
 using gestiones_backend.Context;
+using gestiones_backend.DbConn;
 using gestiones_backend.Dtos.In;
 using gestiones_backend.Dtos.Out;
 using gestiones_backend.Entity;
@@ -7,8 +8,8 @@ using gestiones_backend.Interfaces;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using System.Linq.Expressions;
-using System.Security.Claims;
 
 namespace gestiones_backend.Controllers
 {
@@ -18,11 +19,38 @@ namespace gestiones_backend.Controllers
     {
         private readonly DataContext _context;
         private readonly IAuthenticationService _authService;
+        private readonly IConfiguration _configuration;
 
-        public ClienteController(DataContext context, IAuthenticationService authService)
+        public ClienteController(DataContext context, IAuthenticationService authService, IConfiguration configuration  )
         {
             _context = context;
             _authService = authService;
+            _configuration = configuration;
+        }
+
+
+        [HttpGet("referencias-peronales/{cedulaCliente}")]
+        public IActionResult ReferenciasCliente(string cedulaCliente)
+        {
+            string cadena = $@" select  rpc.""NOMBRE_REFERENCIA"" nombre,
+		                                rpc.""DESCRIP_PROVINCIA"" provincia,
+		                                rpc.""DESCRIP_CANTON"" canton,
+		                                rpc.""DESCRIP_VINCULO"" vinculo,
+		                                rpc.""NUMERO_REFERENCIA"" telefono 
+                            from ""Deudores"" d 
+                            join temp_crecos.""ReferenciasPersonalesCrecos"" rpc 
+                                 on rpc.""NUM_IDENTIFICACION"" = d.""IdDeudor"" 
+                            where d.""IdDeudor"" = '{cedulaCliente}';";
+
+            PgConn conn = new PgConn();
+            conn.cadenaConnect = _configuration.GetConnectionString("DefaultConnection");
+
+
+            DataTable dataTable = conn.ejecutarconsulta_dt(cadena);
+            string JSONString = string.Empty;
+            JSONString = Newtonsoft.Json.JsonConvert.SerializeObject(dataTable);
+
+            return Content(JSONString, "application/json");
         }
 
         [HttpGet("deudas-por-cliente/{cedulaCliente}")]

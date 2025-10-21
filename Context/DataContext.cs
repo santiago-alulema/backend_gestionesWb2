@@ -629,6 +629,8 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Id).HasMaxLength(50);
                 entity.Property(e => e.Nombre).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Activo).IsRequired();
+                entity.Property(e => e.CodigoExterno).HasColumnType("varchar").IsRequired(false);
+
             });
 
             modelBuilder.Entity<TipoTarea>(entity =>
@@ -637,6 +639,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Id).HasMaxLength(50);
                 entity.Property(e => e.Nombre);
                 entity.Property(e => e.Estado);
+                entity.Property(e => e.CodigoExterno).HasColumnType("varchar");
 
             });
 
