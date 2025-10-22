@@ -30,6 +30,8 @@
         public string? Ciudad { get; set; }
         public string? Nombre { get; set; }
         public string? NombreCompleto { get; set; }
+        public string? GestorUltimaGestion { get; set; }
+
 
 
     }

@@ -8,5 +8,7 @@ namespace gestiones_backend.Interfaces
        List<GestionOutDto> GetAllAsync();
         GestionOutDto? UpdateAsync(string idGestion, UpdateGestionDto dto);
         bool DeleteAsync(string idGestion);
+        string  UltimoGestorGestionaDeuda (string idDeuda);
+
     }
 }

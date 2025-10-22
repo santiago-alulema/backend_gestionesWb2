@@ -94,5 +94,57 @@ namespace gestiones_backend.Services
             _context.SaveChanges();
             return true;
         }
+
+        public string UltimoGestorGestionaDeuda(string idDeuda)
+        {
+            Pago? pago = _context.Pagos
+                       .Where(x => x.IdDeuda.ToString() == idDeuda)
+                       .Include(x => x.IdUsuarioNavigation)
+                       .OrderByDescending(y => y.FechaRegistro)
+                       .FirstOrDefault();
+
+            CompromisosPago? compromiso = _context.CompromisosPagos
+                                        .Where(x => x.IdDeuda.ToString() == idDeuda)
+                                        .Include(x => x.IdUsuarioNavigation)
+                                        .OrderByDescending(y => y.FechaRegistro)
+                                        .FirstOrDefault();
+
+            Gestione? gestion = _context.Gestiones
+                                .Where(x => x.IdDeuda.ToString() == idDeuda)
+                                .Include(x => x.IdUsuarioGestionaNavigation)
+                                .OrderByDescending(y => y.FechaGestion)
+                                .FirstOrDefault();
+
+            var fechas = new List<(string Tipo, DateTime? Fecha)>
+                                    {
+                                        ("Pago", pago?.FechaRegistro),
+                                        ("CompromisoPago", compromiso?.FechaRegistro),
+                                        ("Gestion", gestion?.FechaGestion)
+                                    };
+
+            var masReciente = fechas
+                .Where(f => f.Fecha.HasValue)
+                .OrderByDescending(f => f.Fecha)
+                .FirstOrDefault();
+
+            DateTime fechaPago = pago?.FechaRegistro ?? DateTime.MinValue;
+            DateTime fechaCompromiso = compromiso?.FechaRegistro ?? DateTime.MinValue;
+            DateTime fechaGestion = gestion?.FechaGestion ?? DateTime.MinValue;
+
+            if (fechaPago >= fechaCompromiso && fechaPago >= fechaGestion)
+            {
+                return (pago.IdUsuarioNavigation.NombreCompleto);
+            }
+            else if (fechaCompromiso >= fechaPago && fechaCompromiso >= fechaGestion)
+            {
+                return (compromiso.IdUsuarioNavigation.NombreCompleto);
+            }
+            else
+            {
+                return (gestion.IdUsuarioGestionaNavigation.NombreCompleto); ;
+            }
+
+            return ("No se encontro ultimo Gestor");
+        }
     }
 }

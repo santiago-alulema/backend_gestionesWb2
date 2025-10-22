@@ -48,6 +48,10 @@ namespace gestiones_backend.Controllers
             return Ok(gestiones);
         }
 
+        [HttpGet("gestor-ultima-gestion/{idDeuda}")]
+        public IActionResult UltimoGestorDeuda(string idDeuda)
+            =>  Ok(_gestionesService.UltimoGestorGestionaDeuda(idDeuda));
+
         [HttpPut("{id}")]
         public ActionResult<GestionDto> Update(string id, [FromBody] UpdateGestionDto dto)
         {

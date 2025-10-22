@@ -20,12 +20,18 @@ namespace gestiones_backend.Controllers
         private readonly DataContext _context;
         private readonly IAuthenticationService _authService;
         private readonly IConfiguration _configuration;
+        private readonly IGestionesService _gestionesService;
 
-        public ClienteController(DataContext context, IAuthenticationService authService, IConfiguration configuration  )
+
+        public ClienteController(DataContext context, 
+                                IAuthenticationService authService, 
+                                IConfiguration configuration,
+                                IGestionesService gestionesService)
         {
             _context = context;
             _authService = authService;
             _configuration = configuration;
+            _gestionesService = gestionesService;
         }
 
 
@@ -99,6 +105,10 @@ namespace gestiones_backend.Controllers
 
             List<Deuda> deudas = deudasQuery.ToList();
             List<DeudasClienteOutDTO> deudoresDTO = deudas.Adapt<List<DeudasClienteOutDTO>>();
+            foreach ( var item in deudoresDTO)
+            {
+                item.GestorUltimaGestion =_gestionesService.UltimoGestorGestionaDeuda(item.IdDeuda.ToString());
+            }
             return Ok(deudoresDTO);
         }
 
