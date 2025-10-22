@@ -97,35 +97,26 @@ namespace gestiones_backend.Services
 
         public string UltimoGestorGestionaDeuda(string idDeuda)
         {
-            Pago? pago = _context.Pagos
-                       .Where(x => x.IdDeuda.ToString() == idDeuda)
-                       .Include(x => x.IdUsuarioNavigation)
-                       .OrderByDescending(y => y.FechaRegistro)
-                       .FirstOrDefault();
-
-            CompromisosPago? compromiso = _context.CompromisosPagos
-                                        .Where(x => x.IdDeuda.ToString() == idDeuda)
-                                        .Include(x => x.IdUsuarioNavigation)
-                                        .OrderByDescending(y => y.FechaRegistro)
-                                        .FirstOrDefault();
-
-            Gestione? gestion = _context.Gestiones
-                                .Where(x => x.IdDeuda.ToString() == idDeuda)
-                                .Include(x => x.IdUsuarioGestionaNavigation)
-                                .OrderByDescending(y => y.FechaGestion)
-                                .FirstOrDefault();
-
-            var fechas = new List<(string Tipo, DateTime? Fecha)>
-                                    {
-                                        ("Pago", pago?.FechaRegistro),
-                                        ("CompromisoPago", compromiso?.FechaRegistro),
-                                        ("Gestion", gestion?.FechaGestion)
-                                    };
-
-            var masReciente = fechas
-                .Where(f => f.Fecha.HasValue)
-                .OrderByDescending(f => f.Fecha)
+            var pago = _context.Pagos
+                .Where(x => x.IdDeuda.ToString() == idDeuda)
+                .Include(x => x.IdUsuarioNavigation)
+                .OrderByDescending(y => y.FechaRegistro)
                 .FirstOrDefault();
+
+            var compromiso = _context.CompromisosPagos
+                .Where(x => x.IdDeuda.ToString() == idDeuda)
+                .Include(x => x.IdUsuarioNavigation)
+                .OrderByDescending(y => y.FechaRegistro)
+                .FirstOrDefault();
+
+            var gestion = _context.Gestiones
+                .Where(x => x.IdDeuda.ToString() == idDeuda)
+                .Include(x => x.IdUsuarioGestionaNavigation)
+                .OrderByDescending(y => y.FechaGestion)
+                .FirstOrDefault();
+
+            if (pago == null && compromiso == null && gestion == null)
+                return "No se encontró ningún registro relacionado con la deuda.";
 
             DateTime fechaPago = pago?.FechaRegistro ?? DateTime.MinValue;
             DateTime fechaCompromiso = compromiso?.FechaRegistro ?? DateTime.MinValue;
@@ -133,18 +124,18 @@ namespace gestiones_backend.Services
 
             if (fechaPago >= fechaCompromiso && fechaPago >= fechaGestion)
             {
-                return (pago.IdUsuarioNavigation.NombreCompleto);
+                return pago?.IdUsuarioNavigation?.NombreCompleto ?? "Gestor desconocido (Pago)";
             }
             else if (fechaCompromiso >= fechaPago && fechaCompromiso >= fechaGestion)
             {
-                return (compromiso.IdUsuarioNavigation.NombreCompleto);
+                return compromiso?.IdUsuarioNavigation?.NombreCompleto ?? "Gestor desconocido (Compromiso)";
             }
-            else
+            else if (fechaGestion != DateTime.MinValue)
             {
-                return (gestion.IdUsuarioGestionaNavigation.NombreCompleto); ;
+                return gestion?.IdUsuarioGestionaNavigation?.NombreCompleto ?? "Gestor desconocido (Gestión)";
             }
 
-            return ("No se encontro ultimo Gestor");
+            return "No se encontró último gestor.";
         }
     }
 }
