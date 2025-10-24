@@ -197,30 +197,32 @@ namespace gestiones_backend.Controllers
                               observaciones,
                               tracking
                               FROM (
-                      SELECT 'Pago' AS tipo,
-                              p.""FechaPago"" AS fecha,
-                              p.""Observaciones"" observaciones, 
-                              ('<strong>Banco: </strong> '  || COALESCE(bp.""Nombre"", 'N/A') || 
-                             '<br><strong>Cuenta: </strong>' || COALESCE(tcb.""Nombre"", 'N/A') || 
-                             '<br><strong>Tipo Transaccion: </strong>' || COALESCE(tt.""Nombre"", 'N/A') || 
-                             '<br><strong>Abono/Liquidacion: </strong>' || COALESCE(al.""Nombre"", 'N/A') || 
-                             '<br><strong>Numero Doc.: </strong>' || COALESCE(p.""NumeroDocumenro"", 'N/A') || 
-                             '<br><strong>Fecha Pago: </strong>' || COALESCE(TO_CHAR(p.""FechaPago"", 'YYYY-MM-DD HH24:MI:SS'), 'N/A') || 
-                             '<br><strong>Valor: </strong>' || COALESCE(p.""MontoPagado""::text, 'N/A') ||
-                             '<br><strong>Telefono: </strong>' || COALESCE(p.""Telefono""::text, 'N/A')  ) AS tracking
+                                SELECT 
+                                  concat('Pago ( ',upper(u.""NombreUsuario""), ')') AS tipo,
+                                  p.""FechaPago"" AS fecha,
+                                   concat('<p style=""text-align: justify;"">', p.""Observaciones"", '</p>') AS observaciones,
+                                  ('<strong>Banco: </strong> '  || COALESCE(bp.""Nombre"", 'N/A') || 
+                                 '<br><strong>Cuenta: </strong>' || COALESCE(tcb.""Nombre"", 'N/A') || 
+                                 '<br><strong>Tipo Transaccion: </strong>' || COALESCE(tt.""Nombre"", 'N/A') || 
+                                 '<br><strong>Abono/Liquidacion: </strong>' || COALESCE(al.""Nombre"", 'N/A') || 
+                                 '<br><strong>Numero Doc.: </strong>' || COALESCE(p.""NumeroDocumenro"", 'N/A') || 
+                                 '<br><strong>Fecha Pago: </strong>' || COALESCE(TO_CHAR(p.""FechaPago"", 'YYYY-MM-DD HH24:MI:SS'), 'N/A') || 
+                                 '<br><strong>Valor: </strong>' || COALESCE(p.""MontoPagado""::text, 'N/A') ||
+                                 '<br><strong>Telefono: </strong>' || COALESCE(p.""Telefono""::text, 'N/A')  ) AS tracking
                       FROM ""Pagos"" p 
                       LEFT JOIN ""Deudas"" d ON p.""IdDeuda"" = d.""IdDeuda"" 
                       LEFT JOIN ""BancosPagos"" bp ON p.""IdBancosPago"" = bp.""Id""  
                       LEFT JOIN ""TiposCuentaBancaria"" tcb ON p.""IdTipoCuentaBancaria"" = tcb.""Id""
                       LEFT JOIN ""TiposTransaccion"" tt ON tt.""Id"" = p.""IdTipoTransaccion"" 
                       LEFT JOIN ""AbonosLiquidacion"" al ON al.""Id"" = p.""IdAbonoLiquidacion"" 
+                      inner join ""Usuarios"" u on u.""IdUsuario"" = p.""IdUsuario"" 
                       WHERE d.""IdDeuda"" = '{idDeuda}'
 
                       UNION ALL
 
-                      SELECT 'Gestion' AS tipo, 
+                      SELECT concat('Gestion ( ',upper(u.""NombreUsuario""), ')') AS tipo, 
                               g.""FechaGestion"" AS fecha, 
-                              g.""Descripcion"" observaciones,
+                              concat('<p style=""text-align: justify;"">',  g.""Descripcion"", '</p>') AS observaciones,
                               ('<strong>RESULTADO:</strong> '  || tr.""Nombre"" || 
                                '<br><strong>Tipo Contacto Cliente</strong>' || tcr.""Nombre"" || 
                                '<br><strong>Respuesta: </strong>' || rtc.""Nombre"" ||
@@ -230,13 +232,14 @@ namespace gestiones_backend.Controllers
                       JOIN ""TiposResultado"" tr ON tr.""Id"" = g.""IdTipoResultado""
                       JOIN ""TiposContactoResultado"" tcr ON tcr.""Id"" = g.""IdTipoContactoResultado""
                       JOIN ""RespuestasTipoContacto"" rtc ON rtc.""Id"" = g.""IdRespuestaTipoContacto""
+                      inner join ""Usuarios"" u on u.""IdUsuario"" = g.""IdUsuarioGestiona""  
                       WHERE d.""IdDeuda"" = '{idDeuda}'
 
                       UNION ALL
 
-                      SELECT 'Tarea' AS tipo, 
+                      SELECT concat('Tarea ( ', upper(u.""NombreUsuario"") , ')')  AS tipo,  
                               cp.""FechaRegistro"" AS fecha,
-                              cp.""Observaciones"" observaciones,
+                              concat('<p style=""text-align: justify;"">', cp.""Observaciones"" , '</p>') AS observaciones,
                               ('<strong>Fecha recordatorio:</strong> '  || TO_CHAR(cp.""FechaCompromiso"", 'YYYY-MM-DD HH24:MI:SS') || 
                          	    '<br><strong>Hora recordatorio</strong>' || cp.""HoraRecordatorio"" || 
                          	    '<br><strong>Valor: </strong>' || cp.""MontoComprometido"" || 
@@ -246,6 +249,7 @@ namespace gestiones_backend.Controllers
                       FROM ""CompromisosPagos"" cp
                       JOIN ""Deudas"" d ON cp.""IdDeuda"" = d.""IdDeuda""
                       JOIN ""TiposTareas"" tr ON tr.""Id"" = cp.""IdTipoTarea""
+                      inner join ""Usuarios"" u on u.""IdUsuario"" = cp.""IdUsuario""  
                       WHERE d.""IdDeuda"" = '{idDeuda}'
                   ) AS combined_results
                   ORDER BY fecha DESC;";

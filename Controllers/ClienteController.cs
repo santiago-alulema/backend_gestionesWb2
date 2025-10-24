@@ -107,7 +107,7 @@ namespace gestiones_backend.Controllers
             List<DeudasClienteOutDTO> deudoresDTO = deudas.Adapt<List<DeudasClienteOutDTO>>();
             foreach ( var item in deudoresDTO)
             {
-                item.GestorUltimaGestion =_gestionesService.UltimoGestorGestionaDeuda(item.IdDeuda.ToString());
+                item.NumeroFactura = "<p style='margin-left:50px'>"+item.NumeroFactura+"</p>";
             }
             return Ok(deudoresDTO);
         }
