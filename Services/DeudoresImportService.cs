@@ -91,10 +91,10 @@ namespace gestiones_backend.Services
                                         .AsNoTracking()
                                         .ToList();
 
-             _dataContext.Deudas
-                              .Where(d => d.Empresa == "CRECOSCORP")
-                              .ExecuteUpdate(setters => setters
-                              .SetProperty(d => d.EsActivo, false));
+             //_dataContext.Deudas
+             //                 .Where(d => d.Empresa == "CRECOSCORP")
+             //                 .ExecuteUpdate(setters => setters
+             //                 .SetProperty(d => d.EsActivo, false));
 
             List<Deudores> deudores = _dataContext.Deudores.ToList();
             var idsValidos = deudores
@@ -118,40 +118,42 @@ namespace gestiones_backend.Services
             {
                 if (usuarios.Count == 0) return;
 
+                // Solo deudas sin asignar
+                var pendientes = lista.Where(d => d.IdUsuario == null).ToList();
+                if (pendientes.Count == 0) return;
+
                 int i = 0;
-                foreach (var d in lista)
+                foreach (var d in pendientes)
                 {
-                    if (d.IdUsuario != null ) continue; // ya asignada
                     d.IdUsuario = usuarios[i].IdUsuario;
                     i = (i + 1) % usuarios.Count;
                 }
             }
 
-            void Asignar(List<Deuda> lista)
+            void Asignar(List<Deuda> lista)  
             {
-                if (lista.Count == 0) return;
+                if (usuarios.Count == 0) return;
 
-                var grupos = lista
+                // Solo deudas sin asignar
+                var pendientes = lista.Where(d => d.IdUsuario == null).ToList();
+                if (pendientes.Count == 0) return;
+
+                var grupos = pendientes
                     .GroupBy(d => d.IdDeudor)
                     .Select(g => new { Items = g.ToList(), Total = g.Sum(x => x.DeudaCapital ?? 0m) })
                     .OrderByDescending(g => g.Total)
                     .ThenByDescending(g => g.Items.Count)
                     .ToList();
 
+                // Cargas solo para el reparto actual (no cuentan las ya asignadas)
                 var cargas = usuarios.ToDictionary(u => u.IdUsuario, _ => 0m);
 
                 foreach (var g in grupos)
                 {
-                    if (g.Items.All(d => d.IdUsuario != null ))
-                        continue;
-
                     var target = cargas.OrderBy(kv => kv.Value).First().Key;
 
-                    foreach (var d in g.Items)
-                    {
-                        if (d.IdUsuario == null)
-                            d.IdUsuario = target;
-                    }
+                    foreach (var d in g.Items) // todos están sin usuario
+                        d.IdUsuario = target;
 
                     cargas[target] += g.Total;
                 }
@@ -213,6 +215,8 @@ namespace gestiones_backend.Services
 
             return ("Se insertó y actualizó correctamente");
         }
+
+
         public async Task<int> ImportarDeudoresCompletoAsync()
         {
             if (!Directory.Exists(_root))

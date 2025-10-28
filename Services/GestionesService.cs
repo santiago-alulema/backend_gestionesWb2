@@ -30,7 +30,8 @@ namespace gestiones_backend.Services
                 .Include(x => x.RespuestaTipoContactoNavigation)
                 .Include(x => x.IdTipoContactoResultadoNavigation)
                     .ThenInclude(x => x.TipoResultadoNavigation)
-                .Include(x => x.IdUsuarioGestionaNavigation);
+                .Include(x => x.IdUsuarioGestionaNavigation)
+               .OrderByDescending(x => x.FechaGestion);
 
             if (usuario.Rol != "admin")
             {

@@ -41,7 +41,8 @@ namespace gestiones_backend.Services
                 .Include(x => x.AbonoLiquidacionNavigation)
                 .Include(x => x.ImagenesCobrosNavigation)
                 .Include(x => x.IdDeudaNavigation)
-                    .ThenInclude(x => x.IdDeudorNavigation);
+                    .ThenInclude(x => x.IdDeudorNavigation)
+                .OrderByDescending(x => x.FechaRegistro);
 
             if (usuario.Rol != "admin")
             {
