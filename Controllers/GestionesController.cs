@@ -215,7 +215,7 @@ namespace gestiones_backend.Controllers
                       LEFT JOIN ""TiposCuentaBancaria"" tcb ON p.""IdTipoCuentaBancaria"" = tcb.""Id""
                       LEFT JOIN ""TiposTransaccion"" tt ON tt.""Id"" = p.""IdTipoTransaccion"" 
                       LEFT JOIN ""AbonosLiquidacion"" al ON al.""Id"" = p.""IdAbonoLiquidacion"" 
-                      inner join ""Usuarios"" u on u.""IdUsuario"" = p.""IdUsuario"" 
+                      LEFT join ""Usuarios"" u on u.""IdUsuario"" = p.""IdUsuario"" 
                       WHERE d.""IdDeuda"" = '{idDeuda}'
 
                       UNION ALL
