@@ -56,6 +56,7 @@ namespace gestiones_backend.helpers
                     await importSvc.ImportarTelefonosBasicoAsync();
                     importSvc.GrabarTablas();
                     importSvc.ImportarDeudas();
+                    importSvc.importarPagos();
                     _logger.LogInformation("Datos importados correctamente.");
 
                     var updated = await compromisos.MarcarIncumplidosVencidosAsync();

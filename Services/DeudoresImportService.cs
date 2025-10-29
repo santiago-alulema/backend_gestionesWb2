@@ -1,27 +1,143 @@
-﻿using gestiones_backend.Context;
+﻿using CsvHelper;
+using CsvHelper.Configuration;
+using gestiones_backend.Context;
+using gestiones_backend.DbConn;
 using gestiones_backend.Entity;
+using gestiones_backend.Entity.temp_crecos;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
-using CsvHelper;
-using CsvHelper.Configuration;
-using Microsoft.EntityFrameworkCore;
-using gestiones_backend.Entity.temp_crecos;
 
 namespace gestiones_backend.Services
 {
     public class DeudoresImportService
     {
         private readonly DataContext _dataContext;
-
+        private readonly IConfiguration _configuration;
         private readonly string _root;
 
-        public DeudoresImportService(DataContext db, IWebHostEnvironment env)
+        public DeudoresImportService(DataContext db, 
+                                     IWebHostEnvironment env,
+                                     IConfiguration configuration   )
         {
             _dataContext = db;
             _root = Path.Combine(env.ContentRootPath, "ArchivosExternos");
+            _configuration = configuration;
         }
 
+
+        static DateTime? ToUtc(DateTime? dt)
+                            => dt.HasValue ? DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc) : (DateTime?)null;
+
+        public string importarPagos() {
+
+            string cadena = $@"
+                                INSERT INTO public.""Pagos"" (
+                                  ""IdDeuda"",
+                                  ""FechaPago"",
+                                  ""MontoPagado"",
+                                  ""MedioPago"",
+                                  ""NumeroDocumenro"",
+                                  ""Observaciones"",
+                                  ""FormaPagoId"",
+                                  ""IdUsuario"",
+                                  ""IdBancosPago"",
+                                  ""IdTipoCuentaBancaria"",
+                                  ""IdTipoTransaccion"",
+                                  ""IdAbonoLiquidacion"",
+                                  ""UsuarioIdUsuario"",
+                                  ""FechaRegistro"",
+                                  ""IdPago"",
+                                  ""Telefono"",
+                                  ""ArchivoMigracion""
+                                )
+                                WITH base AS (
+                                  select distinct on (rdc.""IRECIBODETALLE"")
+                                    rpc.""NUM_IDENTIFICACION"",
+                                    rpc.""COD_RECIBO"",
+                                    rpc.""FECHA_PAGO"",
+                                    rdc.""IRECIBODETALLE"",
+                                    rdc.""VALOR_RECIBO"",
+                                    rpc.""MONTO"",
+                                    rpc.""DESCRIPC_TPAGO"",
+                                    rdc.""ICODIGOOPERACION"",
+                                    rfpc.""DESCRIPC_FPAGO"",
+                                    rfpc.""IVALOR"",
+                                    rfpc.""DESCRIPC_MOTIVO"",
+                                    d.""IdDeuda"",
+                                    d.""CodigoOperacion""  as ""NumeroFactura"",
+                                    rpc.""Nombre_Archivo""
+                                  FROM temp_crecos.""ReciboPagosCrecos"" rpc
+                                  JOIN temp_crecos.""ReciboDetalleCrecos"" rdc
+                                    ON rpc.""COD_RECIBO"" = rdc.""COD_RECIBO""
+                                  JOIN temp_crecos.""ReciboFormaPagoCrecos"" rfpc
+                                    ON rfpc.""COD_RECIBO"" = rpc.""COD_RECIBO""
+                                  JOIN ""Deudas"" d
+                                    ON d.""CodigoOperacion"" = rdc.""ICODIGOOPERACION""
+                                ),
+                                agg AS (
+                                  SELECT
+                                    b.""IdDeuda""                                   AS ""IdDeuda"",
+                                    MAX(b.""FECHA_PAGO"")::date                     AS ""FechaPago"",
+                                    COALESCE(SUM(b.""VALOR_RECIBO""), 0)::numeric(18,2) AS ""MontoPagado"",
+                                    NULL::text                                    AS ""MedioPago"",
+                                    -- Orden estable para evitar diferencias por re-ejecución
+                                    string_agg(DISTINCT b.""NumeroFactura""::text, ' - ' ) AS ""NumeroDocumenro"",
+                                    (
+                                      '[MIGRACION CRECOS] ' ||
+                                      'TipoPago: '   || COALESCE(string_agg(DISTINCT b.""DESCRIPC_TPAGO"", ' / '), '') ||
+                                      ' Desc. Pago: '|| COALESCE(string_agg(DISTINCT b.""DESCRIPC_FPAGO"", ' / '), '') ||
+                                      ' Motivo: '    || COALESCE(string_agg(DISTINCT b.""DESCRIPC_MOTIVO"", ' / '), '')
+                                    )::text                                       AS ""Observaciones"",
+                                    NULL::uuid AS ""FormaPagoId"",
+                                    NULL::uuid AS ""IdUsuario"",
+                                    NULL::uuid AS ""IdBancosPago"",
+                                    NULL::uuid AS ""IdTipoCuentaBancaria"",
+                                    NULL::uuid AS ""IdTipoTransaccion"",
+                                    NULL::uuid AS ""IdAbonoLiquidacion"",
+                                    NULL::uuid AS ""UsuarioIdUsuario"",
+                                    NOW()        AS ""FechaRegistro"",
+                                    gen_random_uuid() AS ""IdPago"",
+                                    ''::varchar  AS ""Telefono"",
+                                    string_agg(DISTINCT b.""Nombre_Archivo""::text, ' - ') AS ""ArchivoMigracion""
+                                  FROM base b
+                                  GROUP BY b.""NUM_IDENTIFICACION"", b.""IdDeuda""
+                                )
+                                SELECT
+                                  a.""IdDeuda"",
+                                  a.""FechaPago"",
+                                  a.""MontoPagado"",
+                                  a.""MedioPago"",
+                                  a.""NumeroDocumenro"",
+                                  a.""Observaciones"",
+                                  a.""FormaPagoId"",
+                                  a.""IdUsuario"",
+                                  a.""IdBancosPago"",
+                                  a.""IdTipoCuentaBancaria"",
+                                  a.""IdTipoTransaccion"",
+                                  a.""IdAbonoLiquidacion"",
+                                  a.""UsuarioIdUsuario"",
+                                  a.""FechaRegistro"",
+                                  a.""IdPago"",
+                                  a.""Telefono"",
+                                  a.""ArchivoMigracion""
+                                FROM agg a
+                                WHERE NOT EXISTS (
+                                  SELECT 1
+                                  FROM public.""Pagos"" p
+                                  WHERE p.""IdDeuda""         = a.""IdDeuda""
+                                    AND p.""FechaPago""       = a.""FechaPago""
+                                    AND p.""MontoPagado""     = a.""MontoPagado""
+                                    AND p.""NumeroDocumenro"" = a.""NumeroDocumenro""
+                                );";
+
+            PgConn conn = new PgConn();
+            conn.cadenaConnect = _configuration.GetConnectionString("DefaultConnection");
+            conn.ejecutarconsulta_dt(cadena);
+            return "Se actualizo correctamente";
+        }
 
         public string ImportarDeudas()
         {
@@ -167,9 +283,6 @@ namespace gestiones_backend.Services
 
             List<Deuda> deudas = _dataContext.Deudas.ToList();
 
-            static DateTime? ToUtc(DateTime? dt)
-    => dt.HasValue ? DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc) : (DateTime?)null;
-
 
             foreach (var deuda in todas)
             {
@@ -177,29 +290,33 @@ namespace gestiones_backend.Services
 
                 if (existente != null)
                 {
-                    existente.DeudaCapital = deuda.DeudaCapital;
-                    existente.Interes = deuda.Interes;
-                    existente.GastosCobranzas = deuda.GastosCobranzas;
-                    existente.SaldoDeuda = deuda.SaldoDeuda;
-                    existente.Descuento = deuda.Descuento;
-                    existente.MontoCobrar = deuda.MontoCobrar;
-                    existente.FechaVenta = deuda.FechaVenta;
-                    existente.FechaUltimoPago = deuda.FechaUltimoPago;
-                    existente.Estado = deuda.Estado;
-                    existente.DiasMora = deuda.DiasMora;
-                    existente.NumeroFactura = deuda.NumeroFactura;
-                    existente.Clasificacion = deuda.Clasificacion;
-                    existente.Creditos = deuda.Creditos;
-                    existente.ValorCuota = deuda.ValorCuota;
-                    existente.EsActivo = true;
-                    existente.Empresa = deuda.Empresa;
-                    existente.Tramo = deuda.Tramo;
-                    existente.UltimoPago = deuda.UltimoPago;
-                    existente.MontoCobrarPartes = deuda.MontoCobrarPartes;
-                    existente.FechaRegistro = ToUtc(existente.FechaRegistro);
-                    existente.IdUsuario = deuda.IdUsuario;
+                    
+                        existente.DeudaCapital = deuda.DeudaCapital;
+                        existente.Interes = deuda.Interes;
+                        existente.GastosCobranzas = deuda.GastosCobranzas;
+                        existente.SaldoDeuda = deuda.SaldoDeuda;
+                        existente.Descuento = deuda.Descuento;
+                        existente.MontoCobrar = deuda.MontoCobrar;
+                        existente.FechaVenta = deuda.FechaVenta;
+                        existente.FechaUltimoPago = deuda.FechaUltimoPago;
+                        existente.Estado = deuda.Estado;
+                        existente.DiasMora = deuda.DiasMora;
+                        existente.NumeroFactura = deuda.NumeroFactura;
+                        existente.Clasificacion = deuda.Clasificacion;
+                        existente.Creditos = deuda.Creditos;
+                        existente.ValorCuota = deuda.ValorCuota;
+                        existente.EsActivo = true;
+                        existente.Empresa = deuda.Empresa;
+                        existente.Tramo = deuda.Tramo;
+                        existente.UltimoPago = deuda.UltimoPago;
+                        existente.MontoCobrarPartes = deuda.MontoCobrarPartes;
+                        existente.FechaRegistro = ToUtc(existente.FechaRegistro);
 
-                    _dataContext.Deudas.Update(existente);
+                        if (string.IsNullOrEmpty(existente.IdUsuario))
+                            existente.IdUsuario = deuda.IdUsuario;
+
+                        _dataContext.Deudas.Update(existente);
+                   
                 }
                 else
                 {
@@ -210,7 +327,6 @@ namespace gestiones_backend.Services
                     _dataContext.Deudas.Add(deuda);
                 }
             }
-
             _dataContext.SaveChanges();
 
             return ("Se insertó y actualizó correctamente");
@@ -648,6 +764,29 @@ namespace gestiones_backend.Services
         }
 
 
+        static DateTime? ParseLocalToUtcOrNull(string? s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return null;
+
+            // Intenta primero un parse general asumiendo hora local
+            if (DateTime.TryParse(s, CultureInfo.GetCultureInfo("es-EC"),
+                                  DateTimeStyles.AssumeLocal, out var dt))
+                return ToUtc(dt);
+
+            // Intenta con formatos comunes
+            var formats = new[] {
+                    "dd/MM/yyyy", "dd-MM-yyyy",
+                    "yyyy-MM-dd",
+                    "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss",
+                    "yyyy-MM-dd HH:mm:ss"
+                };
+            if (DateTime.TryParseExact(s, formats, CultureInfo.GetCultureInfo("es-EC"),
+                                       DateTimeStyles.AssumeLocal, out dt))
+                return ToUtc(dt);
+
+            throw new FormatException($"Fecha inválida: '{s}'");
+        }
+
         public void GrabarTablas()
         {
             List<ArticuloOperacionCrecos> listaGrabar = new List<ArticuloOperacionCrecos>();
@@ -659,6 +798,11 @@ namespace gestiones_backend.Services
             List<SaldoClienteCrecos> saldoClienteCrecos = new List<SaldoClienteCrecos>();
             List<TelefonosClienteCrecos> telefonoClienteCrecos = new List<TelefonosClienteCrecos>();
             List<CuotaOperacionCrecos> CuotasOperacionCrecos = new List<CuotaOperacionCrecos>();
+
+            List<ReciboDetalleCrecos> reciboDetalleCrecos = new List<ReciboDetalleCrecos>();
+            List<ReciboPagosCrecos> reciboPagosCrecos = new List<ReciboPagosCrecos>();
+            List<ReciboFormaPagoCrecos> reciboFormaPagoCrecos = new List<ReciboFormaPagoCrecos>();
+
 
 
             int? ToInt(string? s) => int.TryParse(s, out var v) ? v : null;
@@ -743,6 +887,90 @@ namespace gestiones_backend.Services
                             COD_OPERACION =row.GetValueOrDefault("COD_OPERACION"),
                             DESC_PRODUCTO = row.GetValueOrDefault("DESC_PRODUCTO"),
                             OBSERVACION = ""
+                        });
+                    }
+                }
+
+                if (upperName.Contains("RECIBOPAGO"))
+                {
+                    foreach (var row in ReadDelimited(file))
+                    {
+                        reciboPagosCrecos.Add(new ReciboPagosCrecos()
+                        {
+                            CodRecibo = row.GetValueOrDefault("COD_RECIBO"),
+                            CestadoRegistro = row.GetValueOrDefault("CESTADO_REGISTRO"),
+                            CodEmpresa = row.GetValueOrDefault("COD_EMPRESA"),
+                            DescripcEmpresa = row.GetValueOrDefault("DESCRIPC_EMPRESA"),
+                            CodUNegocio = row.GetValueOrDefault("COD_UNEGOCIO"),
+                            DescripcUNegocio = row.GetValueOrDefault("DESCRIPC_UNEGOCIO"),
+                            CodTCartera = row.GetValueOrDefault("COD_TCARTERA"),
+                            DescripcTCartera = row.GetValueOrDefault("DESCRIPC_TCARTERA"),
+                            CodOficina = row.GetValueOrDefault("COD_OFICINA"),
+                            CDescripcionOficina = row.GetValueOrDefault("CDESCRIPCION_OFICINA"),
+                            NumIdentificacion = row.GetValueOrDefault("NUM_IDENTIFICACION"),
+                            CodPagoReferencial = row.GetValueOrDefault("COD_PAGO_REFERENCIAL"),
+                            CodMoneda = row.GetValueOrDefault("COD_MONEDA"),
+                            DescripcMoneda = row.GetValueOrDefault("DESCRIPC_MONEDA"),
+                            CodTPago = row.GetValueOrDefault("COD_TPAGO"),
+                            DescripcTPago = row.GetValueOrDefault("DESCRIPC_TPAGO"),
+                            CodCaja = row.GetValueOrDefault("COD_CAJA"),
+                            DescripcCaja = row.GetValueOrDefault("DESCRIPC_CAJA"),
+                            CodGestor = row.GetValueOrDefault("COD_GESTOR"),
+                            DescripcGestor = row.GetValueOrDefault("DESCRIPC_GESTOR"),
+                            CodTRecibo = row.GetValueOrDefault("COD_TRECIBO"),
+                            DescripcTRecibo = row.GetValueOrDefault("DESCRIPC_TRECIBO"),
+                            FechaPago = ParseLocalToUtcOrNull(row.GetValueOrDefault("FECHA_PAGO")) ,
+                            DFechaReverso = ParseLocalToUtcOrNull(row.GetValueOrDefault("DFECHAREVERSO")),
+                            Monto = ToDec(row.GetValueOrDefault("MONTO")),
+                            Cambio = ToDec(row.GetValueOrDefault("CAMBIO")),
+                            NombreArchivo = upperName
+                        });
+                    }
+                }
+
+
+                if (upperName.Contains("RECIBODETALLE_"))
+                {
+                    foreach (var row in ReadDelimited(file))
+                    {
+                        reciboDetalleCrecos.Add(new ReciboDetalleCrecos
+                        {
+                            // IReciboDetalle se genera en la entidad (Guid). Si lo necesitas del archivo, así:
+                            IReciboDetalle = row.GetValueOrDefault("IRECIBODETALLE"),
+                            CodRecibo = row.GetValueOrDefault("COD_RECIBO"),
+                            ICodigoOperacion = row.GetValueOrDefault("ICODIGOOPERACION"),
+                            NumCuota = ToInt(row.GetValueOrDefault("NUM_CUOTA")),
+                            CodRubro = row.GetValueOrDefault("COD_RUBRO"),
+                            CDescripcionRubro = row.GetValueOrDefault("CDESCRIPCION_RUBRO"),
+                            ValorRecibo = ToDec(row.GetValueOrDefault("VALOR_RECIBO")),
+                            NombreArchivo = upperName
+                        });
+                    }
+                }
+
+                if (upperName.Contains("RECIBOFORMAPAGO") )
+                {
+                    foreach (var row in ReadDelimited(file))
+                    {
+                        reciboFormaPagoCrecos.Add(new ReciboFormaPagoCrecos
+                        {
+                            CodReciboFormaPago = row.GetValueOrDefault("COD_RECIBO_FORMAPAGO"), // si viene en el archivo
+                            CodRecibo = row.GetValueOrDefault("COD_RECIBO"),
+                            CodFormaPago = row.GetValueOrDefault("COD_FORMA_PAGO"),
+                            DescripcFPago = row.GetValueOrDefault("DESCRIPC_FPAGO"),
+                            CodInsFinanciera = row.GetValueOrDefault("COD_INS_FINANCIERA"),
+                            CDescripcionInstitucionFinanciera = row.GetValueOrDefault("CDESCRIPCION_INSTITUCION_FINANCIERA"),
+                            NumCuenta = row.GetValueOrDefault("NUM_CUENTA"),
+                            NumDocumento = row.GetValueOrDefault("NUM_DOCUMENTO"),
+                            CNombreCuentaCorrentista = row.GetValueOrDefault("CNOMBRECUENTACORRENTISTA"),
+                            CCedulaCuentaCorrentista = row.GetValueOrDefault("CCEDULACUENTACORRENTISTA"),
+                            DFechaCobroDocumento = ParseLocalToUtcOrNull(row.GetValueOrDefault("DFECHACOBRODOCUMENTO")),
+                            CodMoneda = row.GetValueOrDefault("COD_MONEDA"),
+                            DescripcMoneda = row.GetValueOrDefault("DESCRIPC_MONEDA"),
+                            CodMotivo = row.GetValueOrDefault("COD_MOTIVO"),
+                            DescripcMotivo = row.GetValueOrDefault("DESCRIPC_MOTIVO"),
+                            IValor = ToDec(row.GetValueOrDefault("IVALOR")),
+                            NombreArchivo = upperName
                         });
                     }
                 }
@@ -1059,7 +1287,10 @@ namespace gestiones_backend.Services
                   temp_crecos.""OperacionesClientesCrecos"",
                   temp_crecos.""SaldoClienteCrecos"",
                   temp_crecos.""CuotasOperacionCrecos"",
-                  temp_crecos.""TelefonosClienteCrecos""
+                  temp_crecos.""TelefonosClienteCrecos"",
+                  temp_crecos.""ReciboDetalleCrecos"",
+                  temp_crecos.""ReciboFormaPagoCrecos"",
+                  temp_crecos.""ReciboPagosCrecos""
                 RESTART IDENTITY CASCADE;");
 
             _dataContext.ArticuloOperacionCrecos.AddRange(listaGrabar);
@@ -1071,6 +1302,11 @@ namespace gestiones_backend.Services
             _dataContext.SaldoClienteCrecos.AddRange(saldoClienteCrecos);
             _dataContext.TelefonosClienteCrecos.AddRange(telefonoClienteCrecos);
             _dataContext.CuotasOperacionCrecos.AddRange(CuotasOperacionCrecos);
+
+            _dataContext.ReciboDetalleCrecos.AddRange(reciboDetalleCrecos);
+            _dataContext.ReciboPagosCrecos.AddRange(reciboPagosCrecos);
+            _dataContext.ReciboFormaPagoCrecos.AddRange(reciboFormaPagoCrecos);
+
 
             _dataContext.SaveChanges();
             string ss = "";

@@ -43,6 +43,10 @@ namespace gestiones_backend.Context
         public DbSet<SaldoClienteCrecos> SaldoClienteCrecos => Set<SaldoClienteCrecos>();
         public DbSet<TelefonosClienteCrecos> TelefonosClienteCrecos => Set<TelefonosClienteCrecos>();
 
+        public DbSet<ReciboDetalleCrecos> ReciboDetalleCrecos => Set<ReciboDetalleCrecos>();
+        public DbSet<ReciboPagosCrecos> ReciboPagosCrecos => Set<ReciboPagosCrecos>();
+        public DbSet<ReciboFormaPagoCrecos> ReciboFormaPagoCrecos => Set<ReciboFormaPagoCrecos>();
+
         public DbSet<TrifocusCrecos> TrifocusCrecos => Set<TrifocusCrecos>();
         public DbSet<CuotaOperacionCrecos> CuotasOperacionCrecos => Set<CuotaOperacionCrecos>();
 
@@ -59,6 +63,253 @@ namespace gestiones_backend.Context
 
         private void ConfigureSimpleEntities(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<ReciboPagosCrecos>(entity =>
+            {
+                entity.ToTable("ReciboPagosCrecos", schema: "temp_crecos");
+
+                entity.HasKey(e => e.Id).HasName("PK_IdReciboPagosCrecos");
+
+                entity.Property(e => e.Id)
+                  .HasColumnName("Id")
+                  .HasMaxLength(100);
+
+                // Campos (TODOS explícitos)
+                entity.Property(e => e.CodRecibo)
+                    .HasColumnName("COD_RECIBO")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.CestadoRegistro)
+                    .HasColumnName("CESTADO_REGISTRO")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.CodEmpresa)
+                    .HasColumnName("COD_EMPRESA")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.DescripcEmpresa)
+                    .HasColumnName("DESCRIPC_EMPRESA")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.NombreArchivo)
+                    .HasColumnName("Nombre_Archivo")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.CodUNegocio)
+                    .HasColumnName("COD_UNEGOCIO")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.DescripcUNegocio)
+                    .HasColumnName("DESCRIPC_UNEGOCIO")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.CodTCartera)
+                    .HasColumnName("COD_TCARTERA")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.DescripcTCartera)
+                    .HasColumnName("DESCRIPC_TCARTERA")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.CodOficina)
+                    .HasColumnName("COD_OFICINA")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.CDescripcionOficina)
+                    .HasColumnName("CDESCRIPCION_OFICINA")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.NumIdentificacion)
+                    .HasColumnName("NUM_IDENTIFICACION")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.CodPagoReferencial)
+                    .HasColumnName("COD_PAGO_REFERENCIAL")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.CodMoneda)
+                    .HasColumnName("COD_MONEDA")
+                    .HasMaxLength(10);
+
+                entity.Property(e => e.DescripcMoneda)
+                    .HasColumnName("DESCRIPC_MONEDA")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.CodTPago)
+                    .HasColumnName("COD_TPAGO")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.DescripcTPago)
+                    .HasColumnName("DESCRIPC_TPAGO")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.CodCaja)
+                    .HasColumnName("COD_CAJA")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.DescripcCaja)
+                    .HasColumnName("DESCRIPC_CAJA")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.CodGestor)
+                    .HasColumnName("COD_GESTOR")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.DescripcGestor)
+                    .HasColumnName("DESCRIPC_GESTOR")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.CodTRecibo)
+                    .HasColumnName("COD_TRECIBO")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.DescripcTRecibo)
+                    .HasColumnName("DESCRIPC_TRECIBO")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.FechaPago)
+                    .HasColumnName("FECHA_PAGO")
+                    .HasColumnType("timestamp with time zone"); // Postgres
+
+                entity.Property(e => e.DFechaReverso)
+                    .HasColumnName("DFECHAREVERSO")
+                    .HasColumnType("timestamp with time zone");
+
+                entity.Property(e => e.Monto)
+                    .HasColumnName("MONTO")
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Cambio)
+                    .HasColumnName("CAMBIO")
+                    .HasPrecision(18, 6);
+            });
+
+            modelBuilder.Entity<ReciboDetalleCrecos>(entity =>
+            {
+                entity.ToTable("ReciboDetalleCrecos", schema: "temp_crecos");
+
+                entity.HasKey(e => e.Id).HasName("PK_IdReciboDetalleCrecos");
+
+                entity.HasIndex(e => e.CodRecibo).HasDatabaseName("IX_ReciboDetalle_CodRecibo");
+
+                entity.Property(e => e.Id)
+                   .HasColumnName("Id")
+                   .HasMaxLength(200);
+
+                entity.Property(e => e.NombreArchivo)
+                    .HasColumnName("Nombre_Archivo")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.IReciboDetalle)
+                    .HasColumnName("IRECIBODETALLE")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.CodRecibo)
+                    .HasColumnName("COD_RECIBO")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.ICodigoOperacion)
+                    .HasColumnName("ICODIGOOPERACION")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.NumCuota)
+                    .HasColumnName("NUM_CUOTA");
+
+                entity.Property(e => e.CodRubro)
+                    .HasColumnName("COD_RUBRO")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.CDescripcionRubro)
+                    .HasColumnName("CDESCRIPCION_RUBRO")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.ValorRecibo)
+                    .HasColumnName("VALOR_RECIBO")
+                    .HasPrecision(18, 2);
+            });
+
+
+            modelBuilder.Entity<ReciboFormaPagoCrecos>(entity =>
+            {
+                entity.ToTable("ReciboFormaPagoCrecos", schema: "temp_crecos");
+
+                entity.HasKey(e => e.Id).HasName("PK_IdReciboFormaPagoCrecos");
+
+                // Índice sugerido
+                entity.HasIndex(e => e.CodRecibo).HasDatabaseName("IX_ReciboFormaPago_CodRecibo");
+
+                entity.Property(e => e.Id)
+                    .HasColumnName("Id")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.NombreArchivo)
+                    .HasColumnName("Nombre_Archivo")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.CodReciboFormaPago)
+                    .HasColumnName("COD_RECIBO_FORMAPAGO")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.CodRecibo)
+                    .HasColumnName("COD_RECIBO")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.CodFormaPago)
+                    .HasColumnName("COD_FORMA_PAGO")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.DescripcFPago)
+                    .HasColumnName("DESCRIPC_FPAGO")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.CodInsFinanciera)
+                    .HasColumnName("COD_INS_FINANCIERA")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.CDescripcionInstitucionFinanciera)
+                    .HasColumnName("CDESCRIPCION_INSTITUCION_FINANCIERA")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.NumCuenta)
+                    .HasColumnName("NUM_CUENTA")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.NumDocumento)
+                    .HasColumnName("NUM_DOCUMENTO")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.CNombreCuentaCorrentista)
+                    .HasColumnName("CNOMBRECUENTACORRENTISTA")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.CCedulaCuentaCorrentista)
+                    .HasColumnName("CCEDULACUENTACORRENTISTA")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.DFechaCobroDocumento)
+                    .HasColumnName("DFECHACOBRODOCUMENTO")
+                    .HasColumnType("timestamp with time zone");
+
+                entity.Property(e => e.CodMoneda)
+                    .HasColumnName("COD_MONEDA")
+                    .HasMaxLength(10);
+
+                entity.Property(e => e.DescripcMoneda)
+                    .HasColumnName("DESCRIPC_MONEDA")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.CodMotivo)
+                    .HasColumnName("COD_MOTIVO")
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.DescripcMotivo)
+                    .HasColumnName("DESCRIPC_MOTIVO")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.IValor)
+                    .HasColumnName("IVALOR")
+                    .HasPrecision(18, 2);
+            });
+
             modelBuilder.Entity<CuotaOperacionCrecos>(entity =>
             {
                 entity.ToTable("CuotasOperacionCrecos", schema: "temp_crecos");
@@ -744,6 +995,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.MontoPagado).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.NumeroDocumenro).HasMaxLength(50);
                 entity.Property(e => e.Observaciones).HasMaxLength(500);
+                entity.Property(e => e.ArchivoMigracion).HasMaxLength(500);
                 entity.Property(e => e.FechaPago).HasDefaultValueSql("CURRENT_DATE");
                 entity.Property(e => e.FechaRegistro).HasColumnType("timestamptz")
                                       .HasDefaultValueSql("CURRENT_TIMESTAMP");

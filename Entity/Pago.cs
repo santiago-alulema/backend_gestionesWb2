@@ -17,6 +17,7 @@ public partial class Pago
     public string? MedioPago { get; set; }
     public string? NumeroDocumenro { get; set; }
     public string? Observaciones { get; set; }
+    public string? ArchivoMigracion { get; set; }
     public string? FormaPagoId { get; set; }
     public string? IdUsuario { get; set; }
     public FormaPago FormaPagoNavigation { get; set; }

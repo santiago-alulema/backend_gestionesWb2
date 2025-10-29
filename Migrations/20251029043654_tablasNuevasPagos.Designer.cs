@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using gestiones_backend.Context;
@@ -11,9 +12,11 @@ using gestiones_backend.Context;
 namespace gestiones_backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251029043654_tablasNuevasPagos")]
+    partial class tablasNuevasPagos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1678,10 +1681,10 @@ namespace gestiones_backend.Migrations
 
             modelBuilder.Entity("gestiones_backend.Entity.temp_crecos.ReciboDetalleCrecos", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("Id");
+                    b.Property<string>("IReciboDetalle")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("IRECIBODETALLE");
 
                     b.Property<string>("CDescripcionRubro")
                         .HasMaxLength(200)
@@ -1703,17 +1706,6 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("ICODIGOOPERACION");
 
-                    b.Property<string>("IReciboDetalle")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("IRECIBODETALLE");
-
-                    b.Property<string>("NombreArchivo")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("Nombre_Archivo");
-
                     b.Property<int?>("NumCuota")
                         .HasColumnType("integer")
                         .HasColumnName("NUM_CUOTA");
@@ -1723,8 +1715,8 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("VALOR_RECIBO");
 
-                    b.HasKey("Id")
-                        .HasName("PK_IdReciboDetalleCrecos");
+                    b.HasKey("IReciboDetalle")
+                        .HasName("PK_ReciboDetalleCrecos");
 
                     b.HasIndex("CodRecibo")
                         .HasDatabaseName("IX_ReciboDetalle_CodRecibo");
@@ -1734,10 +1726,10 @@ namespace gestiones_backend.Migrations
 
             modelBuilder.Entity("gestiones_backend.Entity.temp_crecos.ReciboFormaPagoCrecos", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("Id");
+                    b.Property<string>("CodReciboFormaPago")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("COD_RECIBO_FORMAPAGO");
 
                     b.Property<string>("CCedulaCuentaCorrentista")
                         .HasMaxLength(50)
@@ -1779,12 +1771,6 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("COD_RECIBO");
 
-                    b.Property<string>("CodReciboFormaPago")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("COD_RECIBO_FORMAPAGO");
-
                     b.Property<DateTime?>("DFechaCobroDocumento")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("DFECHACOBRODOCUMENTO");
@@ -1809,11 +1795,6 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("IVALOR");
 
-                    b.Property<string>("NombreArchivo")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("Nombre_Archivo");
-
                     b.Property<string>("NumCuenta")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
@@ -1824,8 +1805,8 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("NUM_DOCUMENTO");
 
-                    b.HasKey("Id")
-                        .HasName("PK_IdReciboFormaPagoCrecos");
+                    b.HasKey("CodReciboFormaPago")
+                        .HasName("PK_ReciboFormaPagoCrecos");
 
                     b.HasIndex("CodRecibo")
                         .HasDatabaseName("IX_ReciboFormaPago_CodRecibo");
@@ -1835,10 +1816,10 @@ namespace gestiones_backend.Migrations
 
             modelBuilder.Entity("gestiones_backend.Entity.temp_crecos.ReciboPagosCrecos", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<string>("CodRecibo")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
-                        .HasColumnName("Id");
+                        .HasColumnName("COD_RECIBO");
 
                     b.Property<string>("CDescripcionOficina")
                         .HasMaxLength(200)
@@ -1884,12 +1865,6 @@ namespace gestiones_backend.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("COD_PAGO_REFERENCIAL");
-
-                    b.Property<string>("CodRecibo")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("COD_RECIBO");
 
                     b.Property<string>("CodTCartera")
                         .HasMaxLength(50)
@@ -1964,18 +1939,19 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("MONTO");
 
-                    b.Property<string>("NombreArchivo")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("Nombre_Archivo");
-
                     b.Property<string>("NumIdentificacion")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("NUM_IDENTIFICACION");
 
-                    b.HasKey("Id")
-                        .HasName("PK_IdReciboPagosCrecos");
+                    b.HasKey("CodRecibo")
+                        .HasName("PK_ReciboPagosCrecos");
+
+                    b.HasIndex("FechaPago")
+                        .HasDatabaseName("IX_ReciboPagos_FechaPago");
+
+                    b.HasIndex("NumIdentificacion")
+                        .HasDatabaseName("IX_ReciboPagos_NumIdentificacion");
 
                     b.ToTable("ReciboPagosCrecos", "temp_crecos");
                 });
