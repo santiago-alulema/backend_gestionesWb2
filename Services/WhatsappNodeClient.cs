@@ -44,7 +44,7 @@ namespace gestiones_backend.Services
         {
             //var token = await LoginAsync(user, ct);
             UseToken(_authService.GetCurrentToken());
-            var res = await _http.GetAsync($"/api/session/{Uri.EscapeDataString(user)}/status", ct);
+            var res = await _http.GetAsync($"http://207.180.205.100/whatsapp/api/session/{Uri.EscapeDataString(user)}/status", ct);
             res.EnsureSuccessStatusCode();
             return await res.Content.ReadFromJsonAsync<StatusResponse>(_json, ct)
                    ?? throw new InvalidOperationException("Respuesta inválida (status)");
@@ -52,9 +52,9 @@ namespace gestiones_backend.Services
 
         public async Task LogoutAsync(string user, CancellationToken ct = default)
         {
-            var token = await LoginAsync(user, ct);
-            UseToken(token);
-            var res = await _http.PostAsync($"/api/session/{Uri.EscapeDataString(user)}/logout", content: null, ct);
+            //var token = await LoginAsync(user, ct);
+            UseToken(_authService.GetCurrentToken());
+            var res = await _http.PostAsync($"http://207.180.205.100/whatsapp/api/session/{Uri.EscapeDataString(user)}/logout", content: null, ct);
             res.EnsureSuccessStatusCode();
         }
     }

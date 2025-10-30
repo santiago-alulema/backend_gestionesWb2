@@ -81,7 +81,7 @@ public class WhatsappSessionsController : ControllerBase
         return Ok(new { ok = true, user = st.user, ready = st.ready, hasQr = st.hasQr, exists = st.exists });
     }
 
-    [HttpPost("logout")]
+    [HttpPost("sessions/logout")]
     public async Task<IActionResult> Logout([FromBody] EnsureDto body, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(body.User)) return BadRequest("User requerido");
