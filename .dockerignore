@@ -1,0 +1,13 @@
+.git
+**/bin
+**/obj
+**/*.user
+**/*.suo
+**/*.ncrunch*
+**/*.local.json
+node_modules
+.gitignore
+docker-compose*
+.env
+**/*.ps1
+**/*.sh
