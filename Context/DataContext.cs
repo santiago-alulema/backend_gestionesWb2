@@ -50,6 +50,9 @@ namespace gestiones_backend.Context
         public DbSet<TrifocusCrecos> TrifocusCrecos => Set<TrifocusCrecos>();
         public DbSet<CuotaOperacionCrecos> CuotasOperacionCrecos => Set<CuotaOperacionCrecos>();
 
+        public DbSet<WhatsappSession> WhatsappSessions { get; set; } = default!;
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -63,6 +66,14 @@ namespace gestiones_backend.Context
 
         private void ConfigureSimpleEntities(ModelBuilder modelBuilder)
         {
+
+            modelBuilder.Entity<WhatsappSession>(entity =>
+            {
+                entity.HasIndex(x => x.User).IsUnique(false);
+                entity.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone");
+                entity.Property(x => x.UpdatedAt).HasColumnType("timestamp with time zone");
+            });
+
             modelBuilder.Entity<ReciboPagosCrecos>(entity =>
             {
                 entity.ToTable("ReciboPagosCrecos", schema: "temp_crecos");

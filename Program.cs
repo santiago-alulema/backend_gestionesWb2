@@ -83,6 +83,7 @@ builder.Services.AddSingleton<SftpDownloadService>();
 builder.Services.AddSingleton<ZipExtractService>();
 builder.Services.AddSingleton<FolderCleanService>();
 builder.Services.AddScoped<DeudoresImportService>();
+builder.Services.AddHttpClient<IWhatsappNodeClient, WhatsappNodeClient>();
 builder.Services.AddHttpClient();
 
 // Options

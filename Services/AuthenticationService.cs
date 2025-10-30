@@ -71,5 +71,14 @@ namespace gestiones_backend.Services
 
             return usuario;
         }
+
+        public string? GetCurrentToken()
+        {
+            var authHeader = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrWhiteSpace(authHeader) || !authHeader.StartsWith("Bearer "))
+                return null;
+
+            return authHeader.Substring("Bearer ".Length).Trim();
+        }
     }
 }

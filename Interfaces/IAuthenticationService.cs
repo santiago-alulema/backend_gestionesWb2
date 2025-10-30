@@ -6,5 +6,6 @@ namespace gestiones_backend.Interfaces
     {
         public Usuario GetCurrentUser();
         public Task<Usuario> GetCurrentUserAsync();
+        string? GetCurrentToken();
     }
 }

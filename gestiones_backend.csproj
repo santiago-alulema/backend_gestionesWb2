@@ -28,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Dtos\WhatsappDtosNew\" />
     <Folder Include="Migrations\" />
     <Folder Include="ArchivosExternos\" />
   </ItemGroup>

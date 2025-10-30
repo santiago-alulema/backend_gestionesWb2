@@ -219,7 +219,7 @@ namespace gestiones_backend.Services
                 .ToHashSet();
 
             List<Usuario> usuarios = _dataContext.Usuarios
-                .Where(x => x.Rol == "user" || x.IdUsuario.Contains("0152659447"))
+                .Where(x => x.Rol == "user" )
                 .ToList();
 
             rows = rows
