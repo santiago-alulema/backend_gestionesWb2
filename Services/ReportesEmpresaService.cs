@@ -43,10 +43,11 @@ namespace gestiones_backend.Services
                     .Include(d => d.Pagos)
                     .Include(d => d.CompromisosPagos)
                     .Include(d => d.Gestiones);
-
+                 List<Deuda> ll = query.ToList();
                 if (!string.Equals(usuario.Rol, "admin", StringComparison.OrdinalIgnoreCase))
                 {
                     query = query.Where(d => d.IdUsuario == usuario.IdUsuario);
+                    query = query.Where(d => d.Pagos.Any(y => y.IdUsuario == usuario.IdUsuario));
                 }
 
                 var reporte = await query
@@ -55,7 +56,7 @@ namespace gestiones_backend.Services
                     .Select(g => new ReporteEmpresaDto
                     {
                         Empresa = g.Key,
-
+                        
                         CantidadGestiones = g.SelectMany(d => d.Gestiones)
                             .Count(ges => ges.FechaGestion >= fechaInicio && ges.FechaGestion <= fechaFin),
 
