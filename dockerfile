@@ -37,8 +37,6 @@ WORKDIR /src
 # 1) Copia sólo el csproj para maximizar caché
 #    Ajusta la ruta si tu csproj no está en la raíz
 COPY gestiones_backend.csproj ./
-COPY packages.lock.json ./
-RUN dotnet restore --locked-mode --nologo
 
 # 2) Restore (se cachea si no cambian los PackageReference)
 RUN dotnet restore --nologo --use-lock-file
