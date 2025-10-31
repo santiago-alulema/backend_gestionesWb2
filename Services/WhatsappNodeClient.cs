@@ -14,7 +14,9 @@ namespace gestiones_backend.Services
         public WhatsappNodeClient(HttpClient http, IConfiguration cfg, IAuthenticationService authService   )
         {
             _http = http;
-            _http.BaseAddress = new Uri("http://207.180.205.100/whatsapp");
+            var baseUrl = cfg.GetValue<string>("WhatsappNode:BaseUrl");
+            baseUrl = baseUrl.TrimEnd('/') + "/";
+            _http.BaseAddress = new Uri(baseUrl);
             _authService = authService;
         }
 
@@ -34,7 +36,7 @@ namespace gestiones_backend.Services
             //var token = await LoginAsync(user, ct);
             //Usuario usuario = _authService.GetCurrentUser();
             UseToken(_authService.GetCurrentToken());
-            var res = await _http.GetAsync($"http://207.180.205.100/whatsapp/api/session/{Uri.EscapeDataString(user)}/ensure", ct);
+            var res = await _http.GetAsync($"api/session/{Uri.EscapeDataString(user)}/ensure", ct);
             res.EnsureSuccessStatusCode();
             return await res.Content.ReadFromJsonAsync<EnsureResponse>(_json, ct)
                    ?? throw new InvalidOperationException("Respuesta inválida (ensure)");
@@ -44,7 +46,7 @@ namespace gestiones_backend.Services
         {
             //var token = await LoginAsync(user, ct);
             UseToken(_authService.GetCurrentToken());
-            var res = await _http.GetAsync($"http://207.180.205.100/whatsapp/api/session/{Uri.EscapeDataString(user)}/status", ct);
+            var res = await _http.GetAsync($"api/session/{Uri.EscapeDataString(user)}/status", ct);
             res.EnsureSuccessStatusCode();
             return await res.Content.ReadFromJsonAsync<StatusResponse>(_json, ct)
                    ?? throw new InvalidOperationException("Respuesta inválida (status)");
@@ -54,7 +56,7 @@ namespace gestiones_backend.Services
         {
             //var token = await LoginAsync(user, ct);
             UseToken(_authService.GetCurrentToken());
-            var res = await _http.PostAsync($"http://207.180.205.100/whatsapp/api/session/{Uri.EscapeDataString(user)}/logout", content: null, ct);
+            var res = await _http.PostAsync($"api/session/{Uri.EscapeDataString(user)}/logout", content: null, ct);
             res.EnsureSuccessStatusCode();
         }
     }

@@ -16,6 +16,8 @@ namespace gestiones_backend.Entity
 
         [MaxLength(300)]
         public string? LastReason { get; set; }
+        public string? IdUsuario { get; set; }
+        public Usuario? Usuario  { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

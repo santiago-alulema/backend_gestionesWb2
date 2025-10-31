@@ -11,6 +11,7 @@
         bool exists
     );
 
+ 
     // GET /api/session/:user/status
     public record StatusResponse(
         string user,

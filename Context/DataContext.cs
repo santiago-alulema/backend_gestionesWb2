@@ -72,6 +72,11 @@ namespace gestiones_backend.Context
                 entity.HasIndex(x => x.User).IsUnique(false);
                 entity.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone");
                 entity.Property(x => x.UpdatedAt).HasColumnType("timestamp with time zone");
+
+                entity.HasOne(ws => ws.Usuario)
+                  .WithMany(u => u.WhatsappSessions)
+                  .HasForeignKey(ws => ws.IdUsuario)
+                  .OnDelete(DeleteBehavior.SetNull);
             });
 
             modelBuilder.Entity<ReciboPagosCrecos>(entity =>
