@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Text.Json.Serialization;
+using static Microsoft.IO.RecyclableMemoryStreamManager;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,8 +29,19 @@ builder.Services.AddControllers(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<DataContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserContext, UserContext>();
+builder.Services.AddScoped<gestiones_backend.Auditoria.SimpleAuditInterceptor>();
+builder.Services.AddDbContext<DataContext>((sp, opt) =>
+{
+    var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+    opt.UseNpgsql(connStr);
+    opt.AddInterceptors(sp.GetRequiredService<gestiones_backend.Auditoria.SimpleAuditInterceptor>());
+});
+
+
 
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("Jwt")
@@ -89,7 +101,6 @@ builder.Services.AddScoped<DeudoresImportService>();
 builder.Services.AddHttpClient<IWhatsappNodeClient, WhatsappNodeClient>();
 builder.Services.AddHttpClient();
 
-// Options
 builder.Services.Configure<SftpOptions>(builder.Configuration.GetSection("Sftp"));
 builder.Services.Configure<TrifocusExportOptions>(builder.Configuration.GetSection("TrifocusExport"));
 

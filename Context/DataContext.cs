@@ -67,6 +67,20 @@ namespace gestiones_backend.Context
         private void ConfigureSimpleEntities(ModelBuilder modelBuilder)
         {
 
+            modelBuilder.Entity<AuditLog>(e =>
+            {
+                e.ToTable("audit_logs", "audit");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Id).ValueGeneratedOnAdd();
+                e.Property(x => x.EventDateUtc).HasColumnType("timestamp with time zone");
+                e.Property(x => x.KeyJson).HasColumnType("jsonb");
+                e.Property(x => x.BeforeJson).HasColumnType("jsonb");
+                e.Property(x => x.AfterJson).HasColumnType("jsonb");
+                e.HasIndex(x => x.EventDateUtc);
+                e.HasIndex(x => new { x.Table, x.Action });
+            });
+
+
             modelBuilder.Entity<WhatsappSession>(entity =>
             {
                 entity.HasIndex(x => x.User).IsUnique(false);

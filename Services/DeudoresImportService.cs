@@ -68,6 +68,7 @@ namespace gestiones_backend.Services
                                     rfpc.""DESCRIPC_MOTIVO"",
                                     d.""IdDeuda"",
                                     d.""CodigoOperacion""  as ""NumeroFactura"",
+                                    d.""IdUsuario"" ,
                                     rpc.""Nombre_Archivo""
                                   FROM temp_crecos.""ReciboPagosCrecos"" rpc
                                   JOIN temp_crecos.""ReciboDetalleCrecos"" rdc
@@ -92,7 +93,7 @@ namespace gestiones_backend.Services
                                       ' Motivo: '    || COALESCE(string_agg(DISTINCT b.""DESCRIPC_MOTIVO"", ' / '), '')
                                     )::text                                       AS ""Observaciones"",
                                     NULL::uuid AS ""FormaPagoId"",
-                                    NULL::uuid AS ""IdUsuario"",
+                                    string_agg(DISTINCT b.""IdUsuario""::text, ' - ' ) AS ""IdUsuario"",
                                     NULL::uuid AS ""IdBancosPago"",
                                     NULL::uuid AS ""IdTipoCuentaBancaria"",
                                     NULL::uuid AS ""IdTipoTransaccion"",
