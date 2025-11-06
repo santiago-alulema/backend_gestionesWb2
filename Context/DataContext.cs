@@ -49,6 +49,7 @@ namespace gestiones_backend.Context
 
         public DbSet<TrifocusCrecos> TrifocusCrecos => Set<TrifocusCrecos>();
         public DbSet<CuotaOperacionCrecos> CuotasOperacionCrecos => Set<CuotaOperacionCrecos>();
+        public DbSet<SeguimientoMensajes> SeguimientoMensajes => Set<SeguimientoMensajes>();
 
         public DbSet<WhatsappSession> WhatsappSessions { get; set; } = default!;
 
@@ -66,6 +67,25 @@ namespace gestiones_backend.Context
 
         private void ConfigureSimpleEntities(ModelBuilder modelBuilder)
         {
+            
+            modelBuilder.Entity<SeguimientoMensajes>(entity =>
+            {
+                entity.HasKey(x => x.id);
+                entity.Property(e => e.id)
+                    .HasColumnName("id")
+                    .HasMaxLength(100);
+                entity.Property(e => e.tipo)
+                    .HasColumnType("varchar");
+                entity.Property(e => e.numeroDestino)
+                    .HasColumnType("varchar");
+                entity.Property(e => e.usuario)
+                    .HasColumnType("varchar");
+                entity.Property(e => e.usuarioWhatsapp)
+                    .HasColumnType("varchar");
+                entity.Property(e => e.mensaje)
+                    .HasColumnType("text");
+                entity.Property(x => x.fechaRegistro).HasColumnType("timestamp with time zone");
+            });
 
             modelBuilder.Entity<AuditLog>(e =>
             {

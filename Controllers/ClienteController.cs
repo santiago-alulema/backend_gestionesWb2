@@ -112,6 +112,115 @@ namespace gestiones_backend.Controllers
             return Ok(deudoresDTO);
         }
 
+        [HttpGet("deudas-por-cliente-mensajeria")]
+        public IActionResult DeudasPorClienteParaMensajeria([FromQuery] string? empresa, [FromQuery] string opcionFiltro = "")
+        {
+            Usuario usuario = _authService.GetCurrentUser();
+
+            IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking()
+                                                            .Include(x => x.IdDeudorNavigation)
+                                                                .ThenInclude(x => x.DeudorTelefonos)
+                                                            .Include(x => x.Pagos)
+                                                            .Include(x => x.Gestiones)
+                                                            .Include(x => x.CompromisosPagos)
+                                                            .Include(x => x.Usuario).Where(x => x.EsActivo == true);
+
+            if (usuario.Rol == "user")
+            {
+                deudasQuery = deudasQuery.Where(x => x.IdUsuario == usuario.IdUsuario);
+            }
+
+            if (!string.IsNullOrEmpty(empresa) && empresa != "TODOS")
+            {
+                deudasQuery = deudasQuery.Where(d =>
+                    d.Empresa != null &&
+                    d.Empresa.ToUpper() == empresa.ToUpper());
+            }
+
+            if (opcionFiltro == "SG")
+            {
+                deudasQuery = deudasQuery.Where(d =>
+                    !d.CompromisosPagos.Any() &&
+                    !d.Gestiones.Any() &&
+                    !d.Pagos.Any());
+            }
+
+            if (opcionFiltro == "G")
+            {
+                deudasQuery = deudasQuery.Where(d =>
+                    d.CompromisosPagos.Any() ||
+                    d.Gestiones.Any() ||
+                    d.Pagos.Any());
+            }
+
+            if (opcionFiltro == "IN")
+            {
+                deudasQuery = deudasQuery
+                                .Where(d => d.CompromisosPagos.All(cp => cp.IncumplioCompromisoPago == true));
+            }
+
+
+            List<Deuda> deudas = deudasQuery.OrderByDescending(x => x.IdDeudor).ToList();
+            List<DeudasClienteOutDTO> deudoresDTO = deudas.Adapt<List<DeudasClienteOutDTO>>();
+            foreach (var item in deudoresDTO)
+            {
+                item.NumeroFactura = "<p style='margin-left:50px'>" + item.NumeroFactura + "</p>";
+                // Buscar la deuda real correspondiente
+                var deuda = deudas.FirstOrDefault(d => d.IdDeuda == item.IdDeuda);
+
+                string? telefono = null;
+                string? email = null;
+
+                telefono = deuda?.Pagos?
+                    .Where(p => !string.IsNullOrEmpty(p.Telefono))
+                    .OrderByDescending(p => p.FechaRegistro) 
+                    .Select(p => p.Telefono)
+                    .FirstOrDefault();
+
+                if (string.IsNullOrEmpty(telefono))
+                {
+                    telefono = deuda?.CompromisosPagos?
+                        .Where(c => !string.IsNullOrEmpty(c.Telefono))
+                        .OrderByDescending(c => c.FechaRegistro) // o el campo correspondiente
+                        .Select(c => c.Telefono)
+                        .FirstOrDefault();
+                }
+
+                if (string.IsNullOrEmpty(telefono))
+                {
+                    telefono = deuda?.Gestiones?
+                        .Where(g => !string.IsNullOrEmpty(g.Telefono))
+                        .OrderByDescending(g => g.FechaGestion) // o el campo de fecha correspondiente
+                        .Select(g => g.Telefono)
+                        .FirstOrDefault();
+                }
+
+                if (string.IsNullOrEmpty(telefono))
+                {
+                    telefono = deuda?.IdDeudorNavigation?
+                        .DeudorTelefonos?
+                        .FirstOrDefault(t => t.EsValido == true && t.Propietario.ToUpper() == "DEUDOR")
+                        ?.Telefono;
+                }
+
+                item.Telefono = telefono ?? "";
+
+                string? correo = deuda?.Gestiones?
+                                   .Where(g => !string.IsNullOrWhiteSpace(g.Email)) // <-- ajusta a g.Email si aplica
+                                   .OrderByDescending(g => g.FechaGestion)
+                                   .Select(g => g.Email) // <-- ajusta a g.Email si aplica
+                                   .FirstOrDefault();
+
+                if (string.IsNullOrEmpty(correo))
+                {
+                    correo = deuda?.IdDeudorNavigation?.Correo; // opcional: ajusta si manejas correo en Deudor
+                }
+
+                item.Email = correo ?? "";
+            }
+            return Ok(deudoresDTO);
+        }
+
 
         [HttpGet("deudas-por-cliente-global/{cedulaCliente}")]
         public IActionResult DeudasPorClienteGlobal(string cedulaCliente, [FromQuery] string? empresa)
