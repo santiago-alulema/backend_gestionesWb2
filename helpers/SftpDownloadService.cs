@@ -6,7 +6,7 @@ namespace gestiones_backend.helpers
     {
         private readonly string _host = "186.3.14.45";
         //private readonly string _host = "localhost";
-       
+
         private readonly int _port = 34;
         //private readonly int _port = 9093;
 

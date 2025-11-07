@@ -269,7 +269,7 @@ namespace gestiones_backend.Controllers
                                 u.""NombreUsuario"",
                                 u.""NombreCompleto"" gestor
                             from ""Pagos"" p 
-                            join ""BancosPagos"" bp ON p.""IdBancosPago""  = bp.""Id""  
+                            left join ""BancosPagos"" bp ON p.""IdBancosPago""  = bp.""Id""  
                             left join ""TiposCuentaBancaria"" tcb  ON p.""IdTipoCuentaBancaria""  = tcb.""Id""
                             left join ""TiposTransaccion"" tt on tt.""Id""  = p.""IdTipoTransaccion"" 
                             left join ""AbonosLiquidacion"" al on al.""Id"" = p.""IdAbonoLiquidacion"" 

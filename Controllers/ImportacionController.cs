@@ -28,8 +28,8 @@ namespace gestiones_backend.Controllers
         [HttpPost("deudores/insertar-deudas-crecos")]
         public async Task<IActionResult> ImportarDeudas()
         {
-
-            _deudoresImportService.ImportarDeudas();
+            _deudoresImportService.RedimencionarDeudasNoGestionadas();
+            //_deudoresImportService.ImportarDeudas();
             //        _dataContext.Database.ExecuteSqlRaw(@"CREATE EXTENSION IF NOT EXISTS ""uuid-ossp"";");
 
             //        const string SqlDeudasCrecos = @"

@@ -223,22 +223,51 @@ namespace gestiones_backend.Controllers
 
 
         [HttpGet("deudas-por-cliente-global/{cedulaCliente}")]
-        public IActionResult DeudasPorClienteGlobal(string cedulaCliente, [FromQuery] string? empresa)
+        public async Task<IActionResult> DeudasPorClienteGlobal(string cedulaCliente, [FromQuery] string? empresa)
         {
-            Usuario usuario = _authService.GetCurrentUser();
+            if (string.IsNullOrWhiteSpace(cedulaCliente))
+                return BadRequest("Debe enviar la cédula o el nombre del cliente.");
 
-            IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking()
-                                                            .Include(x => x.IdDeudorNavigation)
-                                                            .Include(x => x.Usuario)
-
-                                                            .Where(x => (x.IdDeudor == cedulaCliente ||
-                                                                                      x.IdDeudorNavigation.Nombre.ToUpper().Contains(cedulaCliente.ToUpper())) &&
-                                                                                      x.Empresa == empresa && x.EsActivo == true);
+            IQueryable<Deuda> query = _context.Deudas.AsNoTracking();
 
 
-            List<Deuda> deudas = deudasQuery.ToList();
-            List<DeudasClienteOutDTO> deudoresDTO = deudas.Adapt<List<DeudasClienteOutDTO>>();
-            return Ok(deudoresDTO);
+            // Filtro por cédula exacta O nombre que contenga (null-safe)
+            query = query.Where(d =>
+                d.EsActivo == true &&
+                (
+                    d.IdDeudor == cedulaCliente ||
+                    (d.IdDeudorNavigation != null &&
+                     d.IdDeudorNavigation.Nombre != null &&
+                     EF.Functions.ILike(d.IdDeudorNavigation.Nombre, $"%{cedulaCliente}%"))
+                ));
+
+            // Proyección directa a DTO: evita Includes y NullReference en navegaciones
+            var result = await query
+                .ProjectToType<DeudasClienteOutDTO>(TypeAdapterConfig.GlobalSettings)
+                .ToListAsync();
+
+            return Ok(result);
+            //Usuario usuario = _authService.GetCurrentUser();
+
+            //IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking()
+            //                                                .Include(x => x.IdDeudorNavigation)
+            //                                                .Include(x => x.Usuario)
+            //                                                .Where(x => (x.IdDeudor == cedulaCliente ||
+            //                                                                          x.IdDeudorNavigation.Nombre.ToUpper().Contains(cedulaCliente.ToUpper())) &&
+            //                                                                          x.Empresa == empresa && x.EsActivo == true);
+
+
+            //List<Deuda> deudas = deudasQuery.ToList();
+
+            //TypeAdapterConfig config = new TypeAdapterConfig();
+            //ConfigTelefonoDeudor.Register(config);
+
+            ////DeudorTelefono TelefonosDeudores = deudas.Adapt<DeudorTelefono>(config);
+
+
+            //List<DeudasClienteOutDTO> deudoresDTO = deudas.Adapt<List<DeudasClienteOutDTO>>(config);
+
+            //return Ok(deudoresDTO);
         }
 
 

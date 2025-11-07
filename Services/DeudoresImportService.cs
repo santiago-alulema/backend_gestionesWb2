@@ -6,6 +6,7 @@ using gestiones_backend.Entity;
 using gestiones_backend.Entity.temp_crecos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Npgsql.Bulk;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
@@ -138,6 +139,134 @@ namespace gestiones_backend.Services
             conn.cadenaConnect = _configuration.GetConnectionString("DefaultConnection");
             conn.ejecutarconsulta_dt(cadena);
             return "Se actualizo correctamente";
+        }
+
+        public string RedimencionarDeudasNoGestionadas() {
+            string cadena = @$"SELECT *
+                                FROM ""Deudas"" d
+                                WHERE d.""Empresa"" LIKE '%CRECO%'
+                                AND NOT EXISTS (
+                                    SELECT 1
+                                    FROM ""Pagos"" p
+                                    WHERE p.""IdDeuda"" = d.""IdDeuda""
+                                )
+                                AND NOT EXISTS (
+                                    SELECT 1
+                                    FROM ""Gestiones"" g
+                                    WHERE g.""IdDeuda"" = d.""IdDeuda""
+                                )
+                                AND NOT EXISTS (
+                                    SELECT 1
+                                    FROM ""CompromisosPagos"" cp
+                                    WHERE cp.""IdDeuda"" = d.""IdDeuda""
+                                );";
+            List<Deuda> rows = _dataContext.Deudas
+                                       .FromSqlRaw(cadena)
+                                       .AsNoTracking()
+                                       .ToList();
+
+            List<Deudores> deudores = _dataContext.Deudores.ToList();
+            var idsValidos = deudores
+                .Where(d => d.IdDeudor != null)
+                .Select(d => d.IdDeudor!)
+                .ToHashSet();
+
+            List<Usuario> usuarios = _dataContext.Usuarios
+                .Where(x => x.Rol == "user")
+                .ToList();
+
+            rows = rows
+                .Where(r => r.IdDeudor != null && idsValidos.Contains(r.IdDeudor!))
+                .ToList();
+
+            List<Deuda> rowsMenos180 = rows.Where(x => x.DiasMora < 180).ToList();
+            List<Deuda> rows181a360 = rows.Where(x => x.DiasMora >= 180 && x.DiasMora <= 360).ToList();
+            List<Deuda> rowsMas360 = rows.Where(x => x.DiasMora > 360).ToList();
+
+            void Asignar(List<Deuda> lista)
+            {
+                if (usuarios.Count == 0) return;
+
+                // Solo deudas sin asignar
+                var pendientes = lista;
+                if (pendientes.Count == 0) return;
+
+                var grupos = pendientes
+                    .GroupBy(d => d.IdDeudor)
+                    .Select(g => new { Items = g.ToList(), Total = g.Sum(x => x.DeudaCapital ?? 0m) })
+                    .OrderByDescending(g => g.Total)
+                    .ThenByDescending(g => g.Items.Count)
+                    .ToList();
+
+                // Cargas solo para el reparto actual (no cuentan las ya asignadas)
+                var cargas = usuarios.ToDictionary(u => u.IdUsuario, _ => 0m);
+
+                foreach (var g in grupos)
+                {
+                    var target = cargas.OrderBy(kv => kv.Value).First().Key;
+
+                    foreach (var d in g.Items) // todos están sin usuario
+                        d.IdUsuario = target;
+
+                    cargas[target] += g.Total;
+                }
+            }
+
+            Asignar(rowsMenos180);
+            Asignar(rows181a360);
+            Asignar(rowsMas360);
+
+            var todas = rowsMenos180.Concat(rows181a360).Concat(rowsMas360).ToList();
+
+            List<Deuda> deudas = _dataContext.Deudas.ToList();
+
+
+            foreach (var deuda in todas)
+            {
+                var existente = deudas.FirstOrDefault(d => d.NumeroFactura == deuda.NumeroFactura);
+
+                if (existente != null)
+                {
+
+                    existente.DeudaCapital = deuda.DeudaCapital;
+                    existente.Interes = deuda.Interes;
+                    existente.GastosCobranzas = deuda.GastosCobranzas;
+                    existente.SaldoDeuda = deuda.SaldoDeuda;
+                    existente.Descuento = deuda.Descuento;
+                    existente.MontoCobrar = deuda.MontoCobrar;
+                    existente.FechaVenta = deuda.FechaVenta;
+                    existente.FechaUltimoPago = deuda.FechaUltimoPago;
+                    existente.Estado = deuda.Estado;
+                    existente.DiasMora = deuda.DiasMora;
+                    existente.NumeroFactura = deuda.NumeroFactura;
+                    existente.Clasificacion = deuda.Clasificacion;
+                    existente.Creditos = deuda.Creditos;
+                    existente.ValorCuota = deuda.ValorCuota;
+                    existente.EsActivo = true;
+                    existente.Empresa = deuda.Empresa;
+                    existente.Tramo = deuda.Tramo;
+                    existente.UltimoPago = deuda.UltimoPago;
+                    existente.MontoCobrarPartes = deuda.MontoCobrarPartes;
+                    existente.FechaRegistro = ToUtc(existente.FechaRegistro);
+
+                    if (string.IsNullOrEmpty(existente.IdUsuario))
+                        existente.IdUsuario = deuda.IdUsuario;
+
+                    _dataContext.Deudas.Update(existente);
+
+                }
+                else
+                {
+                    if (deuda.IdDeuda == Guid.Empty)
+                        deuda.IdDeuda = Guid.NewGuid();
+                    deuda.FechaRegistro = ToUtc(deuda.FechaRegistro);
+                    deuda.EsActivo = true;
+                    _dataContext.Deudas.Add(deuda);
+                }
+            }
+            _dataContext.SaveChanges();
+
+            return ("Se insertó y actualizó correctamente");
         }
 
         public string ImportarDeudas()
@@ -1294,22 +1423,21 @@ namespace gestiones_backend.Services
                   temp_crecos.""ReciboPagosCrecos""
                 RESTART IDENTITY CASCADE;");
 
-            _dataContext.ArticuloOperacionCrecos.AddRange(listaGrabar);
-            _dataContext.CarteraAsignadaCrecos.AddRange(carteraGrabar);
-            _dataContext.DatosClienteCrecos.AddRange(clientesGrabar);
-            _dataContext.DireccionClienteCrecos.AddRange(direccionClientesGrabar);
-            _dataContext.OperacionesClientesCrecos.AddRange(operacionesClienteGrabar);
-            _dataContext.ReferenciasPersonalesCrecos.AddRange(referenciaClienteGrabar);
-            _dataContext.SaldoClienteCrecos.AddRange(saldoClienteCrecos);
-            _dataContext.TelefonosClienteCrecos.AddRange(telefonoClienteCrecos);
-            _dataContext.CuotasOperacionCrecos.AddRange(CuotasOperacionCrecos);
+            var bulk = new NpgsqlBulkUploader(_dataContext);
 
-            _dataContext.ReciboDetalleCrecos.AddRange(reciboDetalleCrecos);
-            _dataContext.ReciboPagosCrecos.AddRange(reciboPagosCrecos);
-            _dataContext.ReciboFormaPagoCrecos.AddRange(reciboFormaPagoCrecos);
+            bulk.Insert(listaGrabar);
+            bulk.Insert(carteraGrabar);
+            bulk.Insert(clientesGrabar);
+            bulk.Insert(direccionClientesGrabar);
+            bulk.Insert(operacionesClienteGrabar);
+            bulk.Insert(referenciaClienteGrabar);
+            bulk.Insert(saldoClienteCrecos);
+            bulk.Insert(telefonoClienteCrecos);
+            bulk.Insert(CuotasOperacionCrecos);
 
-
-            _dataContext.SaveChanges();
+            bulk.Insert(reciboDetalleCrecos);
+            bulk.Insert(reciboPagosCrecos);
+            bulk.Insert(reciboFormaPagoCrecos);
             string ss = "";
 
         }
