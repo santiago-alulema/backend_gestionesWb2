@@ -244,7 +244,7 @@ namespace gestiones_backend.Controllers
                                 p.""FechaPago"" fechaPago,
                                 p.""NumeroDocumenro"",
                                 p.""Observaciones"" ,
-                                d.""Empresa"",
+                                COALESCE(NULLIF(d.""Empresa"", ''), p.""ArchivoMigracion"") AS ""Empresa"",
                                 d.""FechaVenta"",
                                 d.""Estado"",
                                 d.""NumeroFactura"",
@@ -273,9 +273,9 @@ namespace gestiones_backend.Controllers
                             left join ""TiposCuentaBancaria"" tcb  ON p.""IdTipoCuentaBancaria""  = tcb.""Id""
                             left join ""TiposTransaccion"" tt on tt.""Id""  = p.""IdTipoTransaccion"" 
                             left join ""AbonosLiquidacion"" al on al.""Id"" = p.""IdAbonoLiquidacion"" 
-                            join ""Deudas"" d ON p.""IdDeuda""  = d.""IdDeuda"" 
-                            join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
-                            join ""Usuarios"" u on u.""IdUsuario"" = p.""IdUsuario"" 
+                            left join ""Deudas"" d ON p.""IdDeuda""  = d.""IdDeuda"" 
+                            left join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
+                            left join ""Usuarios"" u on u.""IdUsuario"" = p.""IdUsuario"" 
                             where {filtroCliente} (Date(p.""FechaPago"") >= '{fechaInicio}' and Date(p.""FechaPago"") <= '{fechaFin}' ) ";
             }
 

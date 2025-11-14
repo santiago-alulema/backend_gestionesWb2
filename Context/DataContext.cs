@@ -1,4 +1,5 @@
-﻿using gestiones_backend.Entity;
+﻿using DocumentFormat.OpenXml.Vml.Office;
+using gestiones_backend.Entity;
 using gestiones_backend.Entity.temp_crecos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -50,7 +51,8 @@ namespace gestiones_backend.Context
         public DbSet<TrifocusCrecos> TrifocusCrecos => Set<TrifocusCrecos>();
         public DbSet<CuotaOperacionCrecos> CuotasOperacionCrecos => Set<CuotaOperacionCrecos>();
         public DbSet<SeguimientoMensajes> SeguimientoMensajes => Set<SeguimientoMensajes>();
-
+        public DbSet<MensajesEnviadosWhatsapp> MensajesEnviadosWhatsapp => Set<MensajesEnviadosWhatsapp>();
+        public DbSet<TrifocusCrecosPartes> TrifocusCrecosPartes => Set<TrifocusCrecosPartes>();
         public DbSet<WhatsappSession> WhatsappSessions { get; set; } = default!;
 
 
@@ -67,7 +69,24 @@ namespace gestiones_backend.Context
 
         private void ConfigureSimpleEntities(ModelBuilder modelBuilder)
         {
-            
+
+            modelBuilder.Entity<TrifocusCrecosPartes>(e =>
+            {
+                e.ToTable("trifocuscrecospartes", "temp_crecos");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Id)
+                   .HasColumnType("varchar(36)");
+                e.Property(e => e.CodOperacion)
+                   .HasColumnName("codoperacion")
+                   .HasColumnType("varchar");
+                e.Property(e => e.ValorLiquidacion)
+                   .HasColumnName("valorliquidacion")
+                   .HasColumnType("numeric(18,2)");
+                e.Property(e => e.ValorLiquidacionParte)
+                   .HasColumnName("valorliquidacionparte")
+                   .HasColumnType("numeric(18,2)");
+            });
+
             modelBuilder.Entity<SeguimientoMensajes>(entity =>
             {
                 entity.HasKey(x => x.id);
@@ -85,6 +104,33 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.mensaje)
                     .HasColumnType("text");
                 entity.Property(x => x.fechaRegistro).HasColumnType("timestamp with time zone");
+            });
+
+            modelBuilder.Entity<MensajesEnviadosWhatsapp>(entity =>
+            {
+                entity.ToTable("MensajesEnviadosWhatsapp");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id)
+                    .HasColumnName("id")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.IdCliente)
+                    .HasColumnName("id_cliente")
+                    .HasColumnType("varchar");
+
+                entity.Property(e => e.IdUsuario)
+                    .HasColumnName("id_usuario")
+                    .HasColumnType("varchar");
+
+                entity.Property(e => e.TelefonoEnviado)
+                    .HasColumnName("telefono_enviado")
+                    .HasColumnType("varchar");
+
+                entity.Property(e => e.FechaRegistro)
+                    .HasColumnName("fecha_registro")
+                    .HasColumnType("timestamp with time zone");
             });
 
             modelBuilder.Entity<AuditLog>(e =>
@@ -1325,6 +1371,9 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.IdUsuario).HasMaxLength(13);
                 entity.Property(e => e.Email).HasMaxLength(100);
                 entity.Property(e => e.Telefono).HasMaxLength(50);
+                entity.Property(e => e.EstaActivo)
+                      .HasColumnType("bool")
+                      .HasDefaultValue(true);
                 entity.Property(e => e.CodigoUsuario).HasMaxLength(50);
                 entity.Property(e => e.NombreUsuario).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.Rol)

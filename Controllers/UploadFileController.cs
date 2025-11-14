@@ -79,7 +79,7 @@ namespace gestiones_backend.Controllers
         }
 
         [HttpPost("upload-excel-deudas")]
-        public IActionResult UploadFileDeudas([FromBody] List<UploadDeudasInDTO> deudasExcel)
+        public IActionResult UploadFileDeudas([FromBody] List<UploadDeudasInDTO> deudasExcel, [FromQuery] bool desactivarDeudas = true )
         {
             List<string> empresasExcel = deudasExcel.Select(x => x.Empresa).Distinct().ToList();
 
@@ -88,10 +88,16 @@ namespace gestiones_backend.Controllers
                 throw new Exception("Esta subiendo mas de una empresa: " +  String.Join(", ", empresasExcel) );
             }
 
-            _context.Deudas
-                 .Where(x => x.Empresa == empresasExcel[0] && x.EsActivo == true)
-                 .ExecuteUpdate(setters => setters.SetProperty(x => x.EsActivo, false));
-
+            if (desactivarDeudas)
+            {
+                _context.Deudas
+                   .Where(x => x.Empresa == empresasExcel[0] && x.EsActivo == true)
+                   .ExecuteUpdate(setters => setters
+                       .SetProperty(x => x.EsActivo, x => false)
+                       .SetProperty(x => x.FechaRegistro, x => DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc))
+                   );
+            } 
+           
             if (deudasExcel == null || deudasExcel.Count == 0)
                 return BadRequest("No se recibieron datos");
 

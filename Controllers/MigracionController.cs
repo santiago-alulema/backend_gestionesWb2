@@ -113,13 +113,21 @@ namespace gestiones_backend.Controllers
             List<Deuda> deudas = _context.Deudas.ToList();
             List<Usuario> usuarios = _context.Usuarios.ToList();
             List<Pago> pagosGrabar = new();
+            List<Pago> pagosGrabados = _context.Pagos.ToList(); ;
+
             foreach (RegistroPagoInDto mig in migraciones)
             {
                 Deuda deuda = deudas.FirstOrDefault(x => x.NumeroFactura == mig.CXC.Replace("'", ""));
+                Pago pagoExistente = pagosGrabar.Where(x => x.NumeroDocumenro == mig.CXC.Replace("'", "") && x.FechaPago == DateOnly.FromDateTime(mig.FechaPago.Value)).FirstOrDefault();
+                if (pagoExistente != null)
+                {
+                    continue;
+                }
+
                 var palabras = mig.Usuario.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                 Usuario usuario = usuarios.Where(u => palabras.All(p => u.NombreCompleto.ToLower().Contains(p.ToLower()))).FirstOrDefault();
                 string bandoId = bancos.FirstOrDefault(x => x.Nombre == mig.Banco)?.Id;
-                string abonoLiquidacion = abonoLiquidacions.FirstOrDefault(x => x.Nombre == mig.AbonoLiquidacion).Id;
+                string abonoLiquidacion = mig.AbonoLiquidacion == ""? null :abonoLiquidacions.FirstOrDefault(x => x.Nombre == mig.AbonoLiquidacion).Id;
                 if (deuda == null)
                 {
                     string idDeudor = GrabarDeudor(mig);

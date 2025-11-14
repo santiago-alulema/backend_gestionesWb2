@@ -6,7 +6,6 @@ namespace gestiones_backend.Entity.temp_crecos
     {
         [Key]
         public Guid Id { get; set; } = Guid.NewGuid();
-
         public string? UsuarioGenera { get; set; }
         public string? GestorAsignado { get; set; }
         public string? Ciudad { get; set; }

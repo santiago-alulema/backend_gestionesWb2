@@ -69,15 +69,16 @@ namespace gestiones_backend.Services
                                     rfpc.""DESCRIPC_MOTIVO"",
                                     d.""IdDeuda"",
                                     d.""CodigoOperacion""  as ""NumeroFactura"",
-                                    d.""IdUsuario"" ,
+                                    ( select d2.""IdUsuario""  from ""Deudas"" d2 where rpc.""NUM_IDENTIFICACION"" = d2.""IdDeudor"") ,
                                     rpc.""Nombre_Archivo""
                                   FROM temp_crecos.""ReciboPagosCrecos"" rpc
                                   JOIN temp_crecos.""ReciboDetalleCrecos"" rdc
                                     ON rpc.""COD_RECIBO"" = rdc.""COD_RECIBO""
-                                  JOIN temp_crecos.""ReciboFormaPagoCrecos"" rfpc
+                                  left JOIN temp_crecos.""ReciboFormaPagoCrecos"" rfpc
                                     ON rfpc.""COD_RECIBO"" = rpc.""COD_RECIBO""
-                                  JOIN ""Deudas"" d
+                                  left JOIN ""Deudas"" d
                                     ON d.""CodigoOperacion"" = rdc.""ICODIGOOPERACION""
+                                   where rpc.""DESCRIPC_TPAGO"" <> 'Nota de Cr�dito'
                                 ),
                                 agg AS (
                                   SELECT
@@ -299,7 +300,10 @@ namespace gestiones_backend.Services
                                 CAST(MAX(scc.""FECHA_ULT_PAGO"") AS date)                                      AS ""FechaUltimoPago"",
                                 ROUND(MAX(scc.""VALOR_GESTION""), 2)::numeric(18,2)                            AS ""GastosCobranzas"",
                                 ROUND(MAX(scc.""VALOR_MORA""), 2)::numeric(18,2)                               AS ""Interes"",
-                                ROUND(MAX(t.valorliquidacion), 2)::numeric(18,2)                               AS ""MontoCobrar"",
+                                COALESCE(
+                                    ROUND(MAX(t.valorliquidacion), 2)::numeric(18,2) ,
+                                    ROUND(MAX(ca.""IVALORDEUDATOTAL""), 2)::numeric(18,2)
+                                )                                                                              AS ""MontoCobrar"",
                                 ROUND(MAX(t.valorliquidacionparte), 2)::numeric(18,2)                          AS ""MontoCobrarPartes"",
                                 MAX(dcc.""DESCRIP_TIPO_IDENTIF"")::text                                        AS ""TipoDocumento"",
                                 'Creditos Economicos'                                                          AS ""Agencia"",
@@ -337,10 +341,10 @@ namespace gestiones_backend.Services
                                         .AsNoTracking()
                                         .ToList();
 
-             //_dataContext.Deudas
-             //                 .Where(d => d.Empresa == "CRECOSCORP")
-             //                 .ExecuteUpdate(setters => setters
-             //                 .SetProperty(d => d.EsActivo, false));
+            _dataContext.Deudas
+                             .Where(d => d.Empresa == "CRECOSCORP")
+                             .ExecuteUpdate(setters => setters
+                             .SetProperty(d => d.EsActivo, false));
 
             List<Deudores> deudores = _dataContext.Deudores.ToList();
             var idsValidos = deudores
@@ -349,7 +353,7 @@ namespace gestiones_backend.Services
                 .ToHashSet();
 
             List<Usuario> usuarios = _dataContext.Usuarios
-                .Where(x => x.Rol == "user" )
+                .Where(x => x.Rol == "user" && x.EstaActivo)
                 .ToList();
 
             rows = rows
@@ -413,6 +417,8 @@ namespace gestiones_backend.Services
 
             List<Deuda> deudas = _dataContext.Deudas.ToList();
 
+            List<Deuda> deudasUpdate = new List<Deuda>();
+            List<Deuda> deudasNuevo = new List<Deuda>();
 
             foreach (var deuda in todas)
             {
@@ -445,8 +451,8 @@ namespace gestiones_backend.Services
                         if (string.IsNullOrEmpty(existente.IdUsuario))
                             existente.IdUsuario = deuda.IdUsuario;
 
-                        _dataContext.Deudas.Update(existente);
-                   
+                    //_dataContext.Deudas.Update(existente);
+                    deudasUpdate.Add(existente);
                 }
                 else
                 {
@@ -454,10 +460,14 @@ namespace gestiones_backend.Services
                         deuda.IdDeuda = Guid.NewGuid();
                     deuda.FechaRegistro = ToUtc(deuda.FechaRegistro);
                     deuda.EsActivo = true;
-                    _dataContext.Deudas.Add(deuda);
+                    deudasNuevo.Add(deuda);
+                    //_dataContext.Deudas.Add(deuda);
                 }
             }
-            _dataContext.SaveChanges();
+            //_dataContext.SaveChanges();
+            var bulk = new NpgsqlBulkUploader(_dataContext);
+            bulk.Insert(deudasUpdate);
+            bulk.Insert(deudasNuevo);
 
             return ("Se insertó y actualizó correctamente");
         }

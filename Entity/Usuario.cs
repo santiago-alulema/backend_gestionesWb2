@@ -14,6 +14,8 @@ public partial class Usuario
     public string Telefono { get; set; } = null!;
     public string NombreCompleto { get; set; } = null!;
     public string CodigoUsuario { get; set; } = null!;
+    public bool EstaActivo { get; set; } = true!;
+
     public virtual ICollection<CompromisosPago> CompromisosPagos { get; set; } = new List<CompromisosPago>();
     public virtual ICollection<Gestione> Gestiones { get; set; } = new List<Gestione>();
     public virtual ICollection<Deudores> Deudores { get; set; } = new List<Deudores>();

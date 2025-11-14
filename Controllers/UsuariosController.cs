@@ -40,7 +40,7 @@ namespace gestiones_backend.Controllers
             try
             {
                 var user = await _context.Usuarios
-                         .Where(x => x.NombreUsuario == oLoginCLS.Username && x.Contrasena == oLoginCLS.Password)
+                         .Where(x => x.NombreUsuario == oLoginCLS.Username && x.Contrasena == oLoginCLS.Password && x.EstaActivo)
                          .FirstOrDefaultAsync();
 
                 if (user != null)

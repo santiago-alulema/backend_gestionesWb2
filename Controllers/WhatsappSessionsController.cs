@@ -82,42 +82,66 @@ public class WhatsappSessionsController : ControllerBase
         try
         {
             Usuario usuario = _authService.GetCurrentUser();
-            if (string.IsNullOrWhiteSpace(body.User))
-                return BadRequest("User requerido");
+
+            if (body == null || string.IsNullOrWhiteSpace(body.User))
+                return BadRequest(new { ok = false, error = "User requerido" });
 
             var user = body.User.Trim().ToLower();
 
-            // 1) Validación de pertenencia
+            // 1) Validación de pertenencia / unicidad del user
             var sessionExiste = await _ctx.WhatsappSessions
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.User == user, ct);
 
             if (sessionExiste != null && sessionExiste.IdUsuario != usuario.IdUsuario)
-                return BadRequest($"Usuario <strong>{user}</strong> de whatsapp ya existe");
+            {
+                return BadRequest(new
+                {
+                    ok = false,
+                    error = $"El usuario de WhatsApp '{user}' ya está asociado a otro usuario del sistema."
+                });
+            }
 
+            // 2) Polling hacia Node para levantar sesión o traer QR
             var maxWait = TimeSpan.FromSeconds(65);      // tiempo total máximo de espera
-            var delay = TimeSpan.FromMilliseconds(600); // backoff inicial
-            var delayMax = TimeSpan.FromSeconds(3);       // tope de backoff
+            var delay = TimeSpan.FromMilliseconds(600);  // backoff inicial
+            var delayMax = TimeSpan.FromSeconds(3);      // tope de backoff
             var start = DateTime.UtcNow;
 
-            EnsureResponse ensure;
+            EnsureResponse ensure = null!;
 
             while (true)
             {
                 ct.ThrowIfCancellationRequested();
 
-                ensure = await _wa.EnsureAsync(user, ct);
-                // Si el Node ya te devolvió el DataURL del QR: salimos
-                if (!string.IsNullOrWhiteSpace(ensure.qrDataUrl))
+                ensure = await _wa.EnsureAsync(user, ct);   // llama a Node
+
+                if (ensure == null)
+                {
+                    return StatusCode(502, new
+                    {
+                        ok = false,
+                        error = "Node no respondió correctamente en EnsureAsync."
+                    });
+                }
+
+                // Si ya está autenticado / listo -> salimos (no habrá QR)
+                if (ensure.ready)
                     break;
 
-                // Si ya está autenticado/ready, no habrá QR: salimos
-                if (ensure.ready)
+                // Si Node ya devolvió un QR (dataURL), salimos para que el frontend lo muestre
+                if (!string.IsNullOrWhiteSpace(ensure.qrDataUrl))
                     break;
 
                 // Timeout global
                 if (DateTime.UtcNow - start > maxWait)
-                    return StatusCode(504, new { ok = false, error = "Timeout esperando QR desde Node (polling)" });
+                {
+                    return StatusCode(504, new
+                    {
+                        ok = false,
+                        error = "Timeout esperando estado/QR desde Node (polling)."
+                    });
+                }
 
                 // Backoff suave
                 await Task.Delay(delay, ct);
@@ -125,7 +149,7 @@ public class WhatsappSessionsController : ControllerBase
                 delay = TimeSpan.FromMilliseconds(nextMs);
             }
 
-            // 3) Upsert del estado (como ya lo haces)
+            // 3) Upsert del estado en tu tabla
             await UpsertInternal(new UpsertSessionDto
             {
                 User = user,
@@ -134,14 +158,64 @@ public class WhatsappSessionsController : ControllerBase
                 LastReason = ensure.reason
             }, ct);
 
-            // 4) Respuesta final (con QR si llegó)
+            // 4) Respuesta final hacia el frontend
+            var hasQr = !string.IsNullOrWhiteSpace(ensure.qrDataUrl);
+
             return Ok(new
             {
                 ok = true,
                 user = ensure.user,
                 ready = ensure.ready,
+                exists = ensure.exists,
+                hasQr,
                 qrDataUrl = ensure.qrDataUrl,
                 reason = ensure.reason
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            return StatusCode(499, new { ok = false, error = "Cancelado por el cliente." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { ok = false, error = ex.Message });
+        }
+    }
+
+
+    [HttpGet("sessions/status")]
+    public async Task<IActionResult> Status([FromQuery] string user, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(user))
+            return BadRequest(new { ok = false, error = "User requerido" });
+
+        user = user.Trim().ToLower();
+
+        try
+        {
+            StatusResponse st = await _wa.StatusAsync(user, ct);
+
+            if (st == null)
+            {
+                return StatusCode(502, new { ok = false, error = "Node no respondió en StatusAsync." });
+            }
+
+            // Guardamos estado en BD (AQUÍ ya no existe reason)
+            await UpsertInternal(new UpsertSessionDto
+            {
+                User = user,
+                Ready = st.ready,
+                ExistsOnNode = st.exists,
+                LastReason = null // NO HAY reason en StatusResponse
+            }, ct);
+
+            return Ok(new
+            {
+                ok = true,
+                user = st.user,
+                ready = st.ready,
+                exists = st.exists,
+                hasQr = st.hasQr
             });
         }
         catch (OperationCanceledException)
@@ -154,24 +228,6 @@ public class WhatsappSessionsController : ControllerBase
         }
     }
 
-    [HttpGet("sessions/status")]
-    public async Task<IActionResult> Status([FromQuery] string user, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(user)) return BadRequest("User requerido");
-        user = user.Trim().ToLower();
-
-        var st = await _wa.StatusAsync(user, ct);
-
-        await UpsertInternal(new UpsertSessionDto
-        {
-            User = user,
-            Ready = st.ready,
-            ExistsOnNode = st.exists,
-            LastReason = null
-        }, ct);
-
-        return Ok(new { ok = true, user = st.user, ready = st.ready, hasQr = st.hasQr, exists = st.exists });
-    }
 
     [HttpPost("sessions/logout")]
     public async Task<IActionResult> Logout([FromBody] EnsureDto body, CancellationToken ct)

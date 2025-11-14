@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using gestiones_backend.Context;
@@ -11,9 +12,11 @@ using gestiones_backend.Context;
 namespace gestiones_backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251111041650_usuarioEstaActivo")]
+    partial class usuarioEstaActivo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -691,34 +694,6 @@ namespace gestiones_backend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("MensajesWhatsapp");
-                });
-
-            modelBuilder.Entity("gestiones_backend.Entity.MensajesEnviadosWhatsapp", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime?>("FechaRegistro")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("fecha_registro");
-
-                    b.Property<string>("IdCliente")
-                        .HasColumnType("varchar")
-                        .HasColumnName("id_cliente");
-
-                    b.Property<string>("IdUsuario")
-                        .HasColumnType("varchar")
-                        .HasColumnName("id_usuario");
-
-                    b.Property<string>("TelefonoEnviado")
-                        .HasColumnType("varchar")
-                        .HasColumnName("telefono_enviado");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("MensajesEnviadosWhatsapp", (string)null);
                 });
 
             modelBuilder.Entity("gestiones_backend.Entity.Pago", b =>
@@ -2673,29 +2648,6 @@ namespace gestiones_backend.Migrations
                         .HasDatabaseName("ix_operacion_cliente");
 
                     b.ToTable("TrifocusCrecos", "temp_crecos");
-                });
-
-            modelBuilder.Entity("gestiones_backend.Entity.temp_crecos.TrifocusCrecosPartes", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("varchar(36)");
-
-                    b.Property<string>("CodOperacion")
-                        .HasColumnType("varchar")
-                        .HasColumnName("codoperacion");
-
-                    b.Property<decimal?>("ValorLiquidacion")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("valorliquidacion");
-
-                    b.Property<decimal?>("ValorLiquidacionParte")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("valorliquidacionparte");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("trifocuscrecospartes", "temp_crecos");
                 });
 
             modelBuilder.Entity("gestiones_backend.Entity.AsignacionesCartera", b =>

@@ -28,8 +28,9 @@ namespace gestiones_backend.Controllers
         [HttpPost("deudores/insertar-deudas-crecos")]
         public async Task<IActionResult> ImportarDeudas()
         {
-            _deudoresImportService.RedimencionarDeudasNoGestionadas();
-            //_deudoresImportService.ImportarDeudas();
+            // _deudoresImportService.RedimencionarDeudasNoGestionadas();
+            _deudoresImportService.importarPagos();
+           // _deudoresImportService.ImportarDeudas();
             //        _dataContext.Database.ExecuteSqlRaw(@"CREATE EXTENSION IF NOT EXISTS ""uuid-ossp"";");
 
             //        const string SqlDeudasCrecos = @"
@@ -209,10 +210,11 @@ namespace gestiones_backend.Controllers
         [HttpPost("deudores/completo")]
         public async Task<IActionResult> ImportarDeudoresCompleto()
         {
-            // var deudas = await svc.ImportarDeudasBasicoAsync();
-            //await svc.ImportarDeudoresCompletoAsync();
+            var deudas = await svc.ImportarDeudasBasicoAsync();
+            await svc.ImportarDeudoresCompletoAsync();
             //await svc.ImportarTelefonosBasicoAsync();
-            svc.GrabarTablas();
+            //svc.GrabarTablas();
+            svc.ImportarDeudas();
 
             return Ok(new { registrosAfectados = 2, telefonosAgregados = 2 });
         }
