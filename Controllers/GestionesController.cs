@@ -88,7 +88,6 @@ namespace gestiones_backend.Controllers
             gestione.IdRespuestaTipoContacto = nuevaGestion.IdRespuesta;
             gestione.Email = nuevaGestion.Email;
             gestione.Telefono = nuevaGestion.Telefono;
-            gestione.FechaGestion = DateTime.Now;
             _context.Gestiones.Add(gestione);
             _context.SaveChanges();
             return Ok("Se grabo exitosamente");
