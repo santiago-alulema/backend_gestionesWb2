@@ -33,6 +33,8 @@
         public string? GestorUltimaGestion { get; set; }
         public string? Telefono { get; set; } = string.Empty;
         public string? Email { get; set; } = string.Empty;
+        public Decimal? MontoPonteAlDia { get; set; } = 0.0m;
+
 
     }
 }

@@ -300,10 +300,11 @@ namespace gestiones_backend.Services
                                 CAST(MAX(scc.""FECHA_ULT_PAGO"") AS date)                                      AS ""FechaUltimoPago"",
                                 ROUND(MAX(scc.""VALOR_GESTION""), 2)::numeric(18,2)                            AS ""GastosCobranzas"",
                                 ROUND(MAX(scc.""VALOR_MORA""), 2)::numeric(18,2)                               AS ""Interes"",
-                                COALESCE(
-                                    ROUND(MAX(t.valorliquidacion), 2)::numeric(18,2) ,
-                                    ROUND(MAX(ca.""IVALORDEUDATOTAL""), 2)::numeric(18,2)
-                                )                                                                              AS ""MontoCobrar"",
+                                ROUND(MAX(COALESCE(t.valorpontealdia,0)), 2)::numeric(18,2)                                AS ""MontoPonteAlDia"",
+                                ROUND(
+                                    COALESCE(MAX(t.valorliquidacion), 0),
+                                    2
+                                )::numeric(18,2)                                                               AS ""MontoCobrar"",
                                 ROUND(MAX(t.valorliquidacionparte), 2)::numeric(18,2)                          AS ""MontoCobrarPartes"",
                                 MAX(dcc.""DESCRIP_TIPO_IDENTIF"")::text                                        AS ""TipoDocumento"",
                                 'Creditos Economicos'                                                          AS ""Agencia"",
@@ -443,6 +444,7 @@ namespace gestiones_backend.Services
                         existente.ValorCuota = deuda.ValorCuota;
                         existente.EsActivo = true;
                         existente.Empresa = deuda.Empresa;
+                        existente.MontoPonteAlDia = deuda.MontoPonteAlDia;
                         existente.Tramo = deuda.Tramo;
                         existente.UltimoPago = deuda.UltimoPago;
                         existente.MontoCobrarPartes = deuda.MontoCobrarPartes;
@@ -464,9 +466,9 @@ namespace gestiones_backend.Services
                     //_dataContext.Deudas.Add(deuda);
                 }
             }
-            //_dataContext.SaveChanges();
+    
             var bulk = new NpgsqlBulkUploader(_dataContext);
-            bulk.Insert(deudasUpdate);
+            bulk.Update(deudasUpdate);
             bulk.Insert(deudasNuevo);
 
             return ("Se insertó y actualizó correctamente");
@@ -1151,7 +1153,8 @@ namespace gestiones_backend.Services
                             BARRIO = row.GetValueOrDefault("BARRIO"),
                             COD_GESTOR = row.GetValueOrDefault("COD_GESTOR"),
                             GESTOR = row.GetValueOrDefault("GESTOR"),
-                            CODIGOCLIENTE = row.GetValueOrDefault("CODIGOCLIENTE")
+                            CODIGOCLIENTE = row.GetValueOrDefault("CODIGOCLIENTE"),
+                            NOMBREARCHIVO = upperName
                         });
                     }
                 }

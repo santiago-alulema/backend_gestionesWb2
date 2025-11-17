@@ -18,6 +18,7 @@ public partial class Deuda
     public int? Descuento { get; set; }
     public Decimal? MontoCobrar { get; set; } = 0m;
     public Decimal? MontoCobrarPartes { get; set; } = 0m;
+    public Decimal? MontoPonteAlDia { get; set; } = 0m;
     public DateOnly? FechaVenta { get; set; }
     public DateOnly? FechaUltimoPago { get; set; }
     public string? Estado { get; set; }

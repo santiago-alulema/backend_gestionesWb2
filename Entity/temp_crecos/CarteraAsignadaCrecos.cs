@@ -53,5 +53,8 @@ namespace gestiones_backend.Entity.temp_crecos
         [MaxLength(150)] public string? GESTOR { get; set; }
 
         [MaxLength(50)] public string? CODIGOCLIENTE { get; set; }
+
+        [MaxLength(200)] public string? NOMBREARCHIVO { get; set; }
+
     }
 }

@@ -18,12 +18,16 @@ namespace gestiones_backend.Controllers
         }
 
         [HttpPost("grabar-campania")]
-        public IActionResult GrabarCampaniaCrecos(List<TrifocusCrecosPartes> crecosPartes)
+        public IActionResult GrabarCampaniaCrecos(List<TrifocusCrecosPartes> crecosPartes, [FromQuery] Boolean borrarTodo =  false)
         {
-            _dataContext.Database.ExecuteSqlRaw(@"
-                TRUNCATE TABLE temp_crecos.trifocuscrecospartes 
-                RESTART IDENTITY CASCADE;
-            ");
+            if (borrarTodo)
+            {
+                _dataContext.Database.ExecuteSqlRaw(@"
+                    TRUNCATE TABLE temp_crecos.trifocuscrecospartes 
+                    RESTART IDENTITY CASCADE;
+                ");
+            }
+           
             var bulk = new NpgsqlBulkUploader(_dataContext);
             bulk.Insert(crecosPartes);
             return Ok("Las liquidaciones de Crecos por parte se insertaron correctamente");

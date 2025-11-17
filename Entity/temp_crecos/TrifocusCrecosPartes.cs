@@ -9,5 +9,7 @@ namespace gestiones_backend.Entity.temp_crecos
         public string? CodOperacion { get; set; }
         public Decimal? ValorLiquidacion { get; set; }
         public Decimal? ValorLiquidacionParte { get; set; }
+        public Decimal? ValorPonteAlDia { get; set; }
+
     }
 }

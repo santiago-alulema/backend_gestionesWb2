@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using gestiones_backend.Context;
@@ -11,9 +12,11 @@ using gestiones_backend.Context;
 namespace gestiones_backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251115145217_valorpontealdia")]
+    partial class valorpontealdia
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -344,9 +347,6 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("MontoCobrarPartes")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("MontoPonteAlDia")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int?>("NumeroCuotas")
@@ -1248,10 +1248,6 @@ namespace gestiones_backend.Migrations
 
                     b.Property<decimal?>("IVALORDEUDATOTAL")
                         .HasColumnType("numeric(18,2)");
-
-                    b.Property<string>("NOMBREARCHIVO")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("PAIS")
                         .HasMaxLength(150)

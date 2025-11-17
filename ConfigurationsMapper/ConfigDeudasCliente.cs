@@ -35,6 +35,8 @@ namespace gestiones_backend.ConfigurationsMapper
             .Map(d => d.ProductoDescripcion, s => s.ProductoDescripcion)
             .Map(d => d.Agencia, s => s.Agencia)
             .Map(d => d.Ciudad, s => s.Ciudad)
+            .Map(d => d.MontoPonteAlDia, s => s.MontoPonteAlDia)
+
             .Map(d => d.Nombre, s => s.IdDeudorNavigation.Nombre)
             // Campo con typo en el DTO (si existe)
             .Map(d => d.SaldoDeulda, s => s.SaldoDeuda)

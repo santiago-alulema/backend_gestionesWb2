@@ -85,6 +85,9 @@ namespace gestiones_backend.Context
                 e.Property(e => e.ValorLiquidacionParte)
                    .HasColumnName("valorliquidacionparte")
                    .HasColumnType("numeric(18,2)");
+                e.Property(e => e.ValorPonteAlDia)
+                   .HasColumnName("valorpontealdia")
+                   .HasColumnType("numeric(18,2)");
             });
 
             modelBuilder.Entity<SeguimientoMensajes>(entity =>
@@ -635,6 +638,8 @@ namespace gestiones_backend.Context
 
                 e.Property(x => x.COD_UNIDAD_NEGOCIO).HasMaxLength(50);
                 e.Property(x => x.UNIDAD_NEGOCIO).HasMaxLength(200);
+                e.Property(x => x.NOMBREARCHIVO).HasMaxLength(200);
+
 
                 e.Property(x => x.COD_TIPO_CARTERA).HasMaxLength(50);
                 e.Property(x => x.TIPO_CARTERA).HasMaxLength(200);
@@ -1267,6 +1272,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.Descuento);
                 entity.Property(e => e.CodigoOperacion).HasColumnType("varchar");
                 entity.Property(e => e.MontoCobrar).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.MontoPonteAlDia).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.MontoCobrarPartes).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.FechaVenta);
                 entity.Property(e => e.FechaUltimoPago);
