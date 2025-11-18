@@ -59,7 +59,7 @@ namespace gestiones_backend.Controllers
                             IdGestion = Guid.NewGuid().ToString(),
                             IdDeuda = deuda?.IdDeuda ?? Guid.Empty,
                             FechaGestion = mig?.Created != null
-                                            ? DateTime.SpecifyKind(DateTime.Parse(mig.Created.ToString() ?? DateTime.Now.ToString()), DateTimeKind.Utc)
+                                            ? DateTime.Parse(mig.Created.ToString()).ToLocalTime()
                                             : DateTime.UtcNow,
                             Descripcion = (mig?.Comment ?? "") + " [MIGRACION]",
                             Email = mig?.Email ?? "",
@@ -80,7 +80,7 @@ namespace gestiones_backend.Controllers
                         IdDeuda = deuda?.IdDeuda,
                         FechaCompromiso = DateOnly.FromDateTime(mig?.Fecha ?? DateTime.UtcNow),
                         FechaRegistro = mig?.Created != null
-                        ? DateTime.SpecifyKind(mig.Created.Value, DateTimeKind.Utc)
+                        ? DateTime.Parse(mig.Created.ToString()).ToLocalTime()
                         : DateTime.UtcNow,
                         MontoComprometido = mig?.Monto ?? 0m,
                         Telefono = mig?.Phone ?? "S/N",
@@ -144,7 +144,7 @@ namespace gestiones_backend.Controllers
                     FechaPago = mig.FechaPago.HasValue
                                 ? DateOnly.FromDateTime(mig.FechaPago.Value)
                                 : DateOnly.FromDateTime(DateTime.UtcNow),
-                    FechaRegistro =  DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc),
+                    FechaRegistro =  DateTime.UtcNow,
                     MontoPagado = mig.Monto ?? 0m,
                     Telefono = "",
                     MedioPago = null,

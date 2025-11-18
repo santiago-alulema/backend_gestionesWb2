@@ -1147,7 +1147,7 @@ namespace gestiones_backend.Context
                 entity.Property(e => e.IdGestion).HasMaxLength(40);
                 entity.Property(e => e.Descripcion).HasMaxLength(900);
                 entity.Property(e => e.Email).HasMaxLength(100);
-                entity.Property(e => e.FechaGestion).HasColumnType("timestamptz")
+                entity.Property(e => e.FechaGestion).HasColumnType("timestamp with time zone")
                                                     .HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.Telefono)
                      .HasColumnType("varchar")

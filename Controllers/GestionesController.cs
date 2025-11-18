@@ -88,6 +88,7 @@ namespace gestiones_backend.Controllers
             gestione.IdRespuestaTipoContacto = nuevaGestion.IdRespuesta;
             gestione.Email = nuevaGestion.Email;
             gestione.Telefono = nuevaGestion.Telefono;
+            gestione.FechaGestion = DateTime.UtcNow;
             _context.Gestiones.Add(gestione);
             _context.SaveChanges();
             return Ok("Se grabo exitosamente");
@@ -193,22 +194,23 @@ namespace gestiones_backend.Controllers
         public async Task<IActionResult> GetMovimientoDeuda(string idDeuda)
         {
             string consulta = @$"SELECT tipo, 
-                              TO_CHAR(fecha, 'YYYY-MM-DD') as fecha_formateada,
+                              ((fecha::date + (""FechaRegistro""::time)) AT TIME ZONE 'UTC' AT TIME ZONE 'America/Guayaquil') as fecha_formateada,
                               observaciones,
                               tracking
                               FROM (
                                 SELECT 
-                                  concat('Pago ( ',upper(u.""NombreUsuario""), ')') AS tipo,
-                                  p.""FechaPago"" AS fecha,
+                                  concat('Pago ',' <br> <strong>  (',upper(u.""NombreUsuario""), ')</strong>') AS tipo,
+                                  (p.""FechaPago"" + INTERVAL '0 day') AS fecha,
                                    concat('<p style=""text-align: justify;"">', p.""Observaciones"", '</p>') AS observaciones,
                                   ('<strong>Banco: </strong> '  || COALESCE(bp.""Nombre"", 'N/A') || 
                                  '<br><strong>Cuenta: </strong>' || COALESCE(tcb.""Nombre"", 'N/A') || 
                                  '<br><strong>Tipo Transaccion: </strong>' || COALESCE(tt.""Nombre"", 'N/A') || 
                                  '<br><strong>Abono/Liquidacion: </strong>' || COALESCE(al.""Nombre"", 'N/A') || 
                                  '<br><strong>Numero Doc.: </strong>' || COALESCE(p.""NumeroDocumenro"", 'N/A') || 
-                                 '<br><strong>Fecha Pago: </strong>' || COALESCE(TO_CHAR(p.""FechaPago"", 'YYYY-MM-DD HH24:MI:SS'), 'N/A') || 
+                                 '<br><strong>Fecha Pago: </strong>' || COALESCE(TO_CHAR(p.""FechaPago"", 'YYYY-MM-DD'), 'N/A') || 
                                  '<br><strong>Valor: </strong>' || COALESCE(p.""MontoPagado""::text, 'N/A') ||
-                                 '<br><strong>Telefono: </strong>' || COALESCE(p.""Telefono""::text, 'N/A')  ) AS tracking
+                                 '<br><strong>Telefono: </strong>' || COALESCE(p.""Telefono""::text, 'N/A')  ) AS tracking,
+                                 p.""FechaRegistro"" 
                       FROM ""Pagos"" p 
                       LEFT JOIN ""Deudas"" d ON p.""IdDeuda"" = d.""IdDeuda"" 
                       LEFT JOIN ""BancosPagos"" bp ON p.""IdBancosPago"" = bp.""Id""  
@@ -220,13 +222,14 @@ namespace gestiones_backend.Controllers
 
                       UNION ALL
 
-                      SELECT concat('Gestion ( ',upper(u.""NombreUsuario""), ')') AS tipo, 
+                      SELECT concat('Gestion <br> <strong>(',upper(u.""NombreUsuario""), ')</strong>') AS tipo, 
                               g.""FechaGestion"" AS fecha, 
                               concat('<p style=""text-align: justify;"">',  g.""Descripcion"", '</p>') AS observaciones,
                               ('<strong>RESULTADO:</strong> '  || tr.""Nombre"" || 
                                '<br><strong>Tipo Contacto Cliente</strong>' || tcr.""Nombre"" || 
                                '<br><strong>Respuesta: </strong>' || rtc.""Nombre"" ||
-                               '<br><strong>Telefono: </strong>' || g.""Telefono"") as tracking
+                               '<br><strong>Telefono: </strong>' || g.""Telefono"") as tracking,
+                               g.""FechaGestion"" 
                       FROM ""Gestiones"" g 
                       JOIN ""Deudas"" d ON g.""IdDeuda"" = d.""IdDeuda""
                       JOIN ""TiposResultado"" tr ON tr.""Id"" = g.""IdTipoResultado""
@@ -237,22 +240,23 @@ namespace gestiones_backend.Controllers
 
                       UNION ALL
 
-                      SELECT concat('Tarea ( ', upper(u.""NombreUsuario"") , ')')  AS tipo,  
+                      SELECT concat('Tarea <br> <strong>(', upper(u.""NombreUsuario"") , ')</strong>')  AS tipo,  
                               cp.""FechaRegistro"" AS fecha,
                               concat('<p style=""text-align: justify;"">', cp.""Observaciones"" , '</p>') AS observaciones,
-                              ('<strong>Fecha recordatorio:</strong> '  || TO_CHAR(cp.""FechaCompromiso"", 'YYYY-MM-DD HH24:MI:SS') || 
+                              ('<strong>Fecha recordatorio:</strong> '  || TO_CHAR(cp.""FechaCompromiso"", 'YYYY-MM-DD') || 
                          	    '<br><strong>Hora recordatorio</strong>' || cp.""HoraRecordatorio"" || 
                          	    '<br><strong>Valor: </strong>' || cp.""MontoComprometido"" || 
                          	    '<br><strong>Tipo tarea: </strong>' || tr.""Nombre""|| 
                          	    '<br><strong>Observaciones: </strong>' || cp.""Observaciones"" ||
-                                '<br><strong>Telefono: </strong>' || cp.""Telefono"") as tracking
+                                '<br><strong>Telefono: </strong>' || cp.""Telefono"") as tracking,
+                                cp.""FechaRegistro"" 
                       FROM ""CompromisosPagos"" cp
                       JOIN ""Deudas"" d ON cp.""IdDeuda"" = d.""IdDeuda""
                       JOIN ""TiposTareas"" tr ON tr.""Id"" = cp.""IdTipoTarea""
                       inner join ""Usuarios"" u on u.""IdUsuario"" = cp.""IdUsuario""  
                       WHERE d.""IdDeuda"" = '{idDeuda}'
                   ) AS combined_results
-                  ORDER BY fecha DESC;";
+                  ORDER BY fecha_formateada DESC;";
             PgConn conn = new PgConn();
             conn.cadenaConnect = Configuration.GetConnectionString("DefaultConnection");
 

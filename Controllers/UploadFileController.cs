@@ -180,7 +180,7 @@ namespace gestiones_backend.Controllers
                         Ciudad = deudaExcel.Ciudad,
                         EsActivo = true,
                         IdUsuario = deudaExcel.Usuario,
-                        FechaRegistro = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc)
+                        FechaRegistro = DateTime.UtcNow
 
                     };
                     grabarDeuda.Add(nuevaDeuda);

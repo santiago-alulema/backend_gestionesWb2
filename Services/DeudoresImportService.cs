@@ -30,7 +30,7 @@ namespace gestiones_backend.Services
 
 
         static DateTime? ToUtc(DateTime? dt)
-                            => dt.HasValue ? DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc) : (DateTime?)null;
+                    => dt?.ToUniversalTime();
 
         public string importarPagos() {
 
@@ -423,7 +423,7 @@ namespace gestiones_backend.Services
 
             foreach (var deuda in todas)
             {
-                var existente = deudas.FirstOrDefault(d => d.NumeroFactura == deuda.NumeroFactura);
+                var existente = deudas.FirstOrDefault(d => d.CodigoOperacion == deuda.CodigoOperacion);
 
                 if (existente != null)
                 {
