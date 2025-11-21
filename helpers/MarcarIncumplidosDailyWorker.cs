@@ -63,7 +63,7 @@ namespace gestiones_backend.helpers
                     importSvc.importarPagos();
                     _logger.LogInformation("Datos importados correctamente.");
 
-                    var updated = await compromisos.MarcarIncumplidosVencidosAsync();
+                   // var updated = await compromisos.MarcarIncumplidosVencidosAsync();
                     _logger.LogInformation("Job 'MarcarIncumplidos' ejecutado. Filas actualizadas: {Updated}", updated);
                 }
                 catch (Exception ex)

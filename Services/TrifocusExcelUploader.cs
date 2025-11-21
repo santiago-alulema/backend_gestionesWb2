@@ -76,7 +76,7 @@ namespace gestiones_backend.Services
                                                 join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
                                                 join ""Pagos"" p ON p.""IdDeuda""  = d.""IdDeuda"" 
                                                 left join ""AbonosLiquidacion"" al on al.""Id""  = p.""IdAbonoLiquidacion""
-                                                where d.""Empresa"" = 'CRECOSCORP'
+                                                where d.""Empresa"" = 'CRECOSCORP' and p.""Observaciones"" not like '%[MIGRACION CRECOS]%'
 
                                                 union all
 
@@ -107,7 +107,7 @@ namespace gestiones_backend.Services
                                                 join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
                                                 join ""CompromisosPagos"" cp ON cp.""IdDeuda""  = d.""IdDeuda"" 
                                                 left join ""TiposTareas"" tt on tt.""Id""  = cp.""IdTipoTarea"" 
-                                                where d.""Empresa"" = 'CRECOSCORP';
+                                                where d.""Empresa"" = 'CRECOSCORP' ;
                                                 ";
 
         public TrifocusExcelUploader(
@@ -146,7 +146,7 @@ namespace gestiones_backend.Services
             // 3) Excel
             using (var wb = new XLWorkbook())
             {
-                var ws = wb.AddWorksheet("GESTIONES");
+                var ws = wb.AddWorksheet("Hoja 1");
                 ws.Cell(1, 1).InsertTable(dt, "Datos", true);
 
                 var used = ws.RangeUsed();

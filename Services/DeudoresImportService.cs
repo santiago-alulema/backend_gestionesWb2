@@ -35,106 +35,89 @@ namespace gestiones_backend.Services
         public string importarPagos() {
 
             string cadena = $@"
-                                INSERT INTO public.""Pagos"" (
-                                  ""IdDeuda"",
-                                  ""FechaPago"",
-                                  ""MontoPagado"",
-                                  ""MedioPago"",
-                                  ""NumeroDocumenro"",
-                                  ""Observaciones"",
-                                  ""FormaPagoId"",
-                                  ""IdUsuario"",
-                                  ""IdBancosPago"",
-                                  ""IdTipoCuentaBancaria"",
-                                  ""IdTipoTransaccion"",
-                                  ""IdAbonoLiquidacion"",
-                                  ""UsuarioIdUsuario"",
-                                  ""FechaRegistro"",
-                                  ""IdPago"",
-                                  ""Telefono"",
-                                  ""ArchivoMigracion""
-                                )
-                                WITH base AS (
-                                  select distinct on (rdc.""IRECIBODETALLE"")
-                                    rpc.""NUM_IDENTIFICACION"",
-                                    rpc.""COD_RECIBO"",
-                                    rpc.""FECHA_PAGO"",
-                                    rdc.""IRECIBODETALLE"",
-                                    rdc.""VALOR_RECIBO"",
-                                    rpc.""MONTO"",
-                                    rpc.""DESCRIPC_TPAGO"",
-                                    rdc.""ICODIGOOPERACION"",
-                                    rfpc.""DESCRIPC_FPAGO"",
-                                    rfpc.""IVALOR"",
-                                    rfpc.""DESCRIPC_MOTIVO"",
-                                    d.""IdDeuda"",
-                                    d.""CodigoOperacion""  as ""NumeroFactura"",
-                                    ( select d2.""IdUsuario""  from ""Deudas"" d2 where rpc.""NUM_IDENTIFICACION"" = d2.""IdDeudor"") ,
-                                    rpc.""Nombre_Archivo""
-                                  FROM temp_crecos.""ReciboPagosCrecos"" rpc
-                                  JOIN temp_crecos.""ReciboDetalleCrecos"" rdc
-                                    ON rpc.""COD_RECIBO"" = rdc.""COD_RECIBO""
-                                  left JOIN temp_crecos.""ReciboFormaPagoCrecos"" rfpc
-                                    ON rfpc.""COD_RECIBO"" = rpc.""COD_RECIBO""
-                                  left JOIN ""Deudas"" d
-                                    ON d.""CodigoOperacion"" = rdc.""ICODIGOOPERACION""
-                                   where rpc.""DESCRIPC_TPAGO"" <> 'Nota de Cr�dito'
-                                ),
-                                agg AS (
-                                  SELECT
-                                    b.""IdDeuda""                                   AS ""IdDeuda"",
-                                    MAX(b.""FECHA_PAGO"")::date                     AS ""FechaPago"",
-                                    COALESCE(SUM(b.""VALOR_RECIBO""), 0)::numeric(18,2) AS ""MontoPagado"",
-                                    NULL::text                                    AS ""MedioPago"",
-                                    -- Orden estable para evitar diferencias por re-ejecución
-                                    string_agg(DISTINCT b.""NumeroFactura""::text, ' - ' ) AS ""NumeroDocumenro"",
-                                    (
-                                      '[MIGRACION CRECOS] ' ||
-                                      'TipoPago: '   || COALESCE(string_agg(DISTINCT b.""DESCRIPC_TPAGO"", ' / '), '') ||
-                                      ' Desc. Pago: '|| COALESCE(string_agg(DISTINCT b.""DESCRIPC_FPAGO"", ' / '), '') ||
-                                      ' Motivo: '    || COALESCE(string_agg(DISTINCT b.""DESCRIPC_MOTIVO"", ' / '), '')
-                                    )::text                                       AS ""Observaciones"",
-                                    NULL::uuid AS ""FormaPagoId"",
-                                    string_agg(DISTINCT b.""IdUsuario""::text, ' - ' ) AS ""IdUsuario"",
-                                    NULL::uuid AS ""IdBancosPago"",
-                                    NULL::uuid AS ""IdTipoCuentaBancaria"",
-                                    NULL::uuid AS ""IdTipoTransaccion"",
-                                    NULL::uuid AS ""IdAbonoLiquidacion"",
-                                    NULL::uuid AS ""UsuarioIdUsuario"",
-                                    NOW()        AS ""FechaRegistro"",
-                                    gen_random_uuid() AS ""IdPago"",
-                                    ''::varchar  AS ""Telefono"",
-                                    string_agg(DISTINCT b.""Nombre_Archivo""::text, ' - ') AS ""ArchivoMigracion""
-                                  FROM base b
-                                  GROUP BY b.""NUM_IDENTIFICACION"", b.""IdDeuda""
-                                )
-                                SELECT
-                                  a.""IdDeuda"",
-                                  a.""FechaPago"",
-                                  a.""MontoPagado"",
-                                  a.""MedioPago"",
-                                  a.""NumeroDocumenro"",
-                                  a.""Observaciones"",
-                                  a.""FormaPagoId"",
-                                  a.""IdUsuario"",
-                                  a.""IdBancosPago"",
-                                  a.""IdTipoCuentaBancaria"",
-                                  a.""IdTipoTransaccion"",
-                                  a.""IdAbonoLiquidacion"",
-                                  a.""UsuarioIdUsuario"",
-                                  a.""FechaRegistro"",
-                                  a.""IdPago"",
-                                  a.""Telefono"",
-                                  a.""ArchivoMigracion""
-                                FROM agg a
-                                WHERE NOT EXISTS (
-                                  SELECT 1
-                                  FROM public.""Pagos"" p
-                                  WHERE p.""IdDeuda""         = a.""IdDeuda""
-                                    AND p.""FechaPago""       = a.""FechaPago""
-                                    AND p.""MontoPagado""     = a.""MontoPagado""
-                                    AND p.""NumeroDocumenro"" = a.""NumeroDocumenro""
-                                );";
+                               INSERT INTO public.""Pagos"" (
+                                      ""IdDeuda"",
+                                      ""FechaPago"",
+                                      ""MontoPagado"",
+                                      ""MedioPago"",
+                                      ""NumeroDocumenro"",
+                                      ""Observaciones"",
+                                      ""FormaPagoId"",
+                                      ""IdUsuario"",
+                                      ""IdBancosPago"",
+                                      ""IdTipoCuentaBancaria"",
+                                      ""IdTipoTransaccion"",
+                                      ""IdAbonoLiquidacion"",
+                                      ""UsuarioIdUsuario"",
+                                      ""FechaRegistro"",
+                                      ""IdPago"",
+                                      ""Telefono"",
+                                      ""ArchivoMigracion""
+                                    )
+                                    SELECT DISTINCT ON (rdc.""COD_RECIBO"")
+	                                    d.""IdDeuda"" 					as ""IdDeuda"",
+	                                    rpc.""FECHA_PAGO""				as ""FechaPago"",
+	                                    rpc.""MONTO""						as ""MontoPagado"",
+	                                    NULL::text                      as ""MedioPago"",
+	                                    rpc.""COD_RECIBO""				as ""NumeroDocumenro"",
+
+                                         (
+                                           '[MIGRACION CRECOS] ' ||
+                                           'TipoPago: '   || COALESCE(rfpc.""DESCRIPC_FPAGO"", '') ||
+                                           ' Desc. Pago: '|| COALESCE(rpc.""DESCRIPC_TPAGO"", '') ||
+                                           ' Motivo: '    || COALESCE(rfpc.""DESCRIPC_MOTIVO"", '')
+                                         )::text                       as ""Observaciones"",
+	                                    NULL::uuid AS ""FormaPagoId"",
+	                                    (
+                                            SELECT d2.""IdUsuario""
+                                            FROM ""Deudas"" d2
+                                            WHERE rpc.""NUM_IDENTIFICACION"" = d2.""IdDeudor""
+                                            ORDER BY d2.""IdDeuda"" DESC
+                                            LIMIT 1
+                                        ) 								as ""IdUsuario"",
+                                         NULL::uuid AS ""IdBancosPago"",
+                                         NULL::uuid AS ""IdTipoCuentaBancaria"",
+                                         NULL::uuid AS ""IdTipoTransaccion"",
+                                         NULL::uuid AS ""IdAbonoLiquidacion"",
+                                         NULL::uuid AS ""UsuarioIdUsuario"",
+                                         rpc.""FECHA_PAGO""        AS ""FechaRegistro"",
+                                         gen_random_uuid() AS ""IdPago"",
+                                         ''::varchar  AS ""Telefono"",
+	                                    rpc.""Nombre_Archivo""
+	
+                                        --rpc.""NUM_IDENTIFICACION"",
+                                        --rpc.""COD_RECIBO"",
+                                       -- rdc.""IRECIBODETALLE"",
+                                       -- totals.total_valor_recibo,
+                                       -- rpc.""DESCRIPC_TPAGO"",
+                                       -- rdc.""ICODIGOOPERACION"",
+                                        --rfpc.""DESCRIPC_FPAGO"",
+                                       -- rfpc.""IVALOR"",
+                                       -- rfpc.""DESCRIPC_MOTIVO"",
+                                       -- rdc.""COD_RECIBO"" AS ""NumeroFactura"",
+                                        --d.""CodigoOperacion"" 
+	                                    FROM temp_crecos.""ReciboPagosCrecos"" rpc
+	                                    JOIN temp_crecos.""ReciboDetalleCrecos"" rdc
+	                                        ON rpc.""COD_RECIBO"" = rdc.""COD_RECIBO""
+	                                    LEFT JOIN temp_crecos.""ReciboFormaPagoCrecos"" rfpc
+	                                        ON rfpc.""COD_RECIBO"" = rpc.""COD_RECIBO""
+	                                    LEFT JOIN ""Deudas"" d
+	                                        ON d.""CodigoOperacion"" = rdc.""ICODIGOOPERACION""
+	                                    JOIN (
+	                                        SELECT ""COD_RECIBO"", SUM(""VALOR_RECIBO"") AS total_valor_recibo
+	                                        FROM temp_crecos.""ReciboDetalleCrecos""
+	                                        GROUP BY ""COD_RECIBO""
+	                                    ) totals
+	                                        ON totals.""COD_RECIBO"" = rdc.""COD_RECIBO""
+	                                    WHERE rpc.""DESCRIPC_TPAGO"" <> 'Nota de Cr�dito' 
+	                                    and  NOT EXISTS (
+                                       SELECT 1
+                                       FROM public.""Pagos"" p
+                                       WHERE Date(p.""FechaPago"")       = Date(rpc.""FECHA_PAGO"")
+                                         AND p.""MontoPagado""     = rpc.""MONTO""
+                                         AND p.""NumeroDocumenro"" = rpc.""COD_RECIBO""
+                                     )
+	                                    ORDER BY rdc.""COD_RECIBO"", rdc.""IRECIBODETALLE"";";
 
             PgConn conn = new PgConn();
             conn.cadenaConnect = _configuration.GetConnectionString("DefaultConnection");
