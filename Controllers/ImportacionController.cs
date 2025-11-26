@@ -52,6 +52,21 @@ namespace gestiones_backend.Controllers
             return Ok(new { registrosAfectados = 2, telefonosAgregados = 2 });
         }
 
+        [HttpGet("grabar-tablas-crecos")]
+        public async Task<IActionResult> GrabarTablaCrecos()
+        {
+            svc.GrabarTablas();
+            return Ok(new { registrosAfectados = 2, telefonosAgregados = 2 });
+        }
+
+
+        [HttpGet("importar-pagos-crecos")]
+        public async Task<IActionResult> ImportarPagosCrecos()
+        {
+            svc.importarPagos();
+            return Ok(new { registrosAfectados = 2, telefonosAgregados = 2 });
+        }
+
 
 
 

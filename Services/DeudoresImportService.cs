@@ -102,7 +102,7 @@ namespace gestiones_backend.Services
 	                                    LEFT JOIN temp_crecos.""ReciboFormaPagoCrecos"" rfpc
 	                                        ON rfpc.""COD_RECIBO"" = rpc.""COD_RECIBO""
 	                                    LEFT JOIN ""Deudas"" d
-	                                        ON d.""CodigoOperacion"" = rdc.""ICODIGOOPERACION""
+	                                        ON   d.""IdDeudor""  = rpc.""NUM_IDENTIFICACION""   -- d.""CodigoOperacion"" = rdc.""ICODIGOOPERACION""
 	                                    JOIN (
 	                                        SELECT ""COD_RECIBO"", SUM(""VALOR_RECIBO"") AS total_valor_recibo
 	                                        FROM temp_crecos.""ReciboDetalleCrecos""
@@ -116,8 +116,8 @@ namespace gestiones_backend.Services
                                        SELECT 1
                                        FROM public.""Pagos"" p
                                        WHERE Date(p.""FechaPago"")       = Date(rpc.""FECHA_PAGO"")
-                                         AND p.""MontoPagado""     = rpc.""MONTO""
-                                         AND p.""NumeroDocumenro"" = rpc.""COD_RECIBO""
+                                         AND totals.total_valor_recibo   = p.""MontoPagado""
+                                         -- AND p.""NumeroDocumenro"" = rpc.""COD_RECIBO""
                                      )
 	                                    ORDER BY rdc.""COD_RECIBO"", rdc.""IRECIBODETALLE"";";
 
