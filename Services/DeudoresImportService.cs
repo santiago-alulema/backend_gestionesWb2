@@ -57,7 +57,7 @@ namespace gestiones_backend.Services
                                     SELECT DISTINCT ON (rdc.""COD_RECIBO"")
 	                                    d.""IdDeuda"" 					as ""IdDeuda"",
 	                                    rpc.""FECHA_PAGO""				as ""FechaPago"",
-	                                    rpc.""MONTO""						as ""MontoPagado"",
+	                                    totals.total_valor_recibo	    as ""MontoPagado"",
 	                                    NULL::text                      as ""MedioPago"",
 	                                    rpc.""COD_RECIBO""				as ""NumeroDocumenro"",
 
@@ -106,6 +106,8 @@ namespace gestiones_backend.Services
 	                                    JOIN (
 	                                        SELECT ""COD_RECIBO"", SUM(""VALOR_RECIBO"") AS total_valor_recibo
 	                                        FROM temp_crecos.""ReciboDetalleCrecos""
+                                            where  ""CDESCRIPCION_RUBRO"" <> 'Iva S.Gest.Adm.Pag.' and 
+         		                                   ""CDESCRIPCION_RUBRO"" <> 'S.Gest.Adm. Pag.'
 	                                        GROUP BY ""COD_RECIBO""
 	                                    ) totals
 	                                        ON totals.""COD_RECIBO"" = rdc.""COD_RECIBO""
@@ -230,6 +232,7 @@ namespace gestiones_backend.Services
                     existente.Empresa = deuda.Empresa;
                     existente.Tramo = deuda.Tramo;
                     existente.UltimoPago = deuda.UltimoPago;
+
                     existente.MontoCobrarPartes = deuda.MontoCobrarPartes;
                     existente.FechaRegistro = ToUtc(existente.FechaRegistro);
 

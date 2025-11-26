@@ -39,8 +39,8 @@ namespace gestiones_backend.Controllers
             //var deudas = await svc.ImportarDeudasBasicoAsync();
             //await svc.ImportarDeudoresCompletoAsync();
             //await svc.ImportarTelefonosBasicoAsync();
-            //svc.GrabarTablas();
-            svc.ImportarDeudas();
+            svc.GrabarTablas();
+          // svc.ImportarDeudas();
 
             return Ok(new { registrosAfectados = 2, telefonosAgregados = 2 });
         }
