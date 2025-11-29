@@ -20,7 +20,7 @@ namespace gestiones_backend.Services
                                                 SELECT 
                                                     d.""CodigoOperacion""  as ""NOPERACION"",
                                                     TO_CHAR(g.""FechaGestion""  , 'YYYY/MM/DD') as ""DFECHA_PROCESO"",
-                                                    'LATICOB' as ""CCODIGO_GESTOR"",
+                                                    'TRIFOCUS' as ""CCODIGO_GESTOR"",
                                                     tcr.""CodigoEmpresaExterna""  as ""CCODIGO_GESTION"",
                                                     TO_CHAR(d.""FechaRegistro"", 'YYYY/MM/DD') as ""DFECHA_ASIGNACION"",
                                                     TO_CHAR(d.""FechaRegistro"", 'hh:mm:ss') as ""CHORA_ASIGNACION"",
@@ -45,14 +45,14 @@ namespace gestiones_backend.Services
                                                 join ""Gestiones"" g on g.""IdDeuda""  = d.""IdDeuda"" 
                                                 left join ""RespuestasTipoContacto"" rtc on rtc.""Id"" = g.""IdRespuestaTipoContacto""  
                                                 join ""TiposContactoResultado"" tcr on rtc.""IdTipoContactoResultado"" = tcr.""Id"" 
-                                                where d.""Empresa"" = 'CRECOSCORP'
+                                                where d.""Empresa"" = 'CRECOSCORP' and d.""CodigoOperacion"" is not null
 
                                                 union all
 
                                                 SELECT 
                                                     d.""CodigoOperacion""  as ""NOPERACION"",
                                                     TO_CHAR(p.""FechaPago""  , 'YYYY/MM/DD') as ""DFECHA_PROCESO"",
-                                                    'LATICOB' as ""CCODIGO_GESTOR"",
+                                                    'TRIFOCUS' as ""CCODIGO_GESTOR"",
                                                     '010011'  as ""CCODIGO_GESTION"",
                                                     TO_CHAR(d.""FechaRegistro"", 'YYYY/MM/DD') as ""DFECHA_ASIGNACION"",
                                                     TO_CHAR(d.""FechaRegistro"", 'hh:mm:ss') as ""CHORA_ASIGNACION"",
@@ -76,14 +76,16 @@ namespace gestiones_backend.Services
                                                 join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
                                                 join ""Pagos"" p ON p.""IdDeuda""  = d.""IdDeuda"" 
                                                 left join ""AbonosLiquidacion"" al on al.""Id""  = p.""IdAbonoLiquidacion""
-                                                where d.""Empresa"" = 'CRECOSCORP' and p.""Observaciones"" not like '%[MIGRACION CRECOS]%'
+                                                where d.""Empresa"" = 'CRECOSCORP' and 
+                                                      p.""Observaciones"" not like '%[MIGRACION CRECOS]%' and 
+                                                      d.""CodigoOperacion"" is not null
 
                                                 union all
 
                                                 SELECT 
                                                     d.""CodigoOperacion""  as ""NOPERACION"",
                                                     TO_CHAR(cp.""FechaRegistro""  , 'YYYY/MM/DD') as ""DFECHA_PROCESO"",
-                                                    'LATICOB' as ""CCODIGO_GESTOR"",
+                                                    'TRIFOCUS' as ""CCODIGO_GESTOR"",
                                                     '010011'  as ""CCODIGO_GESTION"",
                                                     TO_CHAR(cp.""FechaRegistro"", 'YYYY/MM/DD') as ""DFECHA_ASIGNACION"",
                                                     TO_CHAR(cp.""FechaRegistro"", 'hh:mm:ss') as ""CHORA_ASIGNACION"",
@@ -107,7 +109,8 @@ namespace gestiones_backend.Services
                                                 join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
                                                 join ""CompromisosPagos"" cp ON cp.""IdDeuda""  = d.""IdDeuda"" 
                                                 left join ""TiposTareas"" tt on tt.""Id""  = cp.""IdTipoTarea"" 
-                                                where d.""Empresa"" = 'CRECOSCORP' ;
+                                                where d.""Empresa"" = 'CRECOSCORP' and 
+                                                      d.""CodigoOperacion"" is not null ;
                                                 ";
 
         public TrifocusExcelUploader(
@@ -120,13 +123,11 @@ namespace gestiones_backend.Services
             _sftp = sftp.Value;
             _exp = exp.Value;
             _configuration= configuration;
-            // Aseguramos que PgConn tenga su cadena
 
         }
 
         public async Task<string> GenerateAndUploadAsync(CancellationToken ct = default)
         {
-            // 1) Fecha y rutas
             var tz = TimeZoneInfo.FindSystemTimeZoneById("America/Guayaquil");
             var nowEc = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
             var yyyymmdd = nowEc.ToString("yyyyMMdd");
@@ -137,22 +138,20 @@ namespace gestiones_backend.Services
             var localPath = Path.Combine(baseDir, $"GESTIONES_TRIFOCUS_{yyyymmdd}.xlsx");
             if (File.Exists(localPath)) File.Delete(localPath);
 
-            // 2) Consulta con TU PgConn
             PgConn _pg = new PgConn();
             _pg.cadenaConnect = _configuration.GetConnectionString("DefaultConnection")
                               ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection no configurada.");
             DataTable dt = _pg.ejecutarconsulta_dt(SqlTrifocus, timeout: 600);
 
-            // 3) Excel
             using (var wb = new XLWorkbook())
             {
-                var ws = wb.AddWorksheet("Hoja 1");
+                var ws = wb.AddWorksheet("Hoja1");
                 ws.Cell(1, 1).InsertTable(dt, "Datos", true);
 
                 var used = ws.RangeUsed();
                 if (used != null)
                 {
-                    used.Style.NumberFormat.Format = "@"; // todo como texto
+                    used.Style.NumberFormat.Format = "@"; 
                     ws.SheetView.FreezeRows(1);
                     ws.Columns().AdjustToContents();
                 }
@@ -163,7 +162,6 @@ namespace gestiones_backend.Services
             ct.ThrowIfCancellationRequested();
             string pathServicio = _sftp.RemotePath + "/Archivos Diarios Trifocus";
 
-            // 4) SFTP
             using (var sftp = new SftpClient(_sftp.Host, _sftp.Port, _sftp.Username, _sftp.Password))
             {
                 sftp.Connect();

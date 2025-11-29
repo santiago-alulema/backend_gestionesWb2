@@ -56,12 +56,12 @@ namespace gestiones_backend.helpers
                     zipService.DescomprimirZipsUltimo();
                     _logger.LogInformation("Zips descomprimidos.");
 
-                    await importSvc.ImportarDeudoresCompletoAsync();
-                    await importSvc.ImportarTelefonosBasicoAsync();
-                    importSvc.GrabarTablas();
-                    importSvc.ImportarDeudas();
-                    importSvc.importarPagos();
-                    _logger.LogInformation("Datos importados correctamente.");
+                    //await importSvc.ImportarDeudoresCompletoAsync();
+                    //await importSvc.ImportarTelefonosBasicoAsync();
+                    //importSvc.GrabarTablas();
+                    //importSvc.ImportarDeudas();
+                    //importSvc.importarPagos();
+                    //_logger.LogInformation("Datos importados correctamente.");
 
                    // var updated = await compromisos.MarcarIncumplidosVencidosAsync();
                   //  _logger.LogInformation("Job 'MarcarIncumplidos' ejecutado. Filas actualizadas: {Updated}", updated);

@@ -355,7 +355,6 @@ namespace gestiones_backend.Services
             {
                 if (usuarios.Count == 0) return;
 
-                // Solo deudas sin asignar
                 var pendientes = lista.Where(d => d.IdUsuario == null).ToList();
                 if (pendientes.Count == 0) return;
 
@@ -371,7 +370,6 @@ namespace gestiones_backend.Services
             {
                 if (usuarios.Count == 0) return;
 
-                // Solo deudas sin asignar
                 var pendientes = lista.Where(d => d.IdUsuario == null).ToList();
                 if (pendientes.Count == 0) return;
 
@@ -382,7 +380,6 @@ namespace gestiones_backend.Services
                     .ThenByDescending(g => g.Items.Count)
                     .ToList();
 
-                // Cargas solo para el reparto actual (no cuentan las ya asignadas)
                 var cargas = usuarios.ToDictionary(u => u.IdUsuario, _ => 0m);
 
                 foreach (var g in grupos)
@@ -433,6 +430,7 @@ namespace gestiones_backend.Services
                         existente.MontoPonteAlDia = deuda.MontoPonteAlDia;
                         existente.Tramo = deuda.Tramo;
                         existente.UltimoPago = deuda.UltimoPago;
+                        existente.CodigoOperacion = deuda.CodigoOperacion;
                         existente.MontoCobrarPartes = deuda.MontoCobrarPartes;
                         existente.FechaRegistro = ToUtc(existente.FechaRegistro);
 
@@ -447,6 +445,7 @@ namespace gestiones_backend.Services
                     if (deuda.IdDeuda == Guid.Empty)
                         deuda.IdDeuda = Guid.NewGuid();
                     deuda.FechaRegistro = ToUtc(deuda.FechaRegistro);
+                    deuda.CodigoOperacion = deuda.CodigoOperacion;
                     deuda.EsActivo = true;
                     deudasNuevo.Add(deuda);
                     //_dataContext.Deudas.Add(deuda);
@@ -597,7 +596,6 @@ namespace gestiones_backend.Services
                                       f.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)) &&
                                      Path.GetFileNameWithoutExtension(f).ToUpperInvariant().Contains("TELEFONOCLIENTE"));
 
-            // 1) Recolectar candidatos (en memoria, sin tocar BD aún)
             var candidatos = new List<(string IdDeudor, string Telefono, string? Origen, string? Observacion, string? Propietario)>();
             foreach (var file in files)
             {
@@ -614,7 +612,6 @@ namespace gestiones_backend.Services
                     var telefono = string.IsNullOrWhiteSpace(prefijo) ? numero : $"{prefijo}{numero}";
                     telefono = telefono.Trim();
 
-                    // Datos opcionales
                     var origen = Get(row, "DESCRIP_UBICACION"); // Domicilio/Laboral/etc.
                     var observacion = "[MIGRADO SSH]";
                     var propietario = "deudor";
@@ -625,7 +622,6 @@ namespace gestiones_backend.Services
 
             if (candidatos.Count == 0) return 0;
 
-            // 2) Cargar en memoria solo los deudores involucrados
             var idsDeArchivo = candidatos.Select(c => c.IdDeudor)
                                          .Distinct(StringComparer.OrdinalIgnoreCase)
                                          .ToList();
@@ -637,28 +633,25 @@ namespace gestiones_backend.Services
 
             var setDeudores = new HashSet<string>(deudoresExistentes, StringComparer.OrdinalIgnoreCase);
 
-            // 3) Cargar teléfonos existentes para esos deudores (para evitar duplicados contra BD)
             var existentes = await _dataContext.Set<DeudorTelefono>()
                 .Where(t => t.IdDeudor != null &&
                             idsDeArchivo.Contains(t.IdDeudor))
                 .Select(t => new { t.IdDeudor, t.Telefono })
                 .ToListAsync();
 
-            // Usamos una clave simple "id|tel" para comparación case-insensitive
             string MakeKey(string id, string tel) => $"{id}|{tel}";
             var setExistentes = new HashSet<string>(
                 existentes.Select(e => MakeKey(e.IdDeudor!, e.Telefono!)),
                 StringComparer.OrdinalIgnoreCase
             );
 
-            // 4) Dedupe dentro del mismo lote y descartar los que no tienen deudor en BD
             var setLote = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var nuevos = new List<DeudorTelefono>();
 
             foreach (var c in candidatos)
             {
                 if (!setDeudores.Contains(c.IdDeudor))
-                    continue; // deudor no existe en BD
+                    continue; 
 
                 var key = MakeKey(c.IdDeudor, c.Telefono);
 
@@ -666,7 +659,7 @@ namespace gestiones_backend.Services
                     continue; // ya existe en BD
 
                 if (!setLote.Add(key))
-                    continue; // repetido dentro del mismo lote
+                    continue; 
 
                 nuevos.Add(new DeudorTelefono
                 {

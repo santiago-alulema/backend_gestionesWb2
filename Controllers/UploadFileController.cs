@@ -94,7 +94,7 @@ namespace gestiones_backend.Controllers
                    .Where(x => x.Empresa == empresasExcel[0] && x.EsActivo == true)
                    .ExecuteUpdate(setters => setters
                        .SetProperty(x => x.EsActivo, x => false)
-                       .SetProperty(x => x.FechaRegistro, x => DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc))
+                       .SetProperty(x => x.FechaRegistro, x => DateTime.UtcNow)
                    );
             } 
            

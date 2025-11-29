@@ -45,11 +45,9 @@ namespace gestiones_backend.Controllers
         }
 
 
-        // NUEVO: descarga ZIP de la carpeta ArchivosExternos
         [HttpGet("descargar-trifocus-zip")]
         public IActionResult DescargarTrifocusZip()
         {
-            // 1) (Opcional) refrescar los archivos desde el SFTP
             try
             {
                 _sftpDownloadService.DescargarZips();
@@ -72,7 +70,6 @@ namespace gestiones_backend.Controllers
                 System.IO.File.Delete(rutaZip);
 
             ZipFile.CreateFromDirectory(carpetaArchivos, rutaZip, CompressionLevel.Fastest, false);
-
 
             var bytes = System.IO.File.ReadAllBytes(rutaZip);
 
