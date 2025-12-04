@@ -24,8 +24,8 @@ namespace gestiones_backend.helpers
                 var delay = GetDelayUntilNextRun(tz, hour: 4, minute: 0);
 
                 // ⛳️ Solo para pruebas locales:
-                //var ahoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
-                //var delay = GetDelayUntilNextRun(tz, ahoraLocal.Hour, (ahoraLocal.Minute + 1) % 60);
+              //var ahoraLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+              //var delay = GetDelayUntilNextRun(tz, ahoraLocal.Hour, (ahoraLocal.Minute + 1) % 60);
                 _logger.LogInformation("Job 'MarcarIncumplidos' esperando {Delay} hasta la próxima ejecución.", delay);
 
                 try

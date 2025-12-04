@@ -45,10 +45,18 @@ namespace gestiones_backend.Controllers
             return Ok(new { registrosAfectados = 2, telefonosAgregados = 2 });
         }
 
+        
         [HttpGet("actualizar-deudas-crecos")]
         public async Task<IActionResult> ActualizarDeudasCrecos()
         {
             svc.ImportarDeudas();
+            return Ok(new { registrosAfectados = 2, telefonosAgregados = 2 });
+        }
+
+        [HttpGet("actualizar-deudas-crecos-sin-campania")]
+        public async Task<IActionResult> ActualizarDeudasCrecosSinCampania()
+        {
+            svc.ImportarDeudasSinCampania();
             return Ok(new { registrosAfectados = 2, telefonosAgregados = 2 });
         }
 
