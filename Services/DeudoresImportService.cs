@@ -158,7 +158,7 @@ namespace gestiones_backend.Services
                 .ToHashSet();
 
             List<Usuario> usuarios = _dataContext.Usuarios
-                .Where(x => x.Rol == "user")
+                .Where(x => x.Rol == "user" && x.EstaActivo)
                 .ToList();
 
             rows = rows
