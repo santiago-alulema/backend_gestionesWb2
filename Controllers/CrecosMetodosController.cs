@@ -16,16 +16,20 @@ namespace gestiones_backend.Controllers
         private readonly DataContext _dataContext;
         private readonly IWebHostEnvironment _env;
         private readonly SftpDownloadService _sftpDownloadService;
+        private readonly FolderCleanService _limpiarCarpeta;
+
 
         public CrecosMetodosController(
             DataContext dataContext,
             IWebHostEnvironment env,
-            SftpDownloadService sftpDownloadService
+            SftpDownloadService sftpDownloadService,
+            FolderCleanService limpiarCarpeta
         )
         {
             _dataContext = dataContext;
             _env = env;
             _sftpDownloadService = sftpDownloadService;
+            _limpiarCarpeta = limpiarCarpeta;
         }
 
         [HttpPost("grabar-campania")]
@@ -50,6 +54,7 @@ namespace gestiones_backend.Controllers
         {
             try
             {
+                _limpiarCarpeta.LimpiarCarpeta();
                 _sftpDownloadService.DescargarZips();
             }
             catch (Exception ex)
