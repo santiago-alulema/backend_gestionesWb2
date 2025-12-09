@@ -130,6 +130,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<DataContext>();
+    db.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
     db.Database.Migrate();
 }
 

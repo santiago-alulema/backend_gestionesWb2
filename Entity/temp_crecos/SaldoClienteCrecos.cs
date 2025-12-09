@@ -59,6 +59,7 @@ namespace gestiones_backend.Entity.temp_crecos
 
         public decimal? VAL_ULT_PAGO { get; set; }
         public decimal? VALOR_PAGO_MINIMO_ACTUALIZADO { get; set; }
+        public string? NOMBRE_ARCHIVO { get; set; }
 
         [MaxLength(50)] public string? CODIGOCLIENTE { get; set; }
     }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using gestiones_backend.Context;
@@ -11,9 +12,11 @@ using gestiones_backend.Context;
 namespace gestiones_backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251208204810_agregarNombrearchivo")]
+    partial class agregarNombrearchivo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2336,7 +2339,7 @@ namespace gestiones_backend.Migrations
                         .HasColumnType("character varying(10)");
 
                     b.Property<string>("NOMBRE_ARCHIVO")
-                        .HasColumnType("varchar");
+                        .HasColumnType("text");
 
                     b.Property<string>("PRIMERA_CUOTA_VENCIDA")
                         .HasColumnType("text");
@@ -2374,6 +2377,8 @@ namespace gestiones_backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CNUMEROIDENTIFICACION");
+
+                    b.HasIndex("NOMBRE_ARCHIVO");
 
                     b.ToTable("SaldoClienteCrecos", "temp_crecos");
                 });

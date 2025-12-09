@@ -888,7 +888,10 @@ namespace gestiones_backend.Context
                 e.Property(x => x.VAL_ULT_PAGO).HasColumnType("numeric(18,2)");
                 e.Property(x => x.VALOR_PAGO_MINIMO_ACTUALIZADO).HasColumnType("numeric(18,2)");
                 e.Property(x => x.CODIGOCLIENTE).HasMaxLength(50);
+                e.Property(x => x.NOMBRE_ARCHIVO).HasColumnType("varchar");
+
                 e.HasIndex(x => x.CNUMEROIDENTIFICACION);
+
             });
 
             // ======================== TelefonosClienteCrecos =======================

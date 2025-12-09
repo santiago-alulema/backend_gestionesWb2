@@ -1583,6 +1583,7 @@ namespace gestiones_backend.Services
                             VAL_ULT_PAGO = ToDec(row.GetValueOrDefault("VAL_ULT_PAGO")),
                             VALOR_PAGO_MINIMO_ACTUALIZADO = ToDec(row.GetValueOrDefault("VALOR_PAGO_MINIMO_ACTUALIZADO")),
                             CODIGOCLIENTE = row.GetValueOrDefault("CODIGOCLIENTE"),
+                            NOMBRE_ARCHIVO = upperName
                         });
                     }
                 }
