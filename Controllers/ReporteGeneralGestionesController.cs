@@ -225,6 +225,69 @@ namespace gestiones_backend.Controllers
                 return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"DEUDAS_SUBIDAS_{DateTime.Now}.xlsx");
             }
         }
+
+        [HttpGet("bajar-reporte-cartera-crecos")]
+        public IActionResult ReporteCarteraCrecos()
+        {
+            string consulta = @$"select 
+                                    d.""IdDeudor""              CedulaDeudor,
+                                    d2.""Nombre"",
+                                    ""SaldoDeuda""              SaldoDeuda,
+                                    ""Descuento""               descuento,
+                                    ""MontoCobrar""             montoCobrar,
+                                    d.""ValorCuota"",
+                                    d.""Tramo"",
+                                    d.""NumeroFactura""         factura,
+                                    ""FechaVenta""              fechaVenta,
+                                    ""FechaUltimoPago""         ""FechaUltimoPago"",
+                                    ""Estado""                  ""Estado"",
+                                    ""DiasMora""                ""DiasMora"",
+                                    (
+                                        SELECT 
+                                            REGEXP_REPLACE(dt.""Telefono"", '^(05|04|06|02|07)', '')
+                                        FROM ""DeudorTelefonos"" dt
+                                        WHERE d.""IdDeudor"" = dt.""IdDeudor""
+                                          AND dt.""EsValido"" = true
+                                        LIMIT 1
+                                    )                           AS telefonoCliente,
+                                    d.""IdUsuario"",
+                                    u.""NombreUsuario"" ,
+                                    u.""NombreCompleto"" ,
+                                    REGEXP_REPLACE(d.""ProductoDescripcion"", '</?strong>', '', 'gi') AS ProductoDescripcion,
+                                    d.""Ciudad"",
+                                    d.""Agencia"",
+                                    d.""Empresa"" 
+                                    from ""Deudas"" d 
+                                    join ""Usuarios"" u on u.""IdUsuario"" = d.""IdUsuario"" 
+                                    join ""Deudores"" d2 on d2.""IdDeudor""  = d.""IdDeudor"" 
+                                    where d.""Empresa"" like '%CRECOS%' and
+                                    ""SaldoDeuda"" is not null and 
+                                    ""SaldoDeuda"" <> 0 and
+                                    ""EsActivo"" = true;
+                                    ";
+
+            PgConn conn = new PgConn();
+            conn.cadenaConnect = Configuration.GetConnectionString("DefaultConnection");
+
+            DataTable dataTable = conn.ejecutarconsulta_dt(consulta);
+            ExcelPackage.License.SetNonCommercialPersonal("Santiago");
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Sheet1");
+                worksheet.Cells.LoadFromDataTable(dataTable, true);
+
+                var fileBytes = package.GetAsByteArray();
+                var fileName = $"CARTERA_CRECOS_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+                return File(
+                    fileBytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName
+                );
+            }
+        }
+
+
         [HttpGet("reporte-general-gestiones/{fechaInicio}/{fechaFin}/{tipoReporte}/{cliente}")]
         public IActionResult GetReporteGeneral(string fechaInicio, string fechaFin, string tipoReporte, string cliente = null)
         {

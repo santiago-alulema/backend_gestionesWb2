@@ -810,7 +810,7 @@ namespace gestiones_backend.Services
                 {
                     var idDeudor = Get(row, "CNUMEROIDENTIFICACION");
                     var numero = Get(row, "CNUMERO");
-                    var prefijo = Get(row, "CPREFIJO");
+                    var prefijo = "";
 
                     if (string.IsNullOrWhiteSpace(idDeudor) || string.IsNullOrWhiteSpace(numero))
                         continue;

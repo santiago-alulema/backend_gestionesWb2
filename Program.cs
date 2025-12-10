@@ -77,6 +77,7 @@ builder.Services.AddCors(options =>
              .WithExposedHeaders("message")
             .AllowAnyMethod()
             .AllowAnyHeader()
+            .WithExposedHeaders("Content-Disposition")
             .AllowCredentials());
 });
 
