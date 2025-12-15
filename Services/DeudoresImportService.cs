@@ -115,8 +115,9 @@ namespace gestiones_backend.Services
 	                                    and  NOT EXISTS (
                                        SELECT 1
                                        FROM public.""Pagos"" p
-                                       WHERE Date(p.""FechaPago"")       = Date(rpc.""FECHA_PAGO"")
-                                         AND totals.total_valor_recibo   = p.""MontoPagado""
+                                       WHERE 
+                                      --  Date(p.""FechaPago"")       = Date(rpc.""FECHA_PAGO"") AND 
+                                        totals.total_valor_recibo   = p.""MontoPagado""
                                          -- AND p.""NumeroDocumenro"" = rpc.""COD_RECIBO""
                                      )
 	                                    ORDER BY rdc.""COD_RECIBO"", rdc.""IRECIBODETALLE"";";
