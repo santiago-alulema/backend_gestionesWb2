@@ -56,7 +56,7 @@ namespace gestiones_backend.Services
                                     )
                                     SELECT DISTINCT ON (rdc.""COD_RECIBO"")
 	                                    d.""IdDeuda"" 					as ""IdDeuda"",
-	                                    rpc.""FECHA_PAGO""				as ""FechaPago"",
+	                                    Date(rpc.""FECHA_PAGO"")		as ""FechaPago"",
 	                                    totals.total_valor_recibo	    as ""MontoPagado"",
 	                                    NULL::text                      as ""MedioPago"",
 	                                    rpc.""COD_RECIBO""				as ""NumeroDocumenro"",
@@ -116,9 +116,9 @@ namespace gestiones_backend.Services
                                        SELECT 1
                                        FROM public.""Pagos"" p
                                        WHERE 
-                                      --  Date(p.""FechaPago"")       = Date(rpc.""FECHA_PAGO"") AND 
+                                        Date(p.""FechaPago"")       = Date(rpc.""FECHA_PAGO"") AND 
                                         totals.total_valor_recibo   = p.""MontoPagado""
-                                         -- AND p.""NumeroDocumenro"" = rpc.""COD_RECIBO""
+                                        AND p.""NumeroDocumenro"" = rpc.""COD_RECIBO""
                                      )
 	                                    ORDER BY rdc.""COD_RECIBO"", rdc.""IRECIBODETALLE"";";
 
