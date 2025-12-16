@@ -310,7 +310,7 @@ namespace gestiones_backend.Services
                                 NULL::varchar                                                                   AS ""IdUsuario"",
                                 MAX(ca.""COD_EMPRESA"")::varchar                                                AS ""CodigoEmpresa"",
                                 NOW()::timestamp                                                                AS ""FechaRegistro"",
-                                MAX(occ.""ICODIGOOPERACION"")::varchar                                          AS ""CodigoOperacion""
+                                 MAX(scc.""COD_OPERACION"")::varchar                                            AS ""CodigoOperacion""
                             FROM temp_crecos.""CarteraAsignadaCrecos"" ca
                             LEFT JOIN temp_crecos.""DatosClienteCrecos"" dcc 
                                 ON dcc.""ICODIGOCLIENTE"" = ca.""CODIGOCLIENTE""
