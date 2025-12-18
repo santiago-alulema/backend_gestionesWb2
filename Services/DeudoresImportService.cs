@@ -310,7 +310,7 @@ namespace gestiones_backend.Services
                                 NULL::varchar                                                                   AS ""IdUsuario"",
                                 MAX(ca.""COD_EMPRESA"")::varchar                                                AS ""CodigoEmpresa"",
                                 NOW()::timestamp                                                                AS ""FechaRegistro"",
-                                 MAX(scc.""COD_OPERACION"")::varchar                                            AS ""CodigoOperacion""
+                                MAX(occ.""ICODIGOOPERACION"")::varchar                                           AS ""CodigoOperacion""
                             FROM temp_crecos.""CarteraAsignadaCrecos"" ca
                             LEFT JOIN temp_crecos.""DatosClienteCrecos"" dcc 
                                 ON dcc.""ICODIGOCLIENTE"" = ca.""CODIGOCLIENTE""
@@ -400,14 +400,14 @@ namespace gestiones_backend.Services
 
             var todas = rowsMenos180.Concat(rows181a360).Concat(rowsMas360).ToList();
 
-            List<Deuda> deudas = _dataContext.Deudas.ToList();
+            List<Deuda> deudas = _dataContext.Deudas.Where(x => x.Empresa.Contains("CRECO")).ToList();
 
             List<Deuda> deudasUpdate = new List<Deuda>();
             List<Deuda> deudasNuevo = new List<Deuda>();
 
             foreach (var deuda in todas)
             {
-                var existente = deudas.FirstOrDefault(d => d.CodigoOperacion == deuda.CodigoOperacion);
+                var existente = deudas.FirstOrDefault(d => d.IdDeudor == deuda.IdDeudor.ToString());
 
                 if (existente != null)
                 {
