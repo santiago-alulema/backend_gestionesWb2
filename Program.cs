@@ -94,6 +94,7 @@ builder.Services.AddScoped<IGestionesService, GestionesService>();
 builder.Services.AddScoped<IMensajesWhatsapp, MensajesWhatsappServices>();
 builder.Services.AddScoped<IGestionarImagenes, GestionarImagenesServices>();
 builder.Services.AddScoped<IEmailSenderService, EmailSenderService>();
+builder.Services.AddScoped<IMetodosCrecos, MetodosCrecosServices>();
 builder.Services.AddHostedService<MarcarIncumplidosDailyWorker>();
 builder.Services.AddSingleton<SftpDownloadService>();
 builder.Services.AddSingleton<ZipExtractService>();

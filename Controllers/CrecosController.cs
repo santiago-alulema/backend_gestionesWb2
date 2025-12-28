@@ -1,6 +1,7 @@
 ﻿using gestiones_backend.Context;
 using gestiones_backend.Entity.temp_crecos;
 using gestiones_backend.helpers;
+using gestiones_backend.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +13,13 @@ namespace gestiones_backend.Controllers
     public class CrecosController : ControllerBase
     {
         private readonly DataContext _context;
+        private readonly IMetodosCrecos _metodosCrecos;
 
-        public CrecosController(DataContext context)
+        public CrecosController(DataContext context,
+                                IMetodosCrecos metodosCrecos)
         {
             _context = context;
+            _metodosCrecos = metodosCrecos;
         }
 
        
@@ -69,6 +73,20 @@ namespace gestiones_backend.Controllers
                         .AsNoTracking().Take(1000)
                         .ToList();
 
+            return Ok(data);
+        }
+
+        [HttpGet("reasignar-cartera-usuario-vacio")]
+        public ActionResult ReassignarCarteraCrecosUsuarioNull()
+        {
+            var data = _metodosCrecos.AsignacionAutomaticaDeudasCrecos();
+            return Ok(data);
+        }
+
+        [HttpGet("remover-usuarios-deuda-crecos/{IdUsuario}")]
+        public ActionResult RemoverUsuarioDeudaCrecos(string IdUsuario)
+        {
+            var data = _metodosCrecos.AsignardeudaNullIdUsuario(IdUsuario);
             return Ok(data);
         }
 
