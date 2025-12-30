@@ -310,7 +310,7 @@ namespace gestiones_backend.Services
                                 NULL::varchar                                                                   AS ""IdUsuario"",
                                 MAX(ca.""COD_EMPRESA"")::varchar                                                AS ""CodigoEmpresa"",
                                 NOW()::timestamp                                                                AS ""FechaRegistro"",
-                                MAX(occ.""ICODIGOOPERACION"")::varchar                                           AS ""CodigoOperacion""
+                                MAX(scc.""COD_OPERACION"")::varchar                                           AS ""CodigoOperacion""
                             FROM temp_crecos.""CarteraAsignadaCrecos"" ca
                             LEFT JOIN temp_crecos.""DatosClienteCrecos"" dcc 
                                 ON dcc.""ICODIGOCLIENTE"" = ca.""CODIGOCLIENTE""
@@ -324,7 +324,7 @@ namespace gestiones_backend.Services
 
 
 
-            List<Deuda> rows = _dataContext.Deudas
+            List<Deuda> CarteraAsignada = _dataContext.Deudas
                                         .FromSqlRaw(SqlDeudasCrecos)
                                         .AsNoTracking()
                                         .ToList();
@@ -334,111 +334,49 @@ namespace gestiones_backend.Services
                              .ExecuteUpdate(setters => setters
                              .SetProperty(d => d.EsActivo, false));
 
-            List<Deudores> deudores = _dataContext.Deudores.ToList();
-            var idsValidos = deudores
-                .Where(d => d.IdDeudor != null)
-                .Select(d => d.IdDeudor!)
-                .ToHashSet();
-
             List<Usuario> usuarios = _dataContext.Usuarios
-                .Where(x => x.Rol == "user" && x.EstaActivo)
+                .Where(x => x.EstaActivo && x.Rol == "user")
                 .ToList();
 
-            rows = rows
-                .Where(r => r.IdDeudor != null && idsValidos.Contains(r.IdDeudor!))
-                .ToList();
-
-            List<Deuda> rowsMenos180 = rows.Where(x => x.DiasMora < 180).ToList();
-            List<Deuda> rows181a360 = rows.Where(x => x.DiasMora >= 180 && x.DiasMora <= 360).ToList();
-            List<Deuda> rowsMas360 = rows.Where(x => x.DiasMora > 360).ToList();
-
-            void AsignarUsuario(List<Deuda> lista)
-            {
-                if (usuarios.Count == 0) return;
-
-                var pendientes = lista.Where(d => d.IdUsuario == null).ToList();
-                if (pendientes.Count == 0) return;
-
-                int i = 0;
-                foreach (var d in pendientes)
-                {
-                    d.IdUsuario = usuarios[i].IdUsuario;
-                    i = (i + 1) % usuarios.Count;
-                }
-            }
-
-            void Asignar(List<Deuda> lista)  
-            {
-                if (usuarios.Count == 0) return;
-
-                var pendientes = lista.Where(d => d.IdUsuario == null).ToList();
-                if (pendientes.Count == 0) return;
-
-                var grupos = pendientes
-                    .GroupBy(d => d.IdDeudor)
-                    .Select(g => new { Items = g.ToList(), Total = g.Sum(x => x.DeudaCapital ?? 0m) })
-                    .OrderByDescending(g => g.Total)
-                    .ThenByDescending(g => g.Items.Count)
-                    .ToList();
-
-                var cargas = usuarios.ToDictionary(u => u.IdUsuario, _ => 0m);
-
-                foreach (var g in grupos)
-                {
-                    var target = cargas.OrderBy(kv => kv.Value).First().Key;
-
-                    foreach (var d in g.Items) // todos están sin usuario
-                        d.IdUsuario = target;
-
-                    cargas[target] += g.Total;
-                }
-            }
-
-            Asignar(rowsMenos180);
-            Asignar(rows181a360);
-            Asignar(rowsMas360);
-
-            var todas = rowsMenos180.Concat(rows181a360).Concat(rowsMas360).ToList();
-
+            
             List<Deuda> deudas = _dataContext.Deudas.Where(x => x.Empresa.Contains("CRECO")).ToList();
-
             List<Deuda> deudasUpdate = new List<Deuda>();
             List<Deuda> deudasNuevo = new List<Deuda>();
 
-            foreach (var deuda in todas)
+            int contador = 0;
+            foreach (var deuda in CarteraAsignada)
             {
                 var existente = deudas.FirstOrDefault(d => d.IdDeudor == deuda.IdDeudor.ToString());
 
                 if (existente != null)
                 {
-                    
-                        existente.DeudaCapital = deuda.DeudaCapital;
-                        existente.Interes = deuda.Interes;
-                        existente.GastosCobranzas = deuda.GastosCobranzas;
-                        existente.SaldoDeuda = deuda.SaldoDeuda;
-                        existente.Descuento = deuda.Descuento;
-                        existente.MontoCobrar = deuda.MontoCobrar;
-                        existente.FechaVenta = deuda.FechaVenta;
-                        existente.FechaUltimoPago = deuda.FechaUltimoPago;
-                        existente.Estado = deuda.Estado;
-                        existente.DiasMora = deuda.DiasMora;
-                        existente.NumeroFactura = deuda.NumeroFactura;
-                        existente.Clasificacion = deuda.Clasificacion;
-                        existente.Creditos = deuda.Creditos;
-                        existente.ValorCuota = deuda.ValorCuota;
-                        existente.EsActivo = true;
-                        existente.Empresa = deuda.Empresa;
-                        existente.MontoPonteAlDia = deuda.MontoPonteAlDia;
-                        existente.Tramo = deuda.Tramo;
-                        existente.UltimoPago = deuda.UltimoPago;
-                        existente.CodigoOperacion = deuda.CodigoOperacion;
-                        existente.MontoCobrarPartes = deuda.MontoCobrarPartes;
-                        existente.FechaRegistro = DateTime.UtcNow;
+
+                    existente.DeudaCapital = deuda.DeudaCapital;
+                    existente.Interes = deuda.Interes;
+                    existente.GastosCobranzas = deuda.GastosCobranzas;
+                    existente.SaldoDeuda = deuda.SaldoDeuda;
+                    existente.Descuento = deuda.Descuento;
+                    existente.MontoCobrar = deuda.MontoCobrar;
+                    existente.FechaVenta = deuda.FechaVenta;
+                    existente.FechaUltimoPago = deuda.FechaUltimoPago;
+                    existente.Estado = deuda.Estado;
+                    existente.DiasMora = deuda.DiasMora;
+                    existente.NumeroFactura = deuda.NumeroFactura;
+                    existente.Clasificacion = deuda.Clasificacion;
+                    existente.Creditos = deuda.Creditos;
+                    existente.ValorCuota = deuda.ValorCuota;
+                    existente.EsActivo = true;
+                    existente.Empresa = deuda.Empresa;
+                    existente.MontoPonteAlDia = deuda.MontoPonteAlDia;
+                    existente.Tramo = deuda.Tramo;
+                    existente.UltimoPago = deuda.UltimoPago;
+                    existente.CodigoOperacion = deuda.CodigoOperacion;
+                    existente.MontoCobrarPartes = deuda.MontoCobrarPartes;
+                    existente.FechaRegistro = DateTime.UtcNow;
 
                     if (string.IsNullOrEmpty(existente.IdUsuario))
-                            existente.IdUsuario = deuda.IdUsuario;
+                        existente.IdUsuario = usuarios[contador].IdUsuario;
 
-                    //_dataContext.Deudas.Update(existente);
                     deudasUpdate.Add(existente);
                 }
                 else
@@ -448,11 +386,13 @@ namespace gestiones_backend.Services
                     deuda.FechaRegistro = DateTime.UtcNow;
                     deuda.CodigoOperacion = deuda.CodigoOperacion;
                     deuda.EsActivo = true;
+                    deuda.IdUsuario = usuarios[contador].IdUsuario;
                     deudasNuevo.Add(deuda);
-                    //_dataContext.Deudas.Add(deuda);
                 }
+                contador++;
+                if (contador == usuarios.Count) contador = 0;
             }
-    
+
             var bulk = new NpgsqlBulkUploader(_dataContext);
             bulk.Update(deudasUpdate);
             bulk.Insert(deudasNuevo);
