@@ -23,8 +23,8 @@ namespace gestiones_backend.Controllers
         private readonly IGestionesService _gestionesService;
 
 
-        public ClienteController(DataContext context, 
-                                IAuthenticationService authService, 
+        public ClienteController(DataContext context,
+                                IAuthenticationService authService,
                                 IConfiguration configuration,
                                 IGestionesService gestionesService)
         {
@@ -65,8 +65,8 @@ namespace gestiones_backend.Controllers
             Usuario usuario = _authService.GetCurrentUser();
 
             IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking().Include(x => x.IdDeudorNavigation)
-                                                            .Include(x => x.Usuario).Where(x => x.IdDeudor == cedulaCliente && 
-                                                                                      x.EsActivo == true );
+                                                            .Include(x => x.Usuario).Where(x => x.IdDeudor == cedulaCliente &&
+                                                                                      x.EsActivo == true);
 
             if (usuario.Rol == "user")
             {
@@ -105,9 +105,9 @@ namespace gestiones_backend.Controllers
 
             List<Deuda> deudas = deudasQuery.ToList();
             List<DeudasClienteOutDTO> deudoresDTO = deudas.Adapt<List<DeudasClienteOutDTO>>();
-            foreach ( var item in deudoresDTO)
+            foreach (var item in deudoresDTO)
             {
-                item.NumeroFactura = "<p style='margin-left:50px'>"+item.NumeroFactura+"</p>";
+                item.NumeroFactura = "<p style='margin-left:50px'>" + item.NumeroFactura + "</p>";
             }
             return Ok(deudoresDTO);
         }
@@ -173,7 +173,7 @@ namespace gestiones_backend.Controllers
 
                 telefono = deuda?.Pagos?
                     .Where(p => !string.IsNullOrEmpty(p.Telefono))
-                    .OrderByDescending(p => p.FechaRegistro) 
+                    .OrderByDescending(p => p.FechaRegistro)
                     .Select(p => p.Telefono)
                     .FirstOrDefault();
 
@@ -230,8 +230,10 @@ namespace gestiones_backend.Controllers
 
             IQueryable<Deuda> query = _context.Deudas.AsNoTracking();
 
-
-            // Filtro por cédula exacta O nombre que contenga (null-safe)
+            if (empresa != "TODOS")
+            {
+                query = query.Where(x => x.Empresa == empresa);
+            }
             query = query.Where(d =>
                 d.EsActivo == true &&
                 (
@@ -241,33 +243,11 @@ namespace gestiones_backend.Controllers
                      EF.Functions.ILike(d.IdDeudorNavigation.Nombre, $"%{cedulaCliente}%"))
                 ));
 
-            // Proyección directa a DTO: evita Includes y NullReference en navegaciones
             var result = await query
                 .ProjectToType<DeudasClienteOutDTO>(TypeAdapterConfig.GlobalSettings)
                 .ToListAsync();
 
             return Ok(result);
-            //Usuario usuario = _authService.GetCurrentUser();
-
-            //IQueryable<Deuda> deudasQuery = _context.Deudas.AsNoTracking()
-            //                                                .Include(x => x.IdDeudorNavigation)
-            //                                                .Include(x => x.Usuario)
-            //                                                .Where(x => (x.IdDeudor == cedulaCliente ||
-            //                                                                          x.IdDeudorNavigation.Nombre.ToUpper().Contains(cedulaCliente.ToUpper())) &&
-            //                                                                          x.Empresa == empresa && x.EsActivo == true);
-
-
-            //List<Deuda> deudas = deudasQuery.ToList();
-
-            //TypeAdapterConfig config = new TypeAdapterConfig();
-            //ConfigTelefonoDeudor.Register(config);
-
-            ////DeudorTelefono TelefonosDeudores = deudas.Adapt<DeudorTelefono>(config);
-
-
-            //List<DeudasClienteOutDTO> deudoresDTO = deudas.Adapt<List<DeudasClienteOutDTO>>(config);
-
-            //return Ok(deudoresDTO);
         }
 
 
@@ -443,20 +423,27 @@ namespace gestiones_backend.Controllers
         }
 
         [HttpGet("listar-clientes")]
-        public async Task<IActionResult> Allclients([FromQuery] string? empresa, [FromQuery] string tipoFiltro = "")
+        public async Task<IActionResult> Allclients(
+                                                    [FromQuery] string? empresa,
+                                                    [FromQuery] string tipoFiltro = "",
+                                                    [FromQuery] int page = 0,
+                                                    [FromQuery] string cantidadItem = "")
         {
-            // Usuario actual
+           
+            int pageNumber = page;
+            int pageSize = int.TryParse(cantidadItem, out var s) && s > 0 ? s : 50;
+            int skip = (pageNumber - 1) * pageSize;
+
             Usuario usuario = _authService.GetCurrentUser();
             bool isAdmin = usuario.Rol == "admin";
 
             var empresaUpper = (empresa ?? "").Trim().ToUpper();
             bool filtraEmpresa = !string.IsNullOrEmpty(empresaUpper) && empresaUpper != "TODOS";
 
-            bool filtraSG = tipoFiltro == "SG"; // Sin gestión: sin compromisos, sin gestiones y sin pagos
-            bool filtraG = tipoFiltro == "G";  // Con gestión: alguno de los 3 existe
-            bool filtraIN = tipoFiltro == "IN"; // Incumplió compromiso
+            bool filtraSG = tipoFiltro == "SG";
+            bool filtraG = tipoFiltro == "G";
+            bool filtraIN = tipoFiltro == "IN";
 
-            // Base query (incluye deudas y su usuario para poder mostrar gestor por deuda)
             IQueryable<Deudores> clientesQuery = _context.Deudores
                 .Include(c => c.Deuda)
                     .ThenInclude(d => d.Usuario)
@@ -464,21 +451,27 @@ namespace gestiones_backend.Controllers
 
             if (!isAdmin)
             {
-                clientesQuery = clientesQuery.Where(c => c.Deuda.Any(d => d.IdUsuario == usuario.IdUsuario));
+                clientesQuery = clientesQuery
+                    .Where(c => c.Deuda.Any(d => d.IdUsuario == usuario.IdUsuario));
             }
 
-            Expression<Func<Deudores, bool>> filtroDeudor = c => c.Deuda.Any(d =>
-                d.EsActivo == true &&
-                (isAdmin || d.IdUsuario == usuario.IdUsuario) &&
-                (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)) &&
-                (!filtraSG || (!d.CompromisosPagos.Any() && !d.Gestiones.Any() && !d.Pagos.Any())) &&
-                (!filtraG || (d.CompromisosPagos.Any() || d.Gestiones.Any() || d.Pagos.Any())) &&
-                (!filtraIN || d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true))
-            );
+            Expression<Func<Deudores, bool>> filtroDeudor = c =>
+                c.Deuda.Any(d =>
+                    d.EsActivo == true &&
+                    (isAdmin || d.IdUsuario == usuario.IdUsuario) &&
+                    (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)) &&
+                    (!filtraSG || (!d.CompromisosPagos.Any() && !d.Gestiones.Any() && !d.Pagos.Any())) &&
+                    (!filtraG || (d.CompromisosPagos.Any() || d.Gestiones.Any() || d.Pagos.Any())) &&
+                    (!filtraIN || d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true))
+                );
 
             clientesQuery = clientesQuery.Where(filtroDeudor);
 
-            var deudoresDTO = await clientesQuery.OrderByDescending(x => x.FechaRegistro)
+            // ========================
+            // EJECUCIÓN
+            // ========================
+            var deudoresDTO = await clientesQuery
+                .OrderByDescending(x => x.FechaRegistro)
                 .Select(c => new
                 {
                     c.IdDeudor,
@@ -500,7 +493,7 @@ namespace gestiones_backend.Controllers
                         .Select(d => new
                         {
                             d.Tramo,
-                            GestorNombre = d.Usuario.NombreCompleto, // gestor real de la deuda
+                            GestorNombre = d.Usuario.NombreCompleto,
                             d.IdUsuario
                         })
                         .ToList(),
@@ -516,7 +509,7 @@ namespace gestiones_backend.Controllers
                 })
                 .ToListAsync();
 
-            var result = deudoresDTO
+            var baseResult = deudoresDTO
                 .Select(c => new ClientesOutDTO
                 {
                     cedula = c.IdDeudor,
@@ -530,19 +523,33 @@ namespace gestiones_backend.Controllers
                     tramos = c.DeudasDet.Any()
                         ? string.Join("",
                             c.DeudasDet.Select((d, i) =>
-                                $"<strong>{i + 1}</strong>: {d.Tramo} <br>")
-                          )
+                                $"<strong>{i + 1}</strong>: {d.Tramo} <br>"))
                         : string.Empty,
 
                     gestor = string.Join(", ",
                         c.DeudasDet.Select(d => d.GestorNombre).Distinct())
                 })
-
                 .Where(x => int.Parse(x.numeroDeudas) > 0)
                 .ToList();
 
-            return Ok(result);
+            int totalItems = baseResult.Count;
+
+            var items = baseResult
+                .Skip(skip)
+                .Take(pageSize)
+                .ToList();
+
+            return Ok(new
+            {
+                totalItems,
+                pageNumber,
+                pageSize,
+                items
+            });
         }
+
+
+
 
         [HttpGet("listar-telefonos-activos-cliente/{cedulaCliente}")]
         public IActionResult ListarTelefonosActivosClientes(string cedulaCliente)
