@@ -422,28 +422,22 @@ namespace gestiones_backend.Controllers
             return Ok(mensaje);
         }
 
-        [HttpGet("listar-clientes")]
-        public async Task<IActionResult> Allclients(
-                                                    [FromQuery] string? empresa,
-                                                    [FromQuery] string tipoFiltro = "",
-                                                    [FromQuery] int page = 0,
-                                                    [FromQuery] string cantidadItem = "")
-        {
-           
-            int pageNumber = page;
-            int pageSize = int.TryParse(cantidadItem, out var s) && s > 0 ? s : 50;
-            int skip = (pageNumber - 1) * pageSize;
 
+        [HttpGet("listar-clientes")]
+        public async Task<IActionResult> Allclients([FromQuery] string? empresa, [FromQuery] string tipoFiltro = "")
+        {
+            // Usuario actual
             Usuario usuario = _authService.GetCurrentUser();
             bool isAdmin = usuario.Rol == "admin";
 
             var empresaUpper = (empresa ?? "").Trim().ToUpper();
             bool filtraEmpresa = !string.IsNullOrEmpty(empresaUpper) && empresaUpper != "TODOS";
 
-            bool filtraSG = tipoFiltro == "SG";
-            bool filtraG = tipoFiltro == "G";
-            bool filtraIN = tipoFiltro == "IN";
+            bool filtraSG = tipoFiltro == "SG"; // Sin gestión: sin compromisos, sin gestiones y sin pagos
+            bool filtraG = tipoFiltro == "G";  // Con gestión: alguno de los 3 existe
+            bool filtraIN = tipoFiltro == "IN"; // Incumplió compromiso
 
+            // Base query (incluye deudas y su usuario para poder mostrar gestor por deuda)
             IQueryable<Deudores> clientesQuery = _context.Deudores
                 .Include(c => c.Deuda)
                     .ThenInclude(d => d.Usuario)
@@ -451,27 +445,21 @@ namespace gestiones_backend.Controllers
 
             if (!isAdmin)
             {
-                clientesQuery = clientesQuery
-                    .Where(c => c.Deuda.Any(d => d.IdUsuario == usuario.IdUsuario));
+                clientesQuery = clientesQuery.Where(c => c.Deuda.Any(d => d.IdUsuario == usuario.IdUsuario));
             }
 
-            Expression<Func<Deudores, bool>> filtroDeudor = c =>
-                c.Deuda.Any(d =>
-                    d.EsActivo == true &&
-                    (isAdmin || d.IdUsuario == usuario.IdUsuario) &&
-                    (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)) &&
-                    (!filtraSG || (!d.CompromisosPagos.Any() && !d.Gestiones.Any() && !d.Pagos.Any())) &&
-                    (!filtraG || (d.CompromisosPagos.Any() || d.Gestiones.Any() || d.Pagos.Any())) &&
-                    (!filtraIN || d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true))
-                );
+            Expression<Func<Deudores, bool>> filtroDeudor = c => c.Deuda.Any(d =>
+                d.EsActivo == true &&
+                (isAdmin || d.IdUsuario == usuario.IdUsuario) &&
+                (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)) &&
+                (!filtraSG || (!d.CompromisosPagos.Any() && !d.Gestiones.Any() && !d.Pagos.Any())) &&
+                (!filtraG || (d.CompromisosPagos.Any() || d.Gestiones.Any() || d.Pagos.Any())) &&
+                (!filtraIN || d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true))
+            );
 
             clientesQuery = clientesQuery.Where(filtroDeudor);
 
-            // ========================
-            // EJECUCIÓN
-            // ========================
-            var deudoresDTO = await clientesQuery
-                .OrderByDescending(x => x.FechaRegistro)
+            var deudoresDTO = await clientesQuery.OrderByDescending(x => x.FechaRegistro)
                 .Select(c => new
                 {
                     c.IdDeudor,
@@ -493,7 +481,7 @@ namespace gestiones_backend.Controllers
                         .Select(d => new
                         {
                             d.Tramo,
-                            GestorNombre = d.Usuario.NombreCompleto,
+                            GestorNombre = d.Usuario.NombreCompleto, // gestor real de la deuda
                             d.IdUsuario
                         })
                         .ToList(),
@@ -509,7 +497,7 @@ namespace gestiones_backend.Controllers
                 })
                 .ToListAsync();
 
-            var baseResult = deudoresDTO
+            var result = deudoresDTO
                 .Select(c => new ClientesOutDTO
                 {
                     cedula = c.IdDeudor,
@@ -523,30 +511,146 @@ namespace gestiones_backend.Controllers
                     tramos = c.DeudasDet.Any()
                         ? string.Join("",
                             c.DeudasDet.Select((d, i) =>
-                                $"<strong>{i + 1}</strong>: {d.Tramo} <br>"))
+                                $"<strong>{i + 1}</strong>: {d.Tramo} <br>")
+                          )
                         : string.Empty,
 
                     gestor = string.Join(", ",
                         c.DeudasDet.Select(d => d.GestorNombre).Distinct())
                 })
+
                 .Where(x => int.Parse(x.numeroDeudas) > 0)
                 .ToList();
 
-            int totalItems = baseResult.Count;
-
-            var items = baseResult
-                .Skip(skip)
-                .Take(pageSize)
-                .ToList();
-
-            return Ok(new
-            {
-                totalItems,
-                pageNumber,
-                pageSize,
-                items
-            });
+            return Ok(result);
         }
+
+
+        //[HttpGet("listar-clientes")]
+        //public async Task<IActionResult> Allclients(
+        //                                            [FromQuery] string? empresa,
+        //                                            [FromQuery] string tipoFiltro = "",
+        //                                            [FromQuery] int page = 0,
+        //                                            [FromQuery] string cantidadItem = "")
+        //{
+
+        //    int pageNumber = page;
+        //    int pageSize = int.TryParse(cantidadItem, out var s) && s > 0 ? s : 50;
+        //    int skip = (pageNumber - 1) * pageSize;
+
+        //    Usuario usuario = _authService.GetCurrentUser();
+        //    bool isAdmin = usuario.Rol == "admin";
+
+        //    var empresaUpper = (empresa ?? "").Trim().ToUpper();
+        //    bool filtraEmpresa = !string.IsNullOrEmpty(empresaUpper) && empresaUpper != "TODOS";
+
+        //    bool filtraSG = tipoFiltro == "SG";
+        //    bool filtraG = tipoFiltro == "G";
+        //    bool filtraIN = tipoFiltro == "IN";
+
+        //    IQueryable<Deudores> clientesQuery = _context.Deudores
+        //        .Include(c => c.Deuda)
+        //            .ThenInclude(d => d.Usuario)
+        //        .AsNoTracking();
+
+        //    if (!isAdmin)
+        //    {
+        //        clientesQuery = clientesQuery
+        //            .Where(c => c.Deuda.Any(d => d.IdUsuario == usuario.IdUsuario));
+        //    }
+
+        //    Expression<Func<Deudores, bool>> filtroDeudor = c =>
+        //        c.Deuda.Any(d =>
+        //            d.EsActivo == true &&
+        //            (isAdmin || d.IdUsuario == usuario.IdUsuario) &&
+        //            (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)) &&
+        //            (!filtraSG || (!d.CompromisosPagos.Any() && !d.Gestiones.Any() && !d.Pagos.Any())) &&
+        //            (!filtraG || (d.CompromisosPagos.Any() || d.Gestiones.Any() || d.Pagos.Any())) &&
+        //            (!filtraIN || d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true))
+        //        );
+
+        //    clientesQuery = clientesQuery.Where(filtroDeudor);
+
+        //    // ========================
+        //    // EJECUCIÓN
+        //    // ========================
+        //    var deudoresDTO = await clientesQuery
+        //        .OrderByDescending(x => x.FechaRegistro)
+        //        .Select(c => new
+        //        {
+        //            c.IdDeudor,
+        //            c.Nombre,
+        //            c.Telefono,
+        //            c.Direccion,
+        //            c.Descripcion,
+        //            c.Correo,
+
+        //            DeudasDet = c.Deuda
+        //                .Where(d =>
+        //                    d.EsActivo == true &&
+        //                    (isAdmin || d.IdUsuario == usuario.IdUsuario) &&
+        //                    (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)) &&
+        //                    (!filtraSG || (!d.CompromisosPagos.Any() && !d.Gestiones.Any() && !d.Pagos.Any())) &&
+        //                    (!filtraG || (d.CompromisosPagos.Any() || d.Gestiones.Any() || d.Pagos.Any())) &&
+        //                    (!filtraIN || d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true))
+        //                )
+        //                .Select(d => new
+        //                {
+        //                    d.Tramo,
+        //                    GestorNombre = d.Usuario.NombreCompleto,
+        //                    d.IdUsuario
+        //                })
+        //                .ToList(),
+
+        //            NumeroDeudas = c.Deuda.Count(d =>
+        //                d.EsActivo == true &&
+        //                (isAdmin || d.IdUsuario == usuario.IdUsuario) &&
+        //                (!filtraEmpresa || (d.Empresa != null && d.Empresa.ToUpper() == empresaUpper)) &&
+        //                (!filtraSG || (!d.CompromisosPagos.Any() && !d.Gestiones.Any() && !d.Pagos.Any())) &&
+        //                (!filtraG || (d.CompromisosPagos.Any() || d.Gestiones.Any() || d.Pagos.Any())) &&
+        //                (!filtraIN || d.CompromisosPagos.Any(cp => cp.IncumplioCompromisoPago == true))
+        //            )
+        //        })
+        //        .ToListAsync();
+
+        //    var baseResult = deudoresDTO
+        //        .Select(c => new ClientesOutDTO
+        //        {
+        //            cedula = c.IdDeudor,
+        //            nombre = c.Nombre,
+        //            telefono = c.Telefono,
+        //            direccion = c.Direccion,
+        //            descripcion = c.Descripcion,
+        //            correo = c.Correo,
+        //            numeroDeudas = c.NumeroDeudas.ToString(),
+
+        //            tramos = c.DeudasDet.Any()
+        //                ? string.Join("",
+        //                    c.DeudasDet.Select((d, i) =>
+        //                        $"<strong>{i + 1}</strong>: {d.Tramo} <br>"))
+        //                : string.Empty,
+
+        //            gestor = string.Join(", ",
+        //                c.DeudasDet.Select(d => d.GestorNombre).Distinct())
+        //        })
+        //        .Where(x => int.Parse(x.numeroDeudas) > 0)
+        //        .ToList();
+
+        //    int totalItems = baseResult.Count;
+
+        //    var items = baseResult
+        //        .Skip(skip)
+        //        .Take(pageSize)
+        //        .ToList();
+
+        //    return Ok(new
+        //    {
+        //        totalItems,
+        //        pageNumber,
+        //        pageSize,
+        //        items
+        //    });
+        //}
 
 
 
