@@ -37,9 +37,9 @@ namespace gestiones_backend.Controllers
         public async Task<IActionResult> ImportarDeudoresCompleto()
         {
             //var deudas = await svc.ImportarDeudasBasicoAsync();
-            //await svc.ImportarDeudoresCompletoAsync();
+            await svc.ImportarDeudoresCompletoAsync();
             //await svc.ImportarTelefonosBasicoAsync();
-            svc.GrabarTablas();
+            //svc.GrabarTablas();
           // svc.ImportarDeudas();
 
             return Ok(new { registrosAfectados = 2, telefonosAgregados = 2 });

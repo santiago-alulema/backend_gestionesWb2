@@ -314,11 +314,11 @@ namespace gestiones_backend.Services
                             FROM temp_crecos.""CarteraAsignadaCrecos"" ca
                             LEFT JOIN temp_crecos.""DatosClienteCrecos"" dcc 
                                 ON dcc.""ICODIGOCLIENTE"" = ca.""CODIGOCLIENTE""
-                            LEFT JOIN temp_crecos.""OperacionesClientesCrecos"" occ 
+                             JOIN temp_crecos.""OperacionesClientesCrecos"" occ 
                                 ON occ.""N_IDENTIFICACION"" = ca.""CNUMEROIDENTIFICACION""
                             LEFT JOIN temp_crecos.trifocuscrecospartes t 
                                 ON t.codoperacion = ca.""CNUMEROIDENTIFICACION""
-                            LEFT JOIN temp_crecos.""SaldoClienteCrecos"" scc 
+                            JOIN temp_crecos.""SaldoClienteCrecos"" scc 
                                 ON ca.""CODIGOCLIENTE"" = scc.""CODIGOCLIENTE""
                             GROUP BY ca.""CNUMEROIDENTIFICACION"";";
 
@@ -329,19 +329,33 @@ namespace gestiones_backend.Services
                                         .AsNoTracking()
                                         .ToList();
 
+            List<string> listaDeudasCrecos = _dataContext.CarteraAsignadaCrecos?.Select(x => x.CNUMEROIDENTIFICACION)?.ToList() ;
+
+
+
             _dataContext.Deudas
-                             .Where(d => d.Empresa == "CRECOSCORP")
+                             .Where(d => d.Empresa == "CRECOSCORP" && !listaDeudasCrecos.Contains(d.IdDeudor))
                              .ExecuteUpdate(setters => setters
                              .SetProperty(d => d.EsActivo, false));
+
+            _dataContext.Deudas
+                             .Where(d => d.Empresa == "CRECOSCORP" && listaDeudasCrecos.Contains(d.IdDeudor))
+                             .ExecuteUpdate(setters => setters
+                             .SetProperty(d => d.EsActivo, true));
 
             List<Usuario> usuarios = _dataContext.Usuarios
                 .Where(x => x.EstaActivo && x.Rol == "user")
                 .ToList();
 
             
-            List<Deuda> deudas = _dataContext.Deudas.Where(x => x.Empresa.Contains("CRECO")).ToList();
+            List<Deuda> deudas = _dataContext.Deudas.Where(x => x.Empresa.Contains("CRECO") 
+            //&& x.NumeroFactura == null
+            ).ToList();
+           // var deudasNull = deudas.Select(x => x.IdDeudor).ToList();
             List<Deuda> deudasUpdate = new List<Deuda>();
             List<Deuda> deudasNuevo = new List<Deuda>();
+
+           // CarteraAsignada = CarteraAsignada.Where(x => deudasNull.Contains(x.IdDeudor)).ToList();
 
             int contador = 0;
             foreach (var deuda in CarteraAsignada)
@@ -395,7 +409,7 @@ namespace gestiones_backend.Services
 
             var bulk = new NpgsqlBulkUploader(_dataContext);
             bulk.Update(deudasUpdate);
-            bulk.Insert(deudasNuevo);
+           bulk.Insert(deudasNuevo);
 
             return ("Se insertó y actualizó correctamente");
         }
