@@ -355,12 +355,22 @@ namespace gestiones_backend.Services
             List<Deuda> deudasUpdate = new List<Deuda>();
             List<Deuda> deudasNuevo = new List<Deuda>();
 
-           // CarteraAsignada = CarteraAsignada.Where(x => deudasNull.Contains(x.IdDeudor)).ToList();
+            List<Deudores> deudores = _dataContext.Deudores.ToList();
+            List<string> deudoresNoExistentes = new();
+
+
+            // CarteraAsignada = CarteraAsignada.Where(x => deudasNull.Contains(x.IdDeudor)).ToList();
 
             int contador = 0;
             foreach (var deuda in CarteraAsignada)
             {
                 var existente = deudas.FirstOrDefault(d => d.IdDeudor == deuda.IdDeudor.ToString());
+                var deudorExiste = deudores.FirstOrDefault(d => d.IdDeudor == deuda.IdDeudor.ToString());
+                if (deudorExiste == null)
+                {
+                    deudoresNoExistentes.Add(deuda.IdDeudor.ToString());
+                    continue;
+                }
 
                 if (existente != null)
                 {
@@ -409,7 +419,7 @@ namespace gestiones_backend.Services
 
             var bulk = new NpgsqlBulkUploader(_dataContext);
             bulk.Update(deudasUpdate);
-           bulk.Insert(deudasNuevo);
+            bulk.Insert(deudasNuevo);
 
             return ("Se insertó y actualizó correctamente");
         }
@@ -741,7 +751,11 @@ namespace gestiones_backend.Services
             }
 
             if (nuevos.Count > 0)
-                await _dataContext.Set<Deudores>().AddRangeAsync(nuevos);
+            {
+                var bulk = new NpgsqlBulkUploader(_dataContext);
+                bulk.Insert(nuevos);
+            }
+            //await _dataContext.Set<Deudores>().AddRangeAsync(nuevos);
 
             return await _dataContext.SaveChangesAsync();
         }
@@ -838,201 +852,203 @@ namespace gestiones_backend.Services
 
             if (nuevos.Count == 0) return 0;
 
-            await _dataContext.Set<DeudorTelefono>().AddRangeAsync(nuevos);
+           // await _dataContext.Set<DeudorTelefono>().AddRangeAsync(nuevos);
+            var bulk = new NpgsqlBulkUploader(_dataContext);
+            bulk.Insert(nuevos);
             return await _dataContext.SaveChangesAsync();
         }
 
 
 
 
-        public async Task<int> ImportarDeudasBasicoAsync()
-        {
-            if (!Directory.Exists(_root))
-                throw new DirectoryNotFoundException($"No existe la carpeta: {_root}");
+        //public async Task<int> ImportarDeudasBasicoAsync()
+        //{
+        //    if (!Directory.Exists(_root))
+        //        throw new DirectoryNotFoundException($"No existe la carpeta: {_root}");
 
-            // Índices simples en memoria
-            var carteraById = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-            var operacionesByICodigo = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase); // ICODIGOOPERACION
-            var articulosPorFactura = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);               // NUM_FACTURA
-            var articulosPorCodOperacion = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);               // COD_OPERACION
-            var saldos = new List<Dictionary<string, string>>();
+        //    // Índices simples en memoria
+        //    var carteraById = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+        //    var operacionesByICodigo = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase); // ICODIGOOPERACION
+        //    var articulosPorFactura = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);               // NUM_FACTURA
+        //    var articulosPorCodOperacion = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);               // COD_OPERACION
+        //    var saldos = new List<Dictionary<string, string>>();
 
-            // 1) Leer archivos
-            var files = Directory.EnumerateFiles(_root, "*.*", SearchOption.AllDirectories)
-                                 .Where(f => f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) ||
-                                             f.EndsWith(".csv", StringComparison.OrdinalIgnoreCase));
+        //    // 1) Leer archivos
+        //    var files = Directory.EnumerateFiles(_root, "*.*", SearchOption.AllDirectories)
+        //                         .Where(f => f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) ||
+        //                                     f.EndsWith(".csv", StringComparison.OrdinalIgnoreCase));
 
-            foreach (var file in files)
-            {
-                var name = Path.GetFileNameWithoutExtension(file).ToUpperInvariant();
+        //    foreach (var file in files)
+        //    {
+        //        var name = Path.GetFileNameWithoutExtension(file).ToUpperInvariant();
 
-                if (name.Contains("CARTERAASIGNADA"))
-                {
-                    foreach (var row in ReadDelimited(file))
-                    {
-                        var id = Get(row, "CNUMEROIDENTIFICACION");
-                        if (!string.IsNullOrWhiteSpace(id))
-                            carteraById[id.Trim()] = row;
-                    }
-                }
-                else if (name.Contains("OPERACIONESCLIENTE"))
-                {
-                    foreach (var row in ReadDelimited(file))
-                    {
-                        // Clave: ICODIGOOPERACION
-                        var iCodOp = GetAny(row, "ICODIGOOPERACION", "I_CODIGO_OPERACION", "ICODIGO_OP");
-                        if (!string.IsNullOrWhiteSpace(iCodOp))
-                            operacionesByICodigo[iCodOp.Trim()] = row;
-                    }
-                }
-                else if (name.Contains("ARTICULOOPERACION"))
-                {
-                    foreach (var row in ReadDelimited(file))
-                    {
-                        var factura = GetAny(row, "NUM_FACTURA", "NRO_FACTURA", "NUMEROFACTURA");
-                        var codOp = GetAny(row, "COD_OPERACION");
-                        var prod = GetAny(row, "DESCRIP_ARTICULO", "DESCRIPCION_ARTICULO", "PRODUCTO", "ARTICULO", "NOMBRE");
+        //        if (name.Contains("CARTERAASIGNADA"))
+        //        {
+        //            foreach (var row in ReadDelimited(file))
+        //            {
+        //                var id = Get(row, "CNUMEROIDENTIFICACION");
+        //                if (!string.IsNullOrWhiteSpace(id))
+        //                    carteraById[id.Trim()] = row;
+        //            }
+        //        }
+        //        else if (name.Contains("OPERACIONESCLIENTE"))
+        //        {
+        //            foreach (var row in ReadDelimited(file))
+        //            {
+        //                // Clave: ICODIGOOPERACION
+        //                var iCodOp = GetAny(row, "ICODIGOOPERACION", "I_CODIGO_OPERACION", "ICODIGO_OP");
+        //                if (!string.IsNullOrWhiteSpace(iCodOp))
+        //                    operacionesByICodigo[iCodOp.Trim()] = row;
+        //            }
+        //        }
+        //        else if (name.Contains("ARTICULOOPERACION"))
+        //        {
+        //            foreach (var row in ReadDelimited(file))
+        //            {
+        //                var factura = GetAny(row, "NUM_FACTURA", "NRO_FACTURA", "NUMEROFACTURA");
+        //                var codOp = GetAny(row, "COD_OPERACION");
+        //                var prod = GetAny(row, "DESCRIP_ARTICULO", "DESCRIPCION_ARTICULO", "PRODUCTO", "ARTICULO", "NOMBRE");
 
-                        if (!string.IsNullOrWhiteSpace(factura) && !string.IsNullOrWhiteSpace(prod))
-                        {
-                            var key = factura!.Trim();
-                            if (!articulosPorFactura.TryGetValue(key, out var listF)) articulosPorFactura[key] = listF = new List<string>();
-                            listF.Add(prod!.Trim());
-                        }
+        //                if (!string.IsNullOrWhiteSpace(factura) && !string.IsNullOrWhiteSpace(prod))
+        //                {
+        //                    var key = factura!.Trim();
+        //                    if (!articulosPorFactura.TryGetValue(key, out var listF)) articulosPorFactura[key] = listF = new List<string>();
+        //                    listF.Add(prod!.Trim());
+        //                }
 
-                        if (!string.IsNullOrWhiteSpace(codOp) && !string.IsNullOrWhiteSpace(prod))
-                        {
-                            var key = codOp!.Trim();
-                            if (!articulosPorCodOperacion.TryGetValue(key, out var listO)) articulosPorCodOperacion[key] = listO = new List<string>();
-                            listO.Add(prod!.Trim());
-                        }
-                    }
-                }
-                else if (name.Contains("SALDOCLIENTE"))
-                {
-                    foreach (var row in ReadDelimited(file))
-                        saldos.Add(row);
-                }
-            }
+        //                if (!string.IsNullOrWhiteSpace(codOp) && !string.IsNullOrWhiteSpace(prod))
+        //                {
+        //                    var key = codOp!.Trim();
+        //                    if (!articulosPorCodOperacion.TryGetValue(key, out var listO)) articulosPorCodOperacion[key] = listO = new List<string>();
+        //                    listO.Add(prod!.Trim());
+        //                }
+        //            }
+        //        }
+        //        else if (name.Contains("SALDOCLIENTE"))
+        //        {
+        //            foreach (var row in ReadDelimited(file))
+        //                saldos.Add(row);
+        //        }
+        //    }
 
-            if (saldos.Count == 0) return 0;
+        //    if (saldos.Count == 0) return 0;
 
-            // 2) Construir entidades Deuda (básico, sin deduplicar)
-            var nuevos = new List<Deuda>();
-            var ahoraUtc = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
+        //    // 2) Construir entidades Deuda (básico, sin deduplicar)
+        //    var nuevos = new List<Deuda>();
+        //    var ahoraUtc = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Utc);
 
-            foreach (var s in saldos)
-            {
-                var idDeudor = Get(s, "CNUMEROIDENTIFICACION")?.Trim();
-                if (string.IsNullOrWhiteSpace(idDeudor)) continue;
+        //    foreach (var s in saldos)
+        //    {
+        //        var idDeudor = Get(s, "CNUMEROIDENTIFICACION")?.Trim();
+        //        if (string.IsNullOrWhiteSpace(idDeudor)) continue;
 
-                var numeroFactura = GetAny(s, "NUM_FACTURA", "NRO_FACTURA", "NUMEROFACTURA")?.Trim();
-                var codOperacionSal = GetAny(s, "COD_OPERACION", "CODOPERACION")?.Trim(); // en SALDOCLIENTE
+        //        var numeroFactura = GetAny(s, "NUM_FACTURA", "NRO_FACTURA", "NUMEROFACTURA")?.Trim();
+        //        var codOperacionSal = GetAny(s, "COD_OPERACION", "CODOPERACION")?.Trim(); // en SALDOCLIENTE
 
-                // Buscar fila de OPERACIONES usando ICODIGOOPERACION (= COD_OPERACION de ARTICULOOPERACION)
-                operacionesByICodigo.TryGetValue(codOperacionSal ?? "", out var opRow);
+        //        // Buscar fila de OPERACIONES usando ICODIGOOPERACION (= COD_OPERACION de ARTICULOOPERACION)
+        //        operacionesByICodigo.TryGetValue(codOperacionSal ?? "", out var opRow);
 
-                // Agencia/Ciudad desde cartera
-                carteraById.TryGetValue(idDeudor, out var carRow);
+        //        // Agencia/Ciudad desde cartera
+        //        carteraById.TryGetValue(idDeudor, out var carRow);
 
-                // ProductoDescripcion:
-                // 1) por factura si existe
-                // 2) si no hay factura, por COD_OPERACION (respetando ICODIGOOPERACION = COD_OPERACION)
-                string? productoDescripcion = null;
-                if (!string.IsNullOrWhiteSpace(numeroFactura) &&
-                    articulosPorFactura.TryGetValue(numeroFactura!, out var prodsF) &&
-                    prodsF.Count > 0)
-                {
-                    productoDescripcion = string.Join(" || ", prodsF);
-                }
-                else if (!string.IsNullOrWhiteSpace(codOperacionSal) &&
-                         articulosPorCodOperacion.TryGetValue(codOperacionSal!, out var prodsO) &&
-                         prodsO.Count > 0)
-                {
-                    productoDescripcion = string.Join(" || ", prodsO);
-                }
+        //        // ProductoDescripcion:
+        //        // 1) por factura si existe
+        //        // 2) si no hay factura, por COD_OPERACION (respetando ICODIGOOPERACION = COD_OPERACION)
+        //        string? productoDescripcion = null;
+        //        if (!string.IsNullOrWhiteSpace(numeroFactura) &&
+        //            articulosPorFactura.TryGetValue(numeroFactura!, out var prodsF) &&
+        //            prodsF.Count > 0)
+        //        {
+        //            productoDescripcion = string.Join(" || ", prodsF);
+        //        }
+        //        else if (!string.IsNullOrWhiteSpace(codOperacionSal) &&
+        //                 articulosPorCodOperacion.TryGetValue(codOperacionSal!, out var prodsO) &&
+        //                 prodsO.Count > 0)
+        //        {
+        //            productoDescripcion = string.Join(" || ", prodsO);
+        //        }
 
-                var deuda = new Deuda
-                {
-                    IdDeuda = Guid.NewGuid(),
-                    IdDeudor = idDeudor,
-                    DeudaCapital = ToDecimal(GetAny(s, "DEUDA_CAPITAL", "CAPITAL")),
-                    Interes = ToDecimal(GetAny(s, "INTERES", "MORA")),
-                    GastosCobranzas = ToDecimal(GetAny(s, "GASTOS_COBRANZAS", "GASTOS_COBRO")),
-                    SaldoDeuda = ToDecimal(GetAny(s, "SALDO_DEUDA", "SALDO")),
-                    Descuento = ToInt(GetAny(s, "DESCUENTO")),
-                    MontoCobrar = ToDecimal(GetAny(s, "MONTO_COBRAR", "TOTAL_COBRAR")),
-                    FechaVenta = ToDateOnly(GetAny(s, "FECHA_VENTA", "FECHAEMISION")) ?? ToDateOnly(GetAny(opRow, "FECHA_VENTA", "FECHA_EMISION")),
-                    FechaUltimoPago = ToDateOnly(GetAny(s, "FECHA_ULTIMO_PAGO")),
-                    Estado = GetAny(s, "ESTADO", "ESTADO_DEUDA"),
-                    DiasMora = ToInt(GetAny(s, "DIAS_MORA")),
-                    NumeroFactura = numeroFactura,
-                    Clasificacion = GetAny(s, "CLASIFICACION"),
-                    Creditos = ToInt(GetAny(s, "CREDITOS")),
-                    NumeroCuotas = ToInt(GetAny(s, "NUM_CUOTAS", "CUOTAS")),
-                    TipoDocumento = GetAny(s, "TIPO_DOCUMENTO", "TIPODOC") ?? GetAny(opRow, "TIPO_DOCUMENTO", "TIPODOC"),
-                    ValorCuota = ToDecimal(GetAny(s, "VALOR_CUOTA", "CUOTA")),
-                    Tramo = GetAny(s, "TRAMO"),
-                    UltimoPago = ToDecimal(GetAny(s, "ULTIMO_PAGO")),
-                    ProductoDescripcion = productoDescripcion,
-                    Agencia = GetAny(carRow, "AGENCIA", "NOM_AGENCIA"),
-                    Ciudad = GetAny(carRow, "CIUDAD"),
-                    Empresa = GetAny(s, "EMPRESA") ?? GetAny(opRow, "EMPRESA"),
-                    CodigoEmpresa = GetAny(s, "COD_EMPRESA", "CODEMPRESA") ?? GetAny(opRow, "COD_EMPRESA", "CODEMPRESA"),
-                    EsActivo = true,
-                    FechaRegistro = ahoraUtc,
-                    IdUsuario = null,
-                    CodigoOperacion = codOperacionSal // guarda el mismo código usado para enlazar
-                };
+        //        var deuda = new Deuda
+        //        {
+        //            IdDeuda = Guid.NewGuid(),
+        //            IdDeudor = idDeudor,
+        //            DeudaCapital = ToDecimal(GetAny(s, "DEUDA_CAPITAL", "CAPITAL")),
+        //            Interes = ToDecimal(GetAny(s, "INTERES", "MORA")),
+        //            GastosCobranzas = ToDecimal(GetAny(s, "GASTOS_COBRANZAS", "GASTOS_COBRO")),
+        //            SaldoDeuda = ToDecimal(GetAny(s, "SALDO_DEUDA", "SALDO")),
+        //            Descuento = ToInt(GetAny(s, "DESCUENTO")),
+        //            MontoCobrar = ToDecimal(GetAny(s, "MONTO_COBRAR", "TOTAL_COBRAR")),
+        //            FechaVenta = ToDateOnly(GetAny(s, "FECHA_VENTA", "FECHAEMISION")) ?? ToDateOnly(GetAny(opRow, "FECHA_VENTA", "FECHA_EMISION")),
+        //            FechaUltimoPago = ToDateOnly(GetAny(s, "FECHA_ULTIMO_PAGO")),
+        //            Estado = GetAny(s, "ESTADO", "ESTADO_DEUDA"),
+        //            DiasMora = ToInt(GetAny(s, "DIAS_MORA")),
+        //            NumeroFactura = numeroFactura,
+        //            Clasificacion = GetAny(s, "CLASIFICACION"),
+        //            Creditos = ToInt(GetAny(s, "CREDITOS")),
+        //            NumeroCuotas = ToInt(GetAny(s, "NUM_CUOTAS", "CUOTAS")),
+        //            TipoDocumento = GetAny(s, "TIPO_DOCUMENTO", "TIPODOC") ?? GetAny(opRow, "TIPO_DOCUMENTO", "TIPODOC"),
+        //            ValorCuota = ToDecimal(GetAny(s, "VALOR_CUOTA", "CUOTA")),
+        //            Tramo = GetAny(s, "TRAMO"),
+        //            UltimoPago = ToDecimal(GetAny(s, "ULTIMO_PAGO")),
+        //            ProductoDescripcion = productoDescripcion,
+        //            Agencia = GetAny(carRow, "AGENCIA", "NOM_AGENCIA"),
+        //            Ciudad = GetAny(carRow, "CIUDAD"),
+        //            Empresa = GetAny(s, "EMPRESA") ?? GetAny(opRow, "EMPRESA"),
+        //            CodigoEmpresa = GetAny(s, "COD_EMPRESA", "CODEMPRESA") ?? GetAny(opRow, "COD_EMPRESA", "CODEMPRESA"),
+        //            EsActivo = true,
+        //            FechaRegistro = ahoraUtc,
+        //            IdUsuario = null,
+        //            CodigoOperacion = codOperacionSal // guarda el mismo código usado para enlazar
+        //        };
 
-                // Calcular MontoCobrar si no vino
-                if (deuda.MontoCobrar == null)
-                {
-                    var suma = (deuda.DeudaCapital ?? 0m) + (deuda.Interes ?? 0m) + (deuda.GastosCobranzas ?? 0m);
-                    deuda.MontoCobrar = suma > 0 ? suma : deuda.SaldoDeuda;
-                }
+        //        // Calcular MontoCobrar si no vino
+        //        if (deuda.MontoCobrar == null)
+        //        {
+        //            var suma = (deuda.DeudaCapital ?? 0m) + (deuda.Interes ?? 0m) + (deuda.GastosCobranzas ?? 0m);
+        //            deuda.MontoCobrar = suma > 0 ? suma : deuda.SaldoDeuda;
+        //        }
 
-                nuevos.Add(deuda);
-            }
+        //        nuevos.Add(deuda);
+        //    }
 
-            if (nuevos.Count == 0) return 0;
+        //    if (nuevos.Count == 0) return 0;
 
-            await _dataContext.Set<Deuda>().AddRangeAsync(nuevos);
-            return await _dataContext.SaveChangesAsync();
+        //    await _dataContext.Set<Deuda>().AddRangeAsync(nuevos);
+        //    return await _dataContext.SaveChangesAsync();
 
-            // --------- Helpers locales mínimos ----------
-            static string? GetAny(Dictionary<string, string>? row, params string[] cols)
-            {
-                if (row == null) return null;
-                foreach (var c in cols)
-                {
-                    var v = Get(row, c);
-                    if (!string.IsNullOrWhiteSpace(v)) return v;
-                }
-                return null;
-            }
+        //    // --------- Helpers locales mínimos ----------
+        //    static string? GetAny(Dictionary<string, string>? row, params string[] cols)
+        //    {
+        //        if (row == null) return null;
+        //        foreach (var c in cols)
+        //        {
+        //            var v = Get(row, c);
+        //            if (!string.IsNullOrWhiteSpace(v)) return v;
+        //        }
+        //        return null;
+        //    }
 
-            static decimal? ToDecimal(string? s)
-            {
-                if (string.IsNullOrWhiteSpace(s)) return null;
-                s = s.Trim().Replace(" ", "").Replace(",", ".");
-                return decimal.TryParse(s, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : (decimal?)null;
-            }
+        //    static decimal? ToDecimal(string? s)
+        //    {
+        //        if (string.IsNullOrWhiteSpace(s)) return null;
+        //        s = s.Trim().Replace(" ", "").Replace(",", ".");
+        //        return decimal.TryParse(s, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : (decimal?)null;
+        //    }
 
-            static int? ToInt(string? s)
-            {
-                if (string.IsNullOrWhiteSpace(s)) return null;
-                return int.TryParse(s.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var i) ? i : (int?)null;
-            }
+        //    static int? ToInt(string? s)
+        //    {
+        //        if (string.IsNullOrWhiteSpace(s)) return null;
+        //        return int.TryParse(s.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var i) ? i : (int?)null;
+        //    }
 
-            static DateOnly? ToDateOnly(string? s)
-            {
-                if (string.IsNullOrWhiteSpace(s)) return null;
-                if (DateTime.TryParse(s.Trim(), System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt))
-                    return DateOnly.FromDateTime(dt);
-                return null;
-            }
-        }
+        //    static DateOnly? ToDateOnly(string? s)
+        //    {
+        //        if (string.IsNullOrWhiteSpace(s)) return null;
+        //        if (DateTime.TryParse(s.Trim(), System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt))
+        //            return DateOnly.FromDateTime(dt);
+        //        return null;
+        //    }
+        //}
 
         
         static DateTime? ToDate(string? s)

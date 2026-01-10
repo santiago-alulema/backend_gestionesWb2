@@ -48,6 +48,20 @@ namespace gestiones_backend.Controllers
             return Ok("Las liquidaciones de Crecos por parte se insertaron correctamente");
         }
 
+        [HttpGet("descargar-trifocus-zip-ultimo-dia")]
+        public IActionResult DescargarTrifocusZipUltimoDia()
+        {
+            try
+            {
+                _limpiarCarpeta.LimpiarCarpeta();
+                _sftpDownloadService.DescargarZipsUltimoDia();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error descargando desde SFTP: {ex.Message}");
+            }
+            return Ok("Se realizo correctamente");
+        }
 
         [HttpGet("descargar-trifocus-zip")]
         public IActionResult DescargarTrifocusZip()

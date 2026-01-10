@@ -94,6 +94,62 @@ namespace gestiones_backend.helpers
             }
         }
 
+        public void DescargarZipsUltimoDia()
+        {
+            using var client = new SftpClient(_host, _port, _username, _password);
+
+            try
+            {
+                client.Connect();
+                Console.WriteLine("Conexión SFTP establecida.");
+
+                var zipFiles = client
+                    .ListDirectory(_remotePath)
+                    .Where(f => !f.IsDirectory && f.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (!zipFiles.Any())
+                {
+                    Console.WriteLine("No se encontraron archivos .zip para descargar.");
+                    return;
+                }
+
+                // 1) Detectar el día más reciente (por día)
+                var latestDate = zipFiles.Max(f => f.LastWriteTime.Date);
+
+                // 2) Filtrar solo los archivos de ese día
+                var latestZips = zipFiles
+                    .Where(f => f.LastWriteTime.Date == latestDate)
+                    .OrderByDescending(f => f.LastWriteTime)
+                    .ToList();
+
+                Directory.CreateDirectory(_localPath);
+
+                foreach (var file in latestZips)
+                {
+                    string localFile = Path.Combine(_localPath, file.Name);
+
+                    using var fs = new FileStream(localFile, FileMode.Create, FileAccess.Write);
+                    client.DownloadFile(file.FullName, fs);
+
+                    Console.WriteLine($"Archivo descargado: {file.Name} (Fecha: {file.LastWriteTime:yyyy-MM-dd HH:mm:ss})");
+                }
+
+                Console.WriteLine($"Descarga completada. Día más reciente: {latestDate:yyyy-MM-dd}. Total: {latestZips.Count}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en la descarga SFTP: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                if (client.IsConnected)
+                    client.Disconnect();
+            }
+        }
+
+
         public void DescargarZips()
         {
             using var client = new SftpClient(_host, _port, _username, _password);
