@@ -138,9 +138,17 @@ namespace gestiones_backend.Controllers
                 IdAbonoLiquidacion = pagoDto.AbonoLiquidacionId,
                 Telefono = pagoDto.Telefono,
             };
-            
+            var hoy = DateOnly.FromDateTime(DateTime.Now);
             _context.Pagos.Add(pago);
             await _context.SaveChangesAsync();
+
+            await _context.CompromisosPagos
+                .Where(x => x.IdDeuda == pagoDto.IdDeuda)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(c => c.IncumplioCompromisoPago, false)
+                    .SetProperty(c => c.FechaCumplimientoReal, hoy)
+                );
+
             var pagoOut = new
             {
                 IdPago = pago.IdPago,

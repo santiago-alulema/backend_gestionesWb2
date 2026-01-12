@@ -101,46 +101,37 @@ namespace gestiones_backend.helpers
             try
             {
                 client.Connect();
-                Console.WriteLine("Conexión SFTP establecida.");
 
-                var zipFiles = client
-                    .ListDirectory(_remotePath)
-                    .Where(f => !f.IsDirectory && f.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                var files = client.ListDirectory(_remotePath)
+                    .Where(f => !f.IsDirectory && f.Name.EndsWith(".zip"))
                     .ToList();
 
-                if (!zipFiles.Any())
-                {
-                    Console.WriteLine("No se encontraron archivos .zip para descargar.");
+                if (!files.Any())
                     return;
-                }
-
-                // 1) Detectar el día más reciente (por día)
-                var latestDate = zipFiles.Max(f => f.LastWriteTime.Date);
-
-                // 2) Filtrar solo los archivos de ese día
-                var latestZips = zipFiles
-                    .Where(f => f.LastWriteTime.Date == latestDate)
-                    .OrderByDescending(f => f.LastWriteTime)
-                    .ToList();
 
                 Directory.CreateDirectory(_localPath);
 
-                foreach (var file in latestZips)
+                var ultimoAsignacion = files
+                    .Where(f => f.Name.StartsWith("Archivo Asignacion Cartera", StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(f => f.LastWriteTime)
+                    .FirstOrDefault();
+
+                if (ultimoAsignacion != null)
                 {
-                    string localFile = Path.Combine(_localPath, file.Name);
-
-                    using var fs = new FileStream(localFile, FileMode.Create, FileAccess.Write);
-                    client.DownloadFile(file.FullName, fs);
-
-                    Console.WriteLine($"Archivo descargado: {file.Name} (Fecha: {file.LastWriteTime:yyyy-MM-dd HH:mm:ss})");
+                    using var fs = new FileStream(Path.Combine(_localPath, ultimoAsignacion.Name), FileMode.Create);
+                    client.DownloadFile(ultimoAsignacion.FullName, fs);
                 }
 
-                Console.WriteLine($"Descarga completada. Día más reciente: {latestDate:yyyy-MM-dd}. Total: {latestZips.Count}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error en la descarga SFTP: {ex.Message}");
-                throw;
+                var ultimoDiario = files
+                    .Where(f => f.Name.StartsWith("Archivos Diarios", StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(f => f.LastWriteTime)
+                    .FirstOrDefault();
+
+                if (ultimoDiario != null)
+                {
+                    using var fs = new FileStream(Path.Combine(_localPath, ultimoDiario.Name), FileMode.Create);
+                    client.DownloadFile(ultimoDiario.FullName, fs);
+                }
             }
             finally
             {

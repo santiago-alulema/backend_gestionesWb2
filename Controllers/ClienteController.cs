@@ -223,7 +223,8 @@ namespace gestiones_backend.Controllers
 
 
         [HttpGet("deudas-por-cliente-global/{cedulaCliente}")]
-        public async Task<IActionResult> DeudasPorClienteGlobal(string cedulaCliente, [FromQuery] string? empresa)
+        public async Task<IActionResult> DeudasPorClienteGlobal(string cedulaCliente, 
+                                                                [FromQuery] string? empresa)
         {
             if (string.IsNullOrWhiteSpace(cedulaCliente))
                 return BadRequest("Debe enviar la cédula o el nombre del cliente.");
@@ -235,7 +236,6 @@ namespace gestiones_backend.Controllers
                 query = query.Where(x => x.Empresa == empresa);
             }
             query = query.Where(d =>
-                d.EsActivo == true &&
                 (
                     d.IdDeudor == cedulaCliente ||
                     (d.IdDeudorNavigation != null &&
