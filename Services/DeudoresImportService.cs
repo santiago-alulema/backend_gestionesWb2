@@ -757,7 +757,7 @@ namespace gestiones_backend.Services
             }
             //await _dataContext.Set<Deudores>().AddRangeAsync(nuevos);
 
-            return await _dataContext.SaveChangesAsync();
+            return 1;
         }
 
 
@@ -855,7 +855,7 @@ namespace gestiones_backend.Services
            // await _dataContext.Set<DeudorTelefono>().AddRangeAsync(nuevos);
             var bulk = new NpgsqlBulkUploader(_dataContext);
             bulk.Insert(nuevos);
-            return await _dataContext.SaveChangesAsync();
+            return  1;
         }
 
 

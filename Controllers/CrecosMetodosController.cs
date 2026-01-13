@@ -1,6 +1,7 @@
 ﻿using gestiones_backend.Context;
 using gestiones_backend.Entity.temp_crecos;
 using gestiones_backend.helpers;
+using gestiones_backend.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,20 +17,28 @@ namespace gestiones_backend.Controllers
         private readonly DataContext _dataContext;
         private readonly IWebHostEnvironment _env;
         private readonly SftpDownloadService _sftpDownloadService;
-        private readonly FolderCleanService _limpiarCarpeta;
+        private readonly FolderCleanService _limpiarCarpeta; 
+        private readonly DeudoresImportService deudoresImportService; 
+        private readonly ZipExtractService _zipExtractService;
+
+
 
 
         public CrecosMetodosController(
             DataContext dataContext,
             IWebHostEnvironment env,
             SftpDownloadService sftpDownloadService,
-            FolderCleanService limpiarCarpeta
+            FolderCleanService limpiarCarpeta,
+            DeudoresImportService _deudoresImportService,
+            ZipExtractService zipExtractService
         )
         {
             _dataContext = dataContext;
             _env = env;
             _sftpDownloadService = sftpDownloadService;
             _limpiarCarpeta = limpiarCarpeta;
+            deudoresImportService = _deudoresImportService;
+            _zipExtractService = zipExtractService;
         }
 
         [HttpPost("grabar-campania")]
@@ -55,6 +64,29 @@ namespace gestiones_backend.Controllers
             {
                 _limpiarCarpeta.LimpiarCarpeta();
                 _sftpDownloadService.DescargarZipsUltimoDia();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error descargando desde SFTP: {ex.Message}");
+            }
+            return Ok("Se realizo correctamente");
+        }
+
+        [HttpGet("sincronizar-ultimos-archivos-crecos")]
+        public async Task<IActionResult> DescargarUltimosArchivosCrecos()
+        {
+            try
+            {
+                _limpiarCarpeta.LimpiarCarpeta();
+
+                _sftpDownloadService.DescargarZipsUltimoDia();
+
+                _zipExtractService.DescomprimirZipsUltimo();
+                await deudoresImportService.ImportarDeudoresCompletoAsync();
+                await deudoresImportService.ImportarTelefonosBasicoAsync();
+                deudoresImportService.GrabarTablas();
+                deudoresImportService.ImportarDeudas();
+                deudoresImportService.importarPagos();
             }
             catch (Exception ex)
             {
