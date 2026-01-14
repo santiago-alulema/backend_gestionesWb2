@@ -4,6 +4,7 @@ using gestiones_backend.Context;
 using gestiones_backend.DbConn;
 using gestiones_backend.Entity;
 using gestiones_backend.Entity.temp_crecos;
+using gestiones_backend.helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Npgsql.Bulk;
@@ -15,17 +16,23 @@ namespace gestiones_backend.Services
 {
     public class DeudoresImportService
     {
+        
         private readonly DataContext _dataContext;
         private readonly IConfiguration _configuration;
+        private readonly SftpDownloadService _sftpDownloadService;
+
+
         private readonly string _root;
 
         public DeudoresImportService(DataContext db, 
                                      IWebHostEnvironment env,
-                                     IConfiguration configuration   )
+                                     IConfiguration configuration,
+                                     SftpDownloadService sftpDownloadService)
         {
             _dataContext = db;
             _root = Path.Combine(env.ContentRootPath, "ArchivosExternos");
             _configuration = configuration;
+            _sftpDownloadService = sftpDownloadService;
         }
 
 
@@ -314,11 +321,11 @@ namespace gestiones_backend.Services
                             FROM temp_crecos.""CarteraAsignadaCrecos"" ca
                             LEFT JOIN temp_crecos.""DatosClienteCrecos"" dcc 
                                 ON dcc.""ICODIGOCLIENTE"" = ca.""CODIGOCLIENTE""
-                             JOIN temp_crecos.""OperacionesClientesCrecos"" occ 
+                            LEFT JOIN temp_crecos.""OperacionesClientesCrecos"" occ 
                                 ON occ.""N_IDENTIFICACION"" = ca.""CNUMEROIDENTIFICACION""
                             LEFT JOIN temp_crecos.trifocuscrecospartes t 
                                 ON t.codoperacion = ca.""CNUMEROIDENTIFICACION""
-                            JOIN temp_crecos.""SaldoClienteCrecos"" scc 
+                            LEFT JOIN temp_crecos.""SaldoClienteCrecos"" scc 
                                 ON ca.""CODIGOCLIENTE"" = scc.""CODIGOCLIENTE""
                             GROUP BY ca.""CNUMEROIDENTIFICACION"";";
 
@@ -360,6 +367,7 @@ namespace gestiones_backend.Services
 
 
             // CarteraAsignada = CarteraAsignada.Where(x => deudasNull.Contains(x.IdDeudor)).ToList();
+            var asignaionFecha = _sftpDownloadService.ObtenerFechaUltimaCarteraAsignadaUtc();
 
             int contador = 0;
             foreach (var deuda in CarteraAsignada)
@@ -396,7 +404,7 @@ namespace gestiones_backend.Services
                     existente.UltimoPago = deuda.UltimoPago;
                     existente.CodigoOperacion = deuda.CodigoOperacion;
                     existente.MontoCobrarPartes = deuda.MontoCobrarPartes;
-                    existente.FechaRegistro = DateTime.UtcNow;
+                    existente.FechaRegistro = asignaionFecha;
 
                     if (string.IsNullOrEmpty(existente.IdUsuario))
                         existente.IdUsuario = usuarios[contador].IdUsuario;
@@ -407,7 +415,7 @@ namespace gestiones_backend.Services
                 {
                     if (deuda.IdDeuda == Guid.Empty)
                         deuda.IdDeuda = Guid.NewGuid();
-                    deuda.FechaRegistro = DateTime.UtcNow;
+                    deuda.FechaRegistro = asignaionFecha;
                     deuda.CodigoOperacion = deuda.CodigoOperacion;
                     deuda.EsActivo = true;
                     deuda.IdUsuario = usuarios[contador].IdUsuario;

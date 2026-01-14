@@ -94,6 +94,43 @@ namespace gestiones_backend.helpers
             }
         }
 
+        public DateTime? ObtenerFechaUltimaCarteraAsignadaUtc()
+        {
+            using var client = new SftpClient(_host, _port, _username, _password);
+
+            try
+            {
+                client.Connect();
+
+                var ultimoArchivo = client.ListDirectory(_remotePath)
+                    .Where(f =>
+                        !f.IsDirectory &&
+                        f.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) &&
+                        f.Name.StartsWith("Archivo Asignacion Cartera", StringComparison.OrdinalIgnoreCase)
+                    )
+                    .OrderByDescending(f => f.LastWriteTime)
+                    .FirstOrDefault();
+
+                if (ultimoArchivo == null) return null;
+
+                var dt = ultimoArchivo.LastWriteTime;
+
+                // convertir a UTC para timestamptz
+                return dt.Kind switch
+                {
+                    DateTimeKind.Utc => dt,
+                    DateTimeKind.Local => dt.ToUniversalTime(),
+                    _ => DateTime.SpecifyKind(dt, DateTimeKind.Local).ToUniversalTime()
+                };
+            }
+            finally
+            {
+                if (client.IsConnected)
+                    client.Disconnect();
+            }
+        }
+
+
         public void DescargarZipsUltimoDia()
         {
             using var client = new SftpClient(_host, _port, _username, _password);

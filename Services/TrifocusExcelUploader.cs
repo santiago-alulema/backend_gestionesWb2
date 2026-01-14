@@ -37,7 +37,7 @@ namespace gestiones_backend.Services
                                                     '' as ""CTERMINAL_REGISTRA_RESULTADO"",
                                                     rtc.""CodigoEmpresaExterna""  as ""CCODIGO_RESULTADO"",
                                                     '1' as ""LGESTION_TERMINADA"",
-                                                    g.""Descripcion""  as ""COBSERVACION"",
+                                                     LEFT(g.""Descripcion"", 499)  as ""COBSERVACION"",
                                                     '0' as ""FMONTO_ASIGNADO"",
                                                     d2.""CodigoDeudor""  as ""NCODIGO_CLIENTE""
                                                 FROM ""Deudas"" d 
@@ -45,7 +45,8 @@ namespace gestiones_backend.Services
                                                 join ""Gestiones"" g on g.""IdDeuda""  = d.""IdDeuda"" 
                                                 left join ""RespuestasTipoContacto"" rtc on rtc.""Id"" = g.""IdRespuestaTipoContacto""  
                                                 join ""TiposContactoResultado"" tcr on rtc.""IdTipoContactoResultado"" = tcr.""Id"" 
-                                                where d.""Empresa"" = 'CRECOSCORP' and d.""CodigoOperacion"" is not null
+                                                where d.""Empresa"" = 'CRECOSCORP' and d.""CodigoOperacion"" is not null 
+                                                AND g.""FechaGestion""::date = (now() AT TIME ZONE 'America/Guayaquil')::date - 1 
 
                                                 union all
 
@@ -69,7 +70,7 @@ namespace gestiones_backend.Services
                                                     '' as ""CTERMINAL_REGISTRA_RESULTADO"",
                                                     al.""CodigoExterno""  as ""CCODIGO_RESULTADO"",
                                                     '1' as ""LGESTION_TERMINADA"",
-                                                    p.""Observaciones""  as ""COBSERVACION"",
+                                                    LEFT(p.""Observaciones"", 499)  as ""COBSERVACION"",
                                                     '0' as ""FMONTO_ASIGNADO"",
                                                     d2.""CodigoDeudor""  as ""NCODIGO_CLIENTE""
                                                 FROM ""Deudas"" d 
@@ -78,7 +79,8 @@ namespace gestiones_backend.Services
                                                 left join ""AbonosLiquidacion"" al on al.""Id""  = p.""IdAbonoLiquidacion""
                                                 where d.""Empresa"" = 'CRECOSCORP' and 
                                                       p.""Observaciones"" not like '%[MIGRACION CRECOS]%' and 
-                                                      d.""CodigoOperacion"" is not null
+                                                      d.""CodigoOperacion"" is not null AND 
+                                                      p.""FechaRegistro"" ::date = (now() AT TIME ZONE 'America/Guayaquil')::date - 1
 
                                                 union all
 
@@ -102,7 +104,7 @@ namespace gestiones_backend.Services
                                                     '' as ""CTERMINAL_REGISTRA_RESULTADO"",
                                                     tt.""CodigoExterno""  as ""CCODIGO_RESULTADO"",
                                                     '1' as ""LGESTION_TERMINADA"",
-                                                    cp.""Observaciones""  as ""COBSERVACION"",
+                                                    LEFT(cp.""Observaciones"", 499)  as ""COBSERVACION"",
                                                     '0' as ""FMONTO_ASIGNADO"",
                                                     d2.""CodigoDeudor""  as ""NCODIGO_CLIENTE""
                                                 FROM ""Deudas"" d 
@@ -110,7 +112,8 @@ namespace gestiones_backend.Services
                                                 join ""CompromisosPagos"" cp ON cp.""IdDeuda""  = d.""IdDeuda"" 
                                                 left join ""TiposTareas"" tt on tt.""Id""  = cp.""IdTipoTarea"" 
                                                 where d.""Empresa"" = 'CRECOSCORP' and 
-                                                      d.""CodigoOperacion"" is not null ;
+                                                      d.""CodigoOperacion"" is not null d.""CodigoOperacion"" is not null AND 
+                                                      cp.""FechaRegistro""::date = (now() AT TIME ZONE 'America/Guayaquil')::date - 1 ;
                                                 ";
 
         public TrifocusExcelUploader(
