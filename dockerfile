@@ -23,31 +23,23 @@
 
 ARG DOTNET_VERSION=8.0
 
-# Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION} AS base
 WORKDIR /app
 ENV ASPNETCORE_ENVIRONMENT=Production \
     ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
-# Build
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS build
 WORKDIR /src
 
-# 1) Copia sólo el csproj para maximizar caché
-#    Ajusta la ruta si tu csproj no está en la raíz
 COPY gestiones_backend.csproj ./
 
-# 2) Restore (se cachea si no cambian los PackageReference)
 RUN dotnet restore --nologo --use-lock-file
 
-# 3) Copia el resto del código
 COPY . .
 
-# 4) Publish del PROYECTO (no de la solución) y sin restore extra
 RUN dotnet publish ./gestiones_backend.csproj -c Release -o /app/publish --no-restore
 
-# Final
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .

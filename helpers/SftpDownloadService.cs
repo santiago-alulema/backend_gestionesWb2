@@ -5,11 +5,13 @@ namespace gestiones_backend.helpers
 {
     public class SftpDownloadService
     {
-        private readonly string _host = "186.3.14.45";
-        //private readonly string _host = "localhost";
-
-        private readonly int _port = 34;
-        //private readonly int _port = 9093;
+        #if DEBUG
+                private readonly string _host = "localhost";
+                private readonly int _port = 9093;
+        #else
+            private readonly string _host = "186.3.14.45";
+            private readonly int _port = 34;
+        #endif
 
 
         private readonly string _username = "ftp.trifocus";

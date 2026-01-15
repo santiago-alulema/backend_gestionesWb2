@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Npgsql.Bulk;
 using System.Collections.Concurrent;
+using System.Data;
 using System.Globalization;
 using System.Text;
 
@@ -321,11 +322,11 @@ namespace gestiones_backend.Services
                             FROM temp_crecos.""CarteraAsignadaCrecos"" ca
                             LEFT JOIN temp_crecos.""DatosClienteCrecos"" dcc 
                                 ON dcc.""ICODIGOCLIENTE"" = ca.""CODIGOCLIENTE""
-                            LEFT JOIN temp_crecos.""OperacionesClientesCrecos"" occ 
+                            JOIN temp_crecos.""OperacionesClientesCrecos"" occ 
                                 ON occ.""N_IDENTIFICACION"" = ca.""CNUMEROIDENTIFICACION""
                             LEFT JOIN temp_crecos.trifocuscrecospartes t 
                                 ON t.codoperacion = ca.""CNUMEROIDENTIFICACION""
-                            LEFT JOIN temp_crecos.""SaldoClienteCrecos"" scc 
+                            JOIN temp_crecos.""SaldoClienteCrecos"" scc 
                                 ON ca.""CODIGOCLIENTE"" = scc.""CODIGOCLIENTE""
                             GROUP BY ca.""CNUMEROIDENTIFICACION"";";
 
@@ -336,25 +337,38 @@ namespace gestiones_backend.Services
                                         .AsNoTracking()
                                         .ToList();
 
-            List<string> listaDeudasCrecos = _dataContext.CarteraAsignadaCrecos?.Select(x => x.CNUMEROIDENTIFICACION)?.ToList() ;
+           // List<string> listaDeudasCrecos = _dataContext.CarteraAsignadaCrecos?.Select(x => x.CNUMEROIDENTIFICACION)?.ToList() ;
 
 
 
             _dataContext.Deudas
-                             .Where(d => d.Empresa == "CRECOSCORP" && !listaDeudasCrecos.Contains(d.IdDeudor))
-                             .ExecuteUpdate(setters => setters
-                             .SetProperty(d => d.EsActivo, false));
-
-            _dataContext.Deudas
-                             .Where(d => d.Empresa == "CRECOSCORP" && listaDeudasCrecos.Contains(d.IdDeudor))
-                             .ExecuteUpdate(setters => setters
-                             .SetProperty(d => d.EsActivo, true));
+                           .Where(d => d.Empresa == "CRECOSCORP"
+                           // && !listaDeudasCrecos.Contains(d.IdDeudor)
+                           )
+                           .ExecuteUpdate(setters => setters
+                           .SetProperty(d => d.EsActivo, false));
+            //_dataContext.Deudas
+            //                 .Where(d => d.Empresa == "CRECOSCORP" && listaDeudasCrecos.Contains(d.IdDeudor))
+            //                 .ExecuteUpdate(setters => setters
+            //                 .SetProperty(d => d.EsActivo, true));
 
             List<Usuario> usuarios = _dataContext.Usuarios
                 .Where(x => x.EstaActivo && x.Rol == "user")
                 .ToList();
+            string cadena = @$"DELETE FROM temp_crecos.""CarteraAsignadaCrecosSinSaldoCliente"";";
+            PgConn conn = new PgConn();
+            conn.cadenaConnect = _configuration.GetConnectionString("DefaultConnection");
+            conn.ejecutarconsulta_dt(cadena);
 
-            
+            cadena = @$" INSERT INTO temp_crecos.""CarteraAsignadaCrecosSinSaldoCliente""
+                                        select cac.*
+                                        from temp_crecos.""CarteraAsignadaCrecos"" cac
+                                        left join temp_crecos.""SaldoClienteCrecos"" scc on scc.""CNUMEROIDENTIFICACION"" = cac.""CNUMEROIDENTIFICACION"" 
+                                        where  scc.""CNUMEROIDENTIFICACION"" is null ;";
+            conn = new PgConn();
+            conn.cadenaConnect = _configuration.GetConnectionString("DefaultConnection");
+            conn.ejecutarconsulta_dt(cadena);
+
             List<Deuda> deudas = _dataContext.Deudas.Where(x => x.Empresa.Contains("CRECO") 
             //&& x.NumeroFactura == null
             ).ToList();
@@ -404,7 +418,7 @@ namespace gestiones_backend.Services
                     existente.UltimoPago = deuda.UltimoPago;
                     existente.CodigoOperacion = deuda.CodigoOperacion;
                     existente.MontoCobrarPartes = deuda.MontoCobrarPartes;
-                    existente.FechaRegistro = asignaionFecha;
+                    existente.FechaRegistro = DateTime.Now;
 
                     if (string.IsNullOrEmpty(existente.IdUsuario))
                         existente.IdUsuario = usuarios[contador].IdUsuario;
@@ -415,7 +429,7 @@ namespace gestiones_backend.Services
                 {
                     if (deuda.IdDeuda == Guid.Empty)
                         deuda.IdDeuda = Guid.NewGuid();
-                    deuda.FechaRegistro = asignaionFecha;
+                    deuda.FechaRegistro = DateTime.Now;
                     deuda.CodigoOperacion = deuda.CodigoOperacion;
                     deuda.EsActivo = true;
                     deuda.IdUsuario = usuarios[contador].IdUsuario;

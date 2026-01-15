@@ -38,7 +38,6 @@ namespace gestiones_backend.helpers
                 {
                     using var scope = _scopeFactory.CreateScope();
 
-                    // RESOLVER *DENTRO* DEL SCOPE todo lo que sea Scoped o dependa de DbContext
                     var folderService = scope.ServiceProvider.GetRequiredService<FolderCleanService>();
                     var sftpService = scope.ServiceProvider.GetRequiredService<SftpDownloadService>();
                     var zipService = scope.ServiceProvider.GetRequiredService<ZipExtractService>();
