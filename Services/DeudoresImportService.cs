@@ -418,7 +418,7 @@ namespace gestiones_backend.Services
                     existente.UltimoPago = deuda.UltimoPago;
                     existente.CodigoOperacion = deuda.CodigoOperacion;
                     existente.MontoCobrarPartes = deuda.MontoCobrarPartes;
-                    existente.FechaRegistro = DateTime.Now;
+                    existente.FechaRegistro = DateTime.UtcNow;
 
                     if (string.IsNullOrEmpty(existente.IdUsuario))
                         existente.IdUsuario = usuarios[contador].IdUsuario;
@@ -429,7 +429,7 @@ namespace gestiones_backend.Services
                 {
                     if (deuda.IdDeuda == Guid.Empty)
                         deuda.IdDeuda = Guid.NewGuid();
-                    deuda.FechaRegistro = DateTime.Now;
+                    deuda.FechaRegistro = DateTime.UtcNow;
                     deuda.CodigoOperacion = deuda.CodigoOperacion;
                     deuda.EsActivo = true;
                     deuda.IdUsuario = usuarios[contador].IdUsuario;
