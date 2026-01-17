@@ -232,9 +232,9 @@ namespace gestiones_backend.Controllers
             string consulta = @$"select 
                                     d.""IdDeudor""              CedulaDeudor,
                                     d2.""Nombre"",
-                                    ""SaldoDeuda""              SaldoDeuda,
-                                    ""Descuento""               descuento,
-                                    ""MontoCobrar""             montoCobrar,
+                                    d.""SaldoDeuda""              SaldoDeuda,
+                                    d.""Descuento""               descuento,
+                                    d.""MontoCobrar""             montoCobrar,
                                     d.""ValorCuota"",
                                     d.""Tramo"",
                                     d.""NumeroFactura""         factura,
@@ -256,7 +256,11 @@ namespace gestiones_backend.Controllers
                                     REGEXP_REPLACE(d.""ProductoDescripcion"", '</?strong>', '', 'gi') AS ProductoDescripcion,
                                     d.""Ciudad"",
                                     d.""Agencia"",
-                                    d.""Empresa"" 
+                                    d.""Empresa"",
+                                    d.""MontoPonteAlDia"" , 
+                                    d.""MontoCobrarPartes"", 
+                                    d.""CodigoOperacion"",
+                                    d.""Clasificacion""
                                     from ""Deudas"" d 
                                     join ""Usuarios"" u on u.""IdUsuario"" = d.""IdUsuario"" 
                                     join ""Deudores"" d2 on d2.""IdDeudor""  = d.""IdDeudor"" 

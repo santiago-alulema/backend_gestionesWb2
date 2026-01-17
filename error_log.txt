@@ -2,3 +2,6 @@ martes, 21 de octubre de 2025 - - - - - - - Cannot access a disposed object.
 Object name: 'NpgsqlConnection'.
 martes, 21 de octubre de 2025 - - - - - - - Cannot access a disposed object.
 Object name: 'NpgsqlConnection'.
+jueves, 15 de enero de 2026 - - - - - - - 42601: syntax error at or near "d"
+
+POSITION: 8918

@@ -55,10 +55,10 @@ namespace gestiones_backend.helpers
                     zipService.DescomprimirZipsUltimo();
                     _logger.LogInformation("Zips descomprimidos.");
 
-                    await importSvc.ImportarDeudoresCompletoAsync();
-                    await importSvc.ImportarTelefonosBasicoAsync();
+                    //await importSvc.ImportarDeudoresCompletoAsync();
+                  //  await importSvc.ImportarTelefonosBasicoAsync();
                     importSvc.GrabarTablas();
-                    importSvc.ImportarDeudas();
+                   // importSvc.ImportarDeudas();
                     importSvc.importarPagos();
                     //_logger.LogInformation("Datos importados correctamente.");
 
