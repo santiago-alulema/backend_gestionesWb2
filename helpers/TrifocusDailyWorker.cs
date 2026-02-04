@@ -23,7 +23,7 @@ namespace gestiones_backend.helpers
             while (!stoppingToken.IsCancellationRequested)
             {
                 var now = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
-                var next = new DateTime(now.Year, now.Month, now.Day, 4, 0, 0, now.Kind);
+                var next = new DateTime(now.Year, now.Month, now.Day, 23, 40, 0, now.Kind);
                 if (now > next) next = next.AddDays(1);
 
                 var delay = next - now;

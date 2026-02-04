@@ -16,8 +16,7 @@ namespace gestiones_backend.Services
         private readonly TrifocusExportOptions _exp;
         private readonly IConfiguration _configuration;
 
-        private const string SqlTrifocus = @"
-                                                SELECT 
+        private const string SqlTrifocus = @"  SELECT 
                                                     d.""CodigoOperacion""  as ""NOPERACION"",
                                                     TO_CHAR(g.""FechaGestion""  , 'YYYY/MM/DD') as ""DFECHA_PROCESO"",
                                                     'TRIFOCUS' as ""CCODIGO_GESTOR"",
@@ -46,7 +45,8 @@ namespace gestiones_backend.Services
                                                 left join ""RespuestasTipoContacto"" rtc on rtc.""Id"" = g.""IdRespuestaTipoContacto""  
                                                 join ""TiposContactoResultado"" tcr on rtc.""IdTipoContactoResultado"" = tcr.""Id"" 
                                                 where d.""Empresa"" = 'CRECOSCORP' and d.""CodigoOperacion"" is not null 
-                                                AND g.""FechaGestion""::date = (now() AT TIME ZONE 'America/Guayaquil')::date - 1 
+                                                AND g.""FechaGestion"" >= date_trunc('month', (now() AT TIME ZONE 'America/Guayaquil'))
+                                                AND g.""FechaGestion"" <  date_trunc('month', (now() AT TIME ZONE 'America/Guayaquil')) + interval '1 month'
 
                                                 union all
 
@@ -79,8 +79,9 @@ namespace gestiones_backend.Services
                                                 left join ""AbonosLiquidacion"" al on al.""Id""  = p.""IdAbonoLiquidacion""
                                                 where d.""Empresa"" = 'CRECOSCORP' and 
                                                       p.""Observaciones"" not like '%[MIGRACION CRECOS]%' and 
-                                                      d.""CodigoOperacion"" is not null AND 
-                                                      p.""FechaRegistro"" ::date = (now() AT TIME ZONE 'America/Guayaquil')::date - 1
+                                                      d.""CodigoOperacion"" is not null  
+                                                      AND p.""FechaRegistro"" >= date_trunc('month', (now() AT TIME ZONE 'America/Guayaquil'))
+	                                                  AND p.""FechaRegistro"" <  date_trunc('month', (now() AT TIME ZONE 'America/Guayaquil')) + interval '1 month'
 
                                                 union all
 
@@ -112,8 +113,9 @@ namespace gestiones_backend.Services
                                                 join ""CompromisosPagos"" cp ON cp.""IdDeuda""  = d.""IdDeuda"" 
                                                 left join ""TiposTareas"" tt on tt.""Id""  = cp.""IdTipoTarea"" 
                                                 where d.""Empresa"" = 'CRECOSCORP' and 
-                                                      d.""CodigoOperacion"" is not null d.""CodigoOperacion"" is not null AND 
-                                                      cp.""FechaRegistro""::date = (now() AT TIME ZONE 'America/Guayaquil')::date - 1 ;
+                                                      d.""CodigoOperacion"" is not null 
+	                                                  AND cp.""FechaRegistro"" >= date_trunc('month', (now() AT TIME ZONE 'America/Guayaquil'))
+                                                      AND cp.""FechaRegistro"" <  date_trunc('month', (now() AT TIME ZONE 'America/Guayaquil')) + interval '1 month';
                                                 ";
 
         public TrifocusExcelUploader(
@@ -172,7 +174,7 @@ namespace gestiones_backend.Services
 
                 var remoteFile = $"{pathServicio.TrimEnd('/')}/{Path.GetFileName(localPath)}";
                 using var fs = new FileStream(localPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                sftp.UploadFile(fs, remoteFile, true); // sobrescribe
+                sftp.UploadFile(fs, remoteFile, true); 
                 sftp.Disconnect();
             }
 

@@ -2,6 +2,7 @@
 using gestiones_backend.DbConn;
 using gestiones_backend.Entity.temp_crecos;
 using gestiones_backend.helpers;
+using gestiones_backend.Interfaces;
 using gestiones_backend.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -25,6 +26,7 @@ namespace gestiones_backend.Controllers
         private readonly DeudoresImportService deudoresImportService; 
         private readonly ZipExtractService _zipExtractService;
         private readonly IConfiguration _configuration;
+        private readonly ITrifocusExcelUploader _trifocusExcelUploader;
 
         public CrecosMetodosController(
             DataContext dataContext,
@@ -33,7 +35,8 @@ namespace gestiones_backend.Controllers
             FolderCleanService limpiarCarpeta,
             DeudoresImportService _deudoresImportService,
             ZipExtractService zipExtractService,
-            IConfiguration configuration
+            IConfiguration configuration,
+            ITrifocusExcelUploader trifocusExcelUploader
         )
         {
             _dataContext = dataContext;
@@ -43,6 +46,7 @@ namespace gestiones_backend.Controllers
             deudoresImportService = _deudoresImportService;
             _zipExtractService = zipExtractService;
             _configuration = configuration;
+            _trifocusExcelUploader = trifocusExcelUploader;
         }
 
         [HttpPost("grabar-campania")]
