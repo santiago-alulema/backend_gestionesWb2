@@ -398,6 +398,7 @@ namespace gestiones_backend.Services
                 {
 
                     existente.DeudaCapital = deuda.DeudaCapital;
+                    existente.NumeroCuotas = deuda.NumeroCuotas;
                     existente.Interes = deuda.Interes;
                     existente.GastosCobranzas = deuda.GastosCobranzas;
                     existente.SaldoDeuda = deuda.SaldoDeuda;

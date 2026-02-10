@@ -1,4 +1,5 @@
 ﻿using gestiones_backend.Context;
+using gestiones_backend.Dtos.In;
 using gestiones_backend.Entity.temp_crecos;
 using gestiones_backend.helpers;
 using gestiones_backend.Interfaces;
@@ -33,7 +34,14 @@ namespace gestiones_backend.Controllers
             return Ok(data);
         }
 
-    
+        [HttpPost("subir-cartera-manual")]
+        public async Task<ActionResult> SubirCarteraManual([FromBody]List<DeudasCrecosMasivoInDto> deudas, CancellationToken ct)
+        {
+            await _metodosCrecos.SubirDeudasCrecosMasivomanual(deudas, ct);
+            return Ok("Se actualizo las deudas creos subidas exitosamente");
+        }
+
+
         [HttpGet("saldos")]
         public ActionResult GetSaldos()
         {
