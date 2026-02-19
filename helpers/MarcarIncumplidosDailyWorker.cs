@@ -55,7 +55,7 @@ namespace gestiones_backend.helpers
                     await importSvc.ImportarDeudoresCompletoAsync();
                     await importSvc.ImportarTelefonosBasicoAsync();
                     importSvc.GrabarTablas();
-                  //  importSvc.ImportarDeudas();
+                    //importSvc.ImportarDeudas();
                     importSvc.importarPagos();
                 }
                 catch (Exception ex)

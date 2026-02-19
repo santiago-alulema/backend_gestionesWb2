@@ -110,7 +110,7 @@ builder.Services.Configure<TrifocusExportOptions>(builder.Configuration.GetSecti
 //builder.Services.AddTransient<gestiones_backend.DbConn.PgConn>();
 
 // Servicio principal
-builder.Services.AddSingleton<ITrifocusExcelUploader, TrifocusExcelUploader>();
+builder.Services.AddScoped<ITrifocusExcelUploader, TrifocusExcelUploader>();
 builder.Services.AddHostedService<TrifocusDailyWorker>();
 
 builder.Services.AddMapster();

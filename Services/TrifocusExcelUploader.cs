@@ -4,6 +4,7 @@ using gestiones_backend.DbConn;
 using gestiones_backend.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Org.BouncyCastle.Asn1.Ocsp;
 using Renci.SshNet;
 using System.Data;
 
@@ -14,7 +15,8 @@ namespace gestiones_backend.Services
         private readonly IWebHostEnvironment _env;
         private readonly SftpOptions _sftp;
         private readonly TrifocusExportOptions _exp;
-        private readonly IConfiguration _configuration;
+        private readonly IConfiguration _configuration; 
+        private readonly IEmailSenderService _emailSender;
 
         private const string SqlTrifocus = @"  SELECT 
                                                     d.""CodigoOperacion""  as ""NOPERACION"",
@@ -45,44 +47,8 @@ namespace gestiones_backend.Services
                                                 left join ""RespuestasTipoContacto"" rtc on rtc.""Id"" = g.""IdRespuestaTipoContacto""  
                                                 join ""TiposContactoResultado"" tcr on rtc.""IdTipoContactoResultado"" = tcr.""Id"" 
                                                 where d.""Empresa"" = 'CRECOSCORP' and d.""CodigoOperacion"" is not null 
-                                                AND g.""FechaGestion"" >= date_trunc('month', (now() AT TIME ZONE 'America/Guayaquil'))
-                                                AND g.""FechaGestion"" <  date_trunc('month', (now() AT TIME ZONE 'America/Guayaquil')) + interval '1 month'
-
-                                                union all
-
-                                                SELECT 
-                                                    d.""CodigoOperacion""  as ""NOPERACION"",
-                                                    TO_CHAR(p.""FechaPago""  , 'YYYY/MM/DD') as ""DFECHA_PROCESO"",
-                                                    'TRIFOCUS' as ""CCODIGO_GESTOR"",
-                                                    '010011'  as ""CCODIGO_GESTION"",
-                                                    TO_CHAR(d.""FechaRegistro"", 'YYYY/MM/DD') as ""DFECHA_ASIGNACION"",
-                                                    TO_CHAR(d.""FechaRegistro"", 'hh:mm:ss') as ""CHORA_ASIGNACION"",
-                                                    '' as ""CUSUARIO_ASIGNACION"",
-                                                    '' as ""CTERMINAL_ASIGNACION"",
-                                                    '001' as ""CCODIGO_TIPO_ASIGNACION"",
-                                                    TO_CHAR(p.""FechaPago""  , 'YYYY/MM/DD') as ""DFECHA_EJECUCION"",
-                                                    TO_CHAR(p.""FechaPago""   , 'hh:mm:ss') as ""CHORA_EJECUCION"",
-                                                    '' as ""DFECHA_COMPROMISO_PAGO"",
-                                                    '' as ""CHORA_COMPROMISO_PAGO"",
-                                                    TO_CHAR(p.""FechaPago""   , 'YYYY/MM/DD') as ""DFECHA_REGISTRA_RESULTADO"",
-                                                    TO_CHAR(p.""FechaPago""   , 'hh:mm:ss') as ""CHORA_REGISTRA_RESULTADO"",
-                                                    '' as ""CUSUARIO_REGISTRA_RESULTADO"",
-                                                    '' as ""CTERMINAL_REGISTRA_RESULTADO"",
-                                                    al.""CodigoExterno""  as ""CCODIGO_RESULTADO"",
-                                                    '1' as ""LGESTION_TERMINADA"",
-                                                    LEFT(p.""Observaciones"", 499)  as ""COBSERVACION"",
-                                                    '0' as ""FMONTO_ASIGNADO"",
-                                                    d2.""CodigoDeudor""  as ""NCODIGO_CLIENTE""
-                                                FROM ""Deudas"" d 
-                                                join ""Deudores"" d2 on d2.""IdDeudor"" = d.""IdDeudor"" 
-                                                join ""Pagos"" p ON p.""IdDeuda""  = d.""IdDeuda"" 
-                                                left join ""AbonosLiquidacion"" al on al.""Id""  = p.""IdAbonoLiquidacion""
-                                                where d.""Empresa"" = 'CRECOSCORP' and 
-                                                      p.""Observaciones"" not like '%[MIGRACION CRECOS]%' and 
-                                                      d.""CodigoOperacion"" is not null  
-                                                      AND p.""FechaRegistro"" >= date_trunc('month', (now() AT TIME ZONE 'America/Guayaquil'))
-	                                                  AND p.""FechaRegistro"" <  date_trunc('month', (now() AT TIME ZONE 'America/Guayaquil')) + interval '1 month'
-
+                                                  AND g.""FechaGestion"" >= date_trunc('day', now() AT TIME ZONE 'America/Guayaquil')
+                                                  AND g.""FechaGestion"" <  date_trunc('day', now() AT TIME ZONE 'America/Guayaquil') + interval '1 day'
                                                 union all
 
                                                 SELECT 
@@ -114,21 +80,22 @@ namespace gestiones_backend.Services
                                                 left join ""TiposTareas"" tt on tt.""Id""  = cp.""IdTipoTarea"" 
                                                 where d.""Empresa"" = 'CRECOSCORP' and 
                                                       d.""CodigoOperacion"" is not null 
-	                                                  AND cp.""FechaRegistro"" >= date_trunc('month', (now() AT TIME ZONE 'America/Guayaquil'))
-                                                      AND cp.""FechaRegistro"" <  date_trunc('month', (now() AT TIME ZONE 'America/Guayaquil')) + interval '1 month';
+	                                                   AND cp.""FechaRegistro"" >= date_trunc('day', now() AT TIME ZONE 'America/Guayaquil')
+                                                       AND cp.""FechaRegistro"" <  date_trunc('day', now() AT TIME ZONE 'America/Guayaquil') + interval '1 day';
                                                 ";
-
+        
         public TrifocusExcelUploader(
             IWebHostEnvironment env,
             IOptions<SftpOptions> sftp,
             IOptions<TrifocusExportOptions> exp,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IEmailSenderService emailSender)
         {
             _env = env;
             _sftp = sftp.Value;
             _exp = exp.Value;
             _configuration= configuration;
-
+            _emailSender = emailSender;
         }
 
         public async Task<string> GenerateAndUploadAsync(CancellationToken ct = default)
@@ -176,9 +143,31 @@ namespace gestiones_backend.Services
                 using var fs = new FileStream(localPath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 sftp.UploadFile(fs, remoteFile, true); 
                 sftp.Disconnect();
+                var response = await enviarCorreo(localPath, ct);
             }
 
             return await Task.FromResult(localPath);
+        }
+
+        public async Task<string > enviarCorreo(string localPath, CancellationToken ct)
+        {
+            byte[] fileBytes = await File.ReadAllBytesAsync(localPath, ct);
+            var fileName = Path.GetFileName(localPath);
+
+            await _emailSender.SendEmailAsync(
+                                                   to: "trifocusas@gmail.com",
+                                                   cc: ["santiagoalulema@gmail.com"],
+                                                   subject: "Reporte Gestiones Trifocus",
+                                                   htmlBody: "Se adjunta el archivo subido a crecos",
+                                                   plainTextBody: "Se adjunta el archivo subido a crecos",
+                                                   attachments: new[]
+                                                   {
+                                                        (FileName: fileName, Content: fileBytes, ContentType: "application/octet-stream")
+                                                   },
+                                                   configKey: "default",
+                                                   ct: ct
+                                               );
+            return "Se ecnvio el correo exitosamente";
         }
 
         private static void EnsureRemoteDir(SftpClient sftp, string remotePath)

@@ -92,18 +92,6 @@ namespace gestiones_backend.Services
                                          gen_random_uuid() AS ""IdPago"",
                                          ''::varchar  AS ""Telefono"",
 	                                    rpc.""Nombre_Archivo""
-	
-                                        --rpc.""NUM_IDENTIFICACION"",
-                                        --rpc.""COD_RECIBO"",
-                                       -- rdc.""IRECIBODETALLE"",
-                                       -- totals.total_valor_recibo,
-                                       -- rpc.""DESCRIPC_TPAGO"",
-                                       -- rdc.""ICODIGOOPERACION"",
-                                        --rfpc.""DESCRIPC_FPAGO"",
-                                       -- rfpc.""IVALOR"",
-                                       -- rfpc.""DESCRIPC_MOTIVO"",
-                                       -- rdc.""COD_RECIBO"" AS ""NumeroFactura"",
-                                        --d.""CodigoOperacion"" 
 	                                    FROM temp_crecos.""ReciboPagosCrecos"" rpc
 	                                    JOIN temp_crecos.""ReciboDetalleCrecos"" rdc
 	                                        ON rpc.""COD_RECIBO"" = rdc.""COD_RECIBO""
@@ -123,10 +111,12 @@ namespace gestiones_backend.Services
 	                                    and  NOT EXISTS (
                                        SELECT 1
                                        FROM public.""Pagos"" p
+                                       join ""Deudas"" d3 on d3.""IdDeuda"" = p.""IdDeuda"" 
                                        WHERE 
-                                        Date(p.""FechaPago"")       = Date(rpc.""FECHA_PAGO"") AND 
-                                        totals.total_valor_recibo   = p.""MontoPagado""
-                                        AND p.""NumeroDocumenro"" = rpc.""COD_RECIBO""
+                                        (p.""FechaPago"" >= date_trunc('month', rpc.""FECHA_PAGO"")
+ 	                                    AND p.""FechaPago"" <  date_trunc('month', rpc.""FECHA_PAGO"") + interval '1 month')	and
+                                        totals.total_valor_recibo   = p.""MontoPagado"" AND
+                                        d3.""Empresa"" like '%CRECO%'
                                      )
 	                                    ORDER BY rdc.""COD_RECIBO"", rdc.""IRECIBODETALLE"";";
 
@@ -326,7 +316,7 @@ namespace gestiones_backend.Services
                                 ON occ.""N_IDENTIFICACION"" = ca.""CNUMEROIDENTIFICACION""
                             LEFT JOIN temp_crecos.trifocuscrecospartes t 
                                 ON t.codoperacion = ca.""CNUMEROIDENTIFICACION""
-                            JOIN temp_crecos.""SaldoClienteCrecos"" scc 
+                            LEFT JOIN temp_crecos.""SaldoClienteCrecos"" scc 
                                 ON ca.""CODIGOCLIENTE"" = scc.""CODIGOCLIENTE""
                             GROUP BY ca.""CNUMEROIDENTIFICACION"";";
 

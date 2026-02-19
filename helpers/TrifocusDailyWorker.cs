@@ -6,14 +6,14 @@ namespace gestiones_backend.helpers
     public class TrifocusDailyWorker : BackgroundService
     {
         private readonly ILogger<TrifocusDailyWorker> _logger;
-        private readonly ITrifocusExcelUploader _uploader;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         public TrifocusDailyWorker(
             ILogger<TrifocusDailyWorker> logger,
-            ITrifocusExcelUploader uploader)
+            IServiceScopeFactory scopeFactory)
         {
             _logger = logger;
-            _uploader = uploader;
+            _scopeFactory = scopeFactory;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -27,13 +27,17 @@ namespace gestiones_backend.helpers
                 if (now > next) next = next.AddDays(1);
 
                 var delay = next - now;
+               
                 _logger.LogInformation("Esperando {Delay} para exportar y subir Trifocus...", delay);
                 await Task.Delay(delay, stoppingToken);
 
                 try
                 {
-                    var path = await _uploader.GenerateAndUploadAsync(stoppingToken);
-                    _logger.LogInformation("✅ Exportado y subido: {Path}", path);
+                    using var scope = _scopeFactory.CreateScope();
+                    var uploader = scope.ServiceProvider.GetRequiredService<ITrifocusExcelUploader>();
+
+                    var path = await uploader.GenerateAndUploadAsync(stoppingToken);
+                    _logger.LogInformation("✅ Exportado y subido: {Path}", uploader);
                 }
                 catch (Exception ex)
                 {
