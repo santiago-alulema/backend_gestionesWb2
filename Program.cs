@@ -6,6 +6,7 @@ using gestiones_backend.Interfaces;
 using gestiones_backend.Services;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -29,8 +30,6 @@ builder.Services.AddControllers(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContext, UserContext>();
 builder.Services.AddScoped<gestiones_backend.Auditoria.SimpleAuditInterceptor>();
@@ -123,8 +122,17 @@ ConfigDeudasCliente.Register(mapsterConfig);
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Limits.MaxRequestBodySize = 200 * 1024 * 1024; // 200 MB
+    options.Limits.MaxRequestBodySize = 200 * 1024 * 1024;
 });
+
+
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
+
 
 
 var app = builder.Build();
@@ -136,11 +144,11 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-//if (app.Environment.IsDevelopment())
-//{
+if (app.Environment.IsDevelopment())
+{
     app.UseSwagger();
     app.UseSwaggerUI();
-//}
+}
 
 app.UseCors("AllowSpecificOrigin");
 app.UseAuthentication();
