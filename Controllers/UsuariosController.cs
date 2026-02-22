@@ -24,7 +24,6 @@ namespace gestiones_backend.Controllers
 
 
         [HttpGet("obtener-lista-usuarios")]
-        [Authorize]
         public async Task<IActionResult> ObtenerUsuarios()
         {
             List<Usuario> usuarios =  _context.Usuarios.Where(x => x.Rol == "user" || x.Rol == "admin").ToList();
@@ -34,6 +33,7 @@ namespace gestiones_backend.Controllers
         }
         
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginModel oLoginCLS)
         {
 
