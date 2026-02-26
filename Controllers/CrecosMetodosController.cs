@@ -4,6 +4,7 @@ using gestiones_backend.Entity.temp_crecos;
 using gestiones_backend.helpers;
 using gestiones_backend.Interfaces;
 using gestiones_backend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -115,6 +116,7 @@ namespace gestiones_backend.Controllers
         }
 
         [HttpGet("sincronizar-ultimos-archivos-crecos")]
+        [AllowAnonymous]
         public async Task<IActionResult> DescargarUltimosArchivosCrecos()
         {
             try
@@ -127,7 +129,7 @@ namespace gestiones_backend.Controllers
                 await deudoresImportService.ImportarDeudoresCompletoAsync();
                 await deudoresImportService.ImportarTelefonosBasicoAsync();
                 deudoresImportService.GrabarTablas();
-                deudoresImportService.ImportarDeudas();
+              //  deudoresImportService.ImportarDeudas();
                 deudoresImportService.importarPagos();
             }
             catch (Exception ex)

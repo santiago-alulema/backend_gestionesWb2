@@ -105,19 +105,19 @@ namespace gestiones_backend.Services
                                             where  ""CDESCRIPCION_RUBRO"" <> 'Iva S.Gest.Adm.Pag.' and 
          		                                   ""CDESCRIPCION_RUBRO"" <> 'S.Gest.Adm. Pag.'
 	                                        GROUP BY ""COD_RECIBO""
-	                                    ) totals
-	                                        ON totals.""COD_RECIBO"" = rdc.""COD_RECIBO""
+	                                    ) totals ON totals.""COD_RECIBO"" = rdc.""COD_RECIBO""
 	                                    WHERE rpc.""DESCRIPC_TPAGO"" <> 'Nota de Cr�dito' 
 	                                    and  NOT EXISTS (
-                                       SELECT 1
-                                       FROM public.""Pagos"" p
-                                       join ""Deudas"" d3 on d3.""IdDeuda"" = p.""IdDeuda"" 
-                                       WHERE 
-                                        (p.""FechaPago"" >= date_trunc('month', rpc.""FECHA_PAGO"")
- 	                                    AND p.""FechaPago"" <  date_trunc('month', rpc.""FECHA_PAGO"") + interval '1 month')	and
-                                        totals.total_valor_recibo   = p.""MontoPagado"" AND
-                                        d3.""Empresa"" like '%CRECO%'
-                                     )
+                                           SELECT 1
+                                           FROM public.""Pagos"" p
+                                           join ""Deudas"" d3 on d3.""IdDeuda"" = p.""IdDeuda"" 
+                                           WHERE 
+                                             d3.""IdDeudor"" = rpc.""NUM_IDENTIFICACION"" and
+                                             p.""FechaPago"" >= date_trunc('month', rpc.""FECHA_PAGO"") AND
+ 	                                         p.""FechaPago"" <  date_trunc('month', rpc.""FECHA_PAGO"") + interval '1 month' AND
+                                             totals.total_valor_recibo   = p.""MontoPagado"" AND
+                                             d3.""Empresa"" like '%CRECO%'
+                                         )
 	                                    ORDER BY rdc.""COD_RECIBO"", rdc.""IRECIBODETALLE"";";
 
             PgConn conn = new PgConn();
