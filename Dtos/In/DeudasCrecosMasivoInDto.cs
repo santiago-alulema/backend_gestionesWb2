@@ -16,7 +16,6 @@
         public string? TipoDocumento { get; set; }
         public string? Agencia { get; set; }
         public string? Ciudad { get; set; }
-        public bool? EsActivo { get; set; } = true;
         public string? CodigoEmpresa { get; set; } = "000001";
         public string? CodigoOperacion { get; set; }
         public decimal? MontoCobrarPartes { get; set; }
